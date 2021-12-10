@@ -1,0 +1,2 @@
+# VisualNovelClearer
+一键将视觉小说/Galgame以高分辨率重制，现已支持Kirikiri2/Z及Artemis引擎
