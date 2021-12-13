@@ -138,7 +138,7 @@ class Artemis(GeneralEngine):
 
     """
     ==================================================
-    Artemis引擎脚本文件：ini, tbl, lua, iet, ipt
+    Artemis引擎脚本文件：ini, tbl, lua, iet, ipt, ast
     ==================================================
     """
 
@@ -149,6 +149,7 @@ class Artemis(GeneralEngine):
         self.windwos_tbl2x()
         self.ipt2x()
         self.ast2x()
+        self.lua2x()
 
     def sysini2x(self):
         '''
@@ -253,9 +254,28 @@ class Artemis(GeneralEngine):
                         f.write(line)
                 return
 
+    # def ipt2x(self):
+    #     '''
+    #     粒子效果显示修正
+    #     '''
+    #     for ipt_file in file_list(self.game_data, 'ipt'):
+    #         result = []
+    #         lines, current_encoding = self.get_lines_encoding(ipt_file)
+    #         for line in lines:
+    #             keyn_ls = ['x', 'y', 'w', 'h', 'ax', 'ay']
+    #             for keyn in keyn_ls:
+    #                 pattern = re.compile(rf'(.*\W+{keyn}\W+)(\d+)(.*)')
+    #                 line_c = re.match(pattern, line)
+    #                 if line_c:
+    #                     line = pattern_num2x(line, line_c, self.scale_ratio)
+    #             result.append(line)
+    #         with open(self.a2p(ipt_file), 'w', newline='', encoding=current_encoding) as f:
+    #             for line in result:
+    #                 f.write(line)
+
     def ipt2x(self):
         '''
-        粒子效果显示修正
+        粒子效果显示修正，部分游戏对话框修正
         '''
         for ipt_file in file_list(self.game_data, 'ipt'):
             result = []
@@ -267,6 +287,16 @@ class Artemis(GeneralEngine):
                     line_c = re.match(pattern, line)
                     if line_c:
                         line = pattern_num2x(line, line_c, self.scale_ratio)
+                pattern2 = re.compile(r'(.*\W+")(\d+.*?)(".*)')
+                line_c2 = re.match(pattern2, line)
+                if line_c2:
+                    line2ls = list(line_c2.groups())
+                    num_str_ls = line2ls[1].split(',')
+                    for i, num_str in enumerate(num_str_ls):
+                        if real_digit(num_str):
+                            num_str_ls[i] = str(int(int(num_str)*self.scale_ratio))
+                    line2ls[1] = ','.join(num_str_ls)
+                    line = ''.join(line2ls)
                 result.append(line)
             with open(self.a2p(ipt_file), 'w', newline='', encoding=current_encoding) as f:
                 for line in result:
@@ -288,6 +318,25 @@ class Artemis(GeneralEngine):
                         line = pattern_num2x(line, line_c, self.scale_ratio)
                 result.append(line)
             with open(self.a2p(ast_file), 'w', newline='', encoding=current_encoding) as f:
+                for line in result:
+                    f.write(line)
+
+    def lua2x(self):
+        '''
+        部分游戏音量值位置修正
+        '''
+        for lua_file in file_list(self.game_data, 'lua'):
+            lines, current_encoding = self.get_lines_encoding(lua_file)
+            result = []
+            keyn_ls = ['width', 'height', 'left', 'top', 'x', 'y']
+            for line in lines:
+                for keyn in keyn_ls:
+                    pattern = re.compile(rf'(.*\W+{keyn}\W+)(\d+)(.*)')
+                    line_c = re.match(pattern, line)
+                    if line_c:
+                        line = pattern_num2x(line, line_c, self.scale_ratio)
+                result.append(line)
+            with open(self.a2p(lua_file), 'w', newline='', encoding=current_encoding) as f:
                 for line in result:
                     f.write(line)
 

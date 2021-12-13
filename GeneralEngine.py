@@ -72,7 +72,7 @@ class GeneralEngine(object):
         '''
         对图片进行放大处理
 
-        注意：使用anime4k放大时，指定输出扩展名无效
+        注：使用anime4k放大时，指定输出扩展名无效
         '''
         if not output_path:
             output_path = input_path
@@ -82,7 +82,7 @@ class GeneralEngine(object):
         elif self.image_scale_mode == 'anime4k':
             self.anime4k(input_path, output_path=output_path)
 
-    def waifu2x(self, input_path, output_path=None, output_extention='png'):
+    def waifu2x(self, input_path, output_path, output_extention='png'):
         '''
         使用waifu2x-caffe放大图片(机器学习，伪无损放大)，图片保存为指定格式
 
@@ -94,7 +94,7 @@ class GeneralEngine(object):
         #     vlogf.write('*'*30+'\r\n')
         #     vlogf.write(waifu2x_p.stdout.decode('UTF-8'))
 
-    def anime4k(self, input_path, output_path=None):
+    def anime4k(self, input_path, output_path):
         '''
         使用anime4k放大图片(非机器学习)，图片格式不变
 
@@ -105,9 +105,9 @@ class GeneralEngine(object):
         # anime4k_p = subprocess.run([self.anime4k_exe, '-i', input_path, '-z', scale_ratio, '-o', output_path], capture_output=False)
         # anime4k_p = subprocess.run([self.anime4k_exe, '-i', input_path, '-z', scale_ratio, '-d', self.gpu_No, '-t', cpu_cores, '-o', output_path, '-q', '-w', '-A'], capture_output=False)
         anime4k_p = subprocess.run([self.anime4k_exe, '-i', input_path, '-z', scale_ratio, '-d', self.gpu_No, '-q', '-A', '-o', output_path], capture_output=False)
-        with open(self.vnc_log_file, 'a+', newline='', encoding='UTF-8') as vlogf:
-            vlogf.write('*'*30+'\r\n')
-            vlogf.write(anime4k_p.stdout.decode('UTF-8'))
+        # with open(self.vnc_log_file, 'a+', newline='', encoding='UTF-8') as vlogf:
+        #     vlogf.write('*'*30+'\r\n')
+        #     vlogf.write(anime4k_p.stdout.decode('UTF-8'))
 
     def video_scale(self, input_video, output_extension=None, output_vcodec=None) -> str:
         '''
