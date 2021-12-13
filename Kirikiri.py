@@ -23,7 +23,7 @@ class Kirikiri(GeneralEngine):
         if not os.path.exists(self.patch_folder):
             os.mkdir(self.patch_folder)
         if os.path.exists(self.tmp_folder):
-            os.rmtree(self.tmp_folder)
+            shutil.rmtree(self.tmp_folder)
         os.mkdir(self.tmp_folder)
 
         if self.run_dict['script']:
