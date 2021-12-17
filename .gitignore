@@ -127,3 +127,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# 自定义
+/Dependencies
+/GUI
+/old_modules
+/config.ini
+/py2exe.py
+/test.py
+/test2.py
+/test3.py
