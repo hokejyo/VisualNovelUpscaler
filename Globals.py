@@ -12,37 +12,142 @@ import logging
 import traceback
 import subprocess
 import configparser
+from wmi import WMI
+from PIL import Image
+from pathlib import Path
+from math import log2, ceil
 from multiprocessing import Pool, cpu_count, Process, freeze_support
 
 
+def image_zoom(input_path, zoom_factor, output_path=None) -> Path:
+    """
+    @brief      单张图片缩放
+
+    @param      input_path   输入路径
+    @param      zoom_factor  缩放系数
+    @param      output_path  输出路径
+
+    @return     输出图片路径对象
+    """
+    if not output_path:
+        output_path = input_path
+    image = Image.open(input_path)
+    image_resize = image.resize(
+        (int(image.width*zoom_factor), int(image.height*zoom_factor)),
+        Image.ANTIALIAS)
+    image_resize.save(output_path)
+    return output_path
+
+
+def image_convert(input_path, output_extention, del_input=False) -> Path:
+    """
+    @brief      单张图片格式转换
+
+    @param      input_path        输入路径
+    @param      output_extention  输出格式
+    @param      del_input         是否删除输入图片
+
+    @return     输出图片路径对象
+    """
+    input_path = Path(input_path)
+    output_path = input_path.with_suffix('.'+output_extention)
+    if output_extention.lower() in ['jpg', 'jpeg']:
+        Image.open(input_path).convert('RGB').save(output_path, quality=100)
+    else:
+        Image.open(input_path).save(output_path, quality=100)
+    if del_input:
+        if output_path != input_path:
+            input_path.unlink()
+    return output_path
+
+
+def alpha_image(image_path) -> bool:
+    """
+    @brief      检查图片是否含有alpha通道
+
+    @param      image_path  图片路径
+
+    @return     bool
+    """
+    return True if Image.open(image_path).mode in ['RGBA', 'LA'] else False
+
+
+def get_image_format(image_path) -> str:
+    """
+    @brief      获取图片真实格式
+
+    @param      image_path  图片路径
+
+    @return     图片格式
+    """
+    return Image.open(image_path).format.lower()
+
+
+def get_gpu_list() -> list:
+    """
+    @brief      获取显卡名称列表
+
+    @return     返回显卡名称列表
+    """
+    GPUs = WMI().Win32_VideoController()
+    GPU_list = [i.name for i in GPUs]
+    return GPU_list
+
+
+def get_gpu_id(GPU_name) -> str:
+    """
+    @brief      获取显卡ID
+
+    @param      GPU_name  显卡名
+
+    @return     返回显卡ID
+    """
+    GPU_list = get_gpu_list()
+    return str(GPU_list.index(GPU_name))
+
+
 def fcopy(src, dst):
-    '''
-    强制复制，限定文件到目录
-    '''
-    target_file = os.path.join(dst, os.path.basename(src))
-    if os.path.exists(target_file):
-        os.remove(target_file)
-    if not os.path.exists(dst):
-        os.makedirs(dst)
+    """
+    @brief      复制文件到文件夹
+
+    @param      src   源文件
+    @param      dst   目标文件夹
+    """
+    src = Path(src)
+    dst = Path(dst)
+    target_file = dst/(src.name)
+    if target_file.exists():
+        target_file.unlink()
+    if not dst.exists():
+        dst.makedir(parents=True)
     shutil.copy(src, dst)
 
 
 def fmove(src, dst):
-    '''
-    强制移动，限定文件到目录
-    '''
-    target_file = os.path.join(dst, os.path.basename(src))
-    if os.path.exists(target_file):
-        os.remove(target_file)
-    if not os.path.exists(dst):
-        os.makedirs(dst)
+    """
+    @brief      移动文件到文件夹
+
+    @param      src   源文件
+    @param      dst   目标文件夹
+    """
+    src = Path(src)
+    dst = Path(dst)
+    target_file = dst/(src.name)
+    if target_file.exists():
+        target_file.unlink()
+    if not dst.exists():
+        dst.makedir(parents=True)
     shutil.move(src, dst)
 
 
-def get_encoding(script_file):
-    '''
-    获取编码
-    '''
+def get_encoding(script_file) -> str:
+    """
+    @brief      获取文本编码
+
+    @param      script_file  文本文件路径
+
+    @return     文本编码格式
+    """
     encoding_ls = ['shift-jis', 'utf-8', 'gbk', 'utf-16', 'CP932']
     with open(script_file, 'rb') as f:
         content_b = f.read()
@@ -75,6 +180,7 @@ def file_list(folder, extension=None, walk_mode=True, ignored_folders=[], parent
     忽略遍历文件夹
     指定上级目录(不包含子目录)
     '''
+    folder = Path(folder)
     file_path_ls = []
     for root, dirs, files in os.walk(folder, topdown=True):
         dirs[:] = [d for d in dirs if d not in ignored_folders]
@@ -89,6 +195,7 @@ def file_list(folder, extension=None, walk_mode=True, ignored_folders=[], parent
             break
     if parent_folders:
         file_path_ls = [file_path for file_path in file_path_ls if os.path.basename(os.path.dirname(file_path)) in parent_folders]
+    file_path_ls = [Path(file) for file in file_path_ls]
     return file_path_ls
 
 
@@ -137,10 +244,10 @@ def show_image2x_status(image_folder, image_extension):
     '''
     start_time_dict = {}
     for image_file in file_list(image_folder, image_extension):
-        start_time_dict[image_file] = os.path.getmtime(image_file)
+        start_time_dict[image_file] = image_file.stat().st_mtime
     # 时间戳判断图片是否被放大
-    now_count = len([image_file for image_file in file_list(image_folder, image_extension) if os.path.getmtime(image_file) > start_time_dict[image_file]])
-    target_count = len(file_list(image_folder, image_extension))
+    now_count = len([image_file for image_file in start_time_dict.keys() if image_file.stat().st_mtime > start_time_dict[image_file]])
+    target_count = len(start_time_dict.keys())
     if target_count == 0:
         now_percent = 1
         print(f'未发现需要放大的{image_extension}图片')
@@ -150,7 +257,10 @@ def show_image2x_status(image_folder, image_extension):
     # 百分比小于100%时循环
     while now_percent < 1:
         now_time = time.time()
-        now_count = len([image_file for image_file in file_list(image_folder, image_extension) if os.path.getmtime(image_file) > start_time_dict[image_file]])
+        try:
+            now_count = len([image_file for image_file in start_time_dict.keys() if image_file.stat().st_mtime > start_time_dict[image_file]])
+        except:
+            pass
         now_percent = now_count/target_count
         if now_percent == 0:
             print('处理进度：[%s]' % (format('>'*int(35*now_percent), '<35')), format(now_percent, ' >7.2%'), f'预计剩余时间：统计中...', end=' \r')
@@ -161,87 +271,3 @@ def show_image2x_status(image_folder, image_extension):
         time.sleep(2)
         if now_percent == 1:
             print()
-
-
-class VNCConfig(object):
-    """配置设置"""
-
-    def __init__(self):
-        # 打包后工作目录变了啊
-        self.bundle_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
-        os.chdir(self.bundle_dir)
-        self.vnc_config = configparser.ConfigParser()
-        self.vnc_config_file = os.path.join(self.bundle_dir, 'config.ini')
-        self.vnc_log_file = os.path.join(self.bundle_dir, 'log_records.txt')
-        self.vnc_lic_file = os.path.join(self.bundle_dir, 'LICENSE')
-        self.write_vnc_config()
-        self.read_vnc_config()
-
-    def write_vnc_config(self, reset_mode=False):
-        if not os.path.exists(self.vnc_config_file):
-            reset_mode = True
-        if reset_mode == True:
-            self.vnc_config = configparser.ConfigParser()
-            if os.path.exists(self.vnc_config_file):
-                os.remove(self.vnc_config_file)
-            with open(self.vnc_config_file, 'w', newline='', encoding='utf-8') as vcf:
-                self.vnc_config.add_section('General')
-                self.vnc_config.set('General', 'image_scale_mode', 'waifu2x')
-                self.vnc_config.set('General', 'cpu_cores', str(cpu_count()))
-                self.vnc_config.set('General', 'gpu_No', '0')
-                # waifu2x配置相关
-                self.vnc_config.add_section('waifu2x')
-                self.vnc_config.set('waifu2x', 'process_mode', 'cudnn')
-                self.vnc_config.set('waifu2x', 'crop_size', '128')
-                self.vnc_config.set('waifu2x', 'scale_mode', 'noise_scale')
-                self.vnc_config.set('waifu2x', 'noise_level', '3')
-                self.vnc_config.set('waifu2x', 'style_mode', 'cunet')
-                self.vnc_config.set('waifu2x', 'batch_size', '1')
-                self.vnc_config.set('waifu2x', 'tta', '0')
-                # ffmpeg配置相关
-                self.vnc_config.add_section('ffmpeg')
-                self.vnc_config.set('ffmpeg', 'video_quality', '2')
-                self.vnc_config.write(vcf)
-
-    def read_vnc_config(self):
-        # 依赖工具集执行文件路径
-        self.toolkit_path = os.path.join(self.bundle_dir, 'Dependencies')
-        # https://github.com/FFmpeg/FFmpeg
-        self.ffmpeg = os.path.join(self.toolkit_path, 'ffmpeg\\bin\\ffmpeg.exe')
-        self.ffprobe = os.path.join(self.toolkit_path, 'ffmpeg\\bin\\ffprobe.exe')
-        # https://github.com/lltcggie/waifu2x-caffe
-        self.waifu2x_exe = os.path.join(self.toolkit_path, 'waifu2x-caffe\\waifu2x-caffe-cui.exe')
-        # https://github.com/TianZerL/Anime4KCPP
-        self.anime4k_exe = os.path.join(self.toolkit_path, 'Anime4KCPP_CLI\\Anime4KCPP_CLI.exe')
-        # https://github.com/UlyssesWu/FreeMote
-        self.psb_de_exe = os.path.join(self.toolkit_path, 'FreeMoteToolkit\\PsbDecompile.exe')
-        self.psb_en_exe = os.path.join(self.toolkit_path, 'FreeMoteToolkit\\PsBuild.exe')
-        # https://github.com/vn-toolkit/tlg2png
-        self.tlg2png_exe = os.path.join(self.toolkit_path, 'tlg2png\\tlg2png.exe')
-        # https://github.com/krkrz/krkr2
-        self.krkrtpc_exe = os.path.join(self.toolkit_path, 'krkrtpc\\krkrtpc.exe')
-        # https://github.com/zhiyb/png2tlg
-        self.png2tlg6_exe = os.path.join(self.toolkit_path, 'png2tlg6\\png2tlg6.exe')
-        # https://github.com/xmoeproject/AlphaMovieDecoder
-        self.amv_de_exe = os.path.join(self.toolkit_path, 'AlphaMovieDecoder\\AlphaMovieDecoderFake.exe')
-        self.amv_de_folder = os.path.join(self.toolkit_path, 'AlphaMovieDecoder\\video')
-        # https://github.com/zhiyb/AlphaMovieEncoder
-        self.amv_en_exe = os.path.join(self.toolkit_path, 'AlphaMovieEncoder\\amenc.exe')
-        # 通用参数
-        self.vnc_config.read(self.vnc_config_file)
-        self.image_scale_mode = self.vnc_config.get('General', 'image_scale_mode')
-        self.cpu_cores = self.vnc_config.getint('General', 'cpu_cores')
-        self.gpu_No = self.vnc_config.get('General', 'gpu_No')
-        # waifu2x配置相关
-        self.process_mode = self.vnc_config.get('waifu2x', 'process_mode')
-        self.crop_size = self.vnc_config.get('waifu2x', 'crop_size')
-        self.scale_mode = self.vnc_config.get('waifu2x', 'scale_mode')
-        self.noise_level = self.vnc_config.get('waifu2x', 'noise_level')
-        self.style_mode = self.vnc_config.get('waifu2x', 'style_mode')
-        self.batch_size = self.vnc_config.get('waifu2x', 'batch_size')
-        self.tta = self.vnc_config.get('waifu2x', 'tta')
-        # ffmpeg配置相关
-        self.video_quality = self.vnc_config.get('ffmpeg', 'video_quality')
-
-
-vc = VNCConfig()

@@ -134,6 +134,4 @@ dmypy.json
 /old_modules
 /config.ini
 /py2exe.py
-/test.py
-/test2.py
-/test3.py
+/test*

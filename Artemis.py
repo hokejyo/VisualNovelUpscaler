@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 from Globals import *
+from VNCConfig import vc
 from GeneralEngine import GeneralEngine
 
 
@@ -10,7 +11,7 @@ class Artemis(GeneralEngine):
     def __init__(self, game_data):
         super().__init__(game_data)
 
-        self.patch_folder = os.path.join(os.path.dirname(self.game_data), 'root')
+        self.patch_folder = self.game_data.parent/'root'
         self.encoding, self.scwidth, self.scheight = self.get_encoding_resolution()
         self.scale_ratio = self.get_default_scale_ratio()
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
@@ -20,11 +21,11 @@ class Artemis(GeneralEngine):
         self.select2run()
         print('\n', format('开始处理', '=^76'), sep='', end='\n'*2)
         timing_start = time.time()
-        if not os.path.exists(self.patch_folder):
-            os.mkdir(self.patch_folder)
-        if os.path.exists(self.tmp_folder):
+        if not self.patch_folder.exists():
+            self.patch_folder.mkdir(parents=True)
+        if self.tmp_folder.exists():
             shutil.rmtree(self.tmp_folder)
-        os.mkdir(self.tmp_folder)
+        self.tmp_folder.mkdir(parents=True)
 
         if self.run_dict['script']:
             self.script2x()
@@ -39,9 +40,9 @@ class Artemis(GeneralEngine):
             self.video2x()
             print('视频文件处理完成')
 
-        shutil.rmtree(self.tmp_folder)
         timing_count = time.time() - timing_start
         tmp = input(f'\n高清重制完成，共耗时{seconds_format(timing_count)}\n请将root文件夹中的文件放到游戏根目录下\n按回车键退出：')
+        shutil.rmtree(self.tmp_folder)
         sys.exit()
 
     def select2run(self):
@@ -93,7 +94,7 @@ class Artemis(GeneralEngine):
         获取文本编码和分辨率
         '''
         for ini_file in file_list(self.game_data, 'ini'):
-            if os.path.basename(ini_file) == 'system.ini':
+            if ini_file.name == 'system.ini':
                 encoding = get_encoding(ini_file)
                 with open(ini_file, newline='', encoding=encoding) as f:
                     lines = f.readlines()
@@ -110,30 +111,42 @@ class Artemis(GeneralEngine):
                     return encoding, scwidth, scheight
 
     def a2p(self, file_path):
-        '''
-        游戏数据文件夹到补丁文件夹，保持目录结构路径
-        '''
-        target_file = file_path.replace(self.game_data, self.patch_folder)
-        if not os.path.exists(os.path.dirname(target_file)):
-            os.makedirs(os.path.dirname(target_file))
+        """
+        @brief      游戏数据文件夹到补丁文件夹，保持目录结构路径
+
+        @param      file_path  文件路径对象
+
+        @return     目标文件路径对象
+        """
+        target_file = self.patch_folder/file_path.relative_to(self.game_data)
+        if not target_file.parent.exists():
+            target_file.parent.mkdir(parents=True)
         return target_file
 
     def a2t(self, file_path):
-        '''
-        游戏数据文件夹到临时文件夹，保持目录结构路径
-        '''
-        target_file = file_path.replace(self.game_data, self.tmp_folder)
-        if not os.path.exists(os.path.dirname(target_file)):
-            os.makedirs(os.path.dirname(target_file))
+        """
+        @brief      游戏数据文件夹到临时文件夹，保持目录结构路径
+
+        @param      file_path  文件路径对象
+
+        @return     目标文件路径对象
+        """
+        target_file = self.tmp_folder/file_path.relative_to(self.game_data)
+        if not target_file.parent.exists():
+            target_file.parent.mkdir(parents=True)
         return target_file
 
     def t2p(self, file_path):
-        '''
-        临时文件夹到补丁文件夹，保持目录结构路径
-        '''
-        target_file = file_path.replace(self.tmp_folder, self.patch_folder)
-        if not os.path.exists(os.path.dirname(target_file)):
-            os.makedirs(os.path.dirname(target_file))
+        """
+        @brief      临时文件夹到补丁文件夹，保持目录结构路径
+
+        @param      file_path  文件路径对象
+
+        @return     目标文件路径对象
+        """
+        target_file = self.patch_folder/file_path.relative_to(self.tmp_folder)
+        if not target_file.parent.exists():
+            target_file.parent.mkdir(parents=True)
         return target_file
 
     """
@@ -145,8 +158,7 @@ class Artemis(GeneralEngine):
     def script2x(self):
         print('正在处理脚本文件......')
         self.sysini2x()
-        self.windows_xx_tbl2x()
-        self.windwos_tbl2x()
+        self.tbl2x()
         self.ipt2x()
         self.ast2x()
         self.lua2x()
@@ -156,7 +168,7 @@ class Artemis(GeneralEngine):
         游戏分辨率，存档位置修改
         '''
         for ini_file in file_list(self.game_data, 'ini'):
-            if os.path.basename(ini_file) == 'system.ini':
+            if ini_file.name == 'system.ini':
                 pattern1 = re.compile(r'(WIDTH|HEIGHT)(\W+)(\d+)(.*)')
                 result = []
                 lines, current_encoding = self.get_lines_encoding(ini_file)
@@ -179,99 +191,81 @@ class Artemis(GeneralEngine):
                                 line = ';'+line
                         f.write(line)
 
-    def windows_xx_tbl2x(self):
+    def tbl2x(self):
+        for tbl_file in file_list(self.game_data, 'tbl'):
+            if tbl_file.name.startswith('list_windows_'):
+                self.windows_xx_tbl2x(tbl_file)
+            if tbl_file.name == 'list_windows.tbl':
+                self.windwos_tbl2x(tbl_file)
+
+    def windows_xx_tbl2x(self, tbl_file):
         '''
         主要是字体修正
         '''
         keyn_ls = ['size', 'left', 'top', 'width', 'height', 'spacetop', 'spacemiddle', 'spacebottom', 'rubysize']
-        windows_xx_ls = [tbl_file for tbl_file in file_list(self.game_data, 'tbl') if os.path.basename(tbl_file).startswith('list_windows_')]
-        for tbl_file in windows_xx_ls:
-            result = []
-            lines, current_encoding = self.get_lines_encoding(tbl_file)
-            for line in lines:
-                for keyn in keyn_ls:
-                    pattern = re.compile(rf'(.*?\W+{keyn}\W+)(\d+)(.*)')
-                    line_c = re.match(pattern, line)
-                    if line_c:
-                        line = pattern_num2x(line, line_c, self.scale_ratio)
-                result.append(line)
-            with open(self.a2p(tbl_file), 'w', newline='', encoding=current_encoding) as f:
-                for line in result:
-                    f.write(line)
+        result = []
+        lines, current_encoding = self.get_lines_encoding(tbl_file)
+        for line in lines:
+            for keyn in keyn_ls:
+                pattern = re.compile(rf'(.*?\W+{keyn}\W+)(\d+)(.*)')
+                line_c = re.match(pattern, line)
+                if line_c:
+                    line = pattern_num2x(line, line_c, self.scale_ratio)
+            result.append(line)
+        with open(self.a2p(tbl_file), 'w', newline='', encoding=current_encoding) as f:
+            for line in result:
+                f.write(line)
 
-    def windwos_tbl2x(self):
+    def windwos_tbl2x(self, tbl_file):
         '''
         主要是ui修正，游戏窗口，立绘定位
         '''
-        for tbl_file in file_list(self.game_data, 'tbl'):
-            if os.path.basename(tbl_file) == 'list_windows.tbl':
-                result = []
-                lines, current_encoding = self.get_lines_encoding(tbl_file)
-                for line in lines:
-                    ls1 = ['game_scale', 'game_wasmbar', 'fontsize', 'line_size', 'line_window', 'line_back', 'line_scroll', 'line_name01', 'line_name02']
-                    # ls1 = ['game_scale', 'game_wasmbar', 'title_anime', 'fontsize', 'line_size', 'line_window', 'line_back', 'line_scroll', 'line_name01', 'line_name02']
-                    for keyn1 in ls1:
-                        if line.startswith(keyn1):
-                            # pattern_rule1 = rf'({keyn1}\W+?\{)(.*?)(\}.*)'    # 为甚?
-                            pattern_rule1 = '('+keyn1+r'\W+?\{'+')'+'(.*?)'+r'(\}.*)'
-                            pattern1 = re.compile(pattern_rule1)
-                            line_c1 = re.match(pattern1, line)
-                            if line_c1:
-                                line_ls = list(line_c1.groups())
-                                tmp_ls = line_ls[1].split(',')
-                                for i in range(len(tmp_ls)):
-                                    if real_digit(tmp_ls[i]):
-                                        tmp_ls[i] = str(int(int(tmp_ls[i])*self.scale_ratio))
-                                line_ls[1] = ','.join(tmp_ls)
-                                line = ''.join([i for i in line_ls if i != None])
-                    ls2 = ['x', 'y', 'w', 'h', 'r', 'cx', 'cy', 'cw', 'ch', 'fx', 'fy', 'fw', 'fh', 'left', 'top', 'size', 'width', 'height', 'spacetop', 'spacemiddle', 'spacebottom', 'kerning', 'rubysize']
-                    for keyn2 in ls2:
-                        pattern2 = re.compile(rf'(.*\W+{keyn2}\W+)(\d+)(.*)')
-                        line_c2 = re.match(pattern2, line)
-                        if line_c2:
-                            line = pattern_num2x(line, line_c2, self.scale_ratio)
-                    ls3 = ['clip', 'clip_a', 'clip_c', 'clip_d']
-                    for keyn3 in ls3:
-                        pattern3 = re.compile(rf'(.*\W+{keyn3}\W+?")(.*?)(".*)')
-                        line_c3 = re.match(pattern3, line)
-                        if line_c3:
-                            line_ls = list(line_c3.groups())
-                            tmp_ls = line_ls[1].split(',')
-                            for i in range(len(tmp_ls)):
-                                if real_digit(tmp_ls[i]):
-                                    tmp_ls[i] = str(int(int(tmp_ls[i])*self.scale_ratio))
-                            line_ls[1] = ','.join(tmp_ls)
-                            line = ''.join([i for i in line_ls if i != None])
-                    ls4 = ['game_width', 'game_height']
-                    for keyn4 in ls4:
-                        pattern4 = re.compile(rf'^({keyn4}\W+)(\d+)(.*)')
-                        line_c4 = re.match(pattern4, line)
-                        if line_c4:
-                            line = pattern_num2x(line, line_c4, self.scale_ratio)
-                    result.append(line)
-                with open(self.a2p(tbl_file), 'w', newline='', encoding=current_encoding) as f:
-                    for line in result:
-                        f.write(line)
-                return
-
-    # def ipt2x(self):
-    #     '''
-    #     粒子效果显示修正
-    #     '''
-    #     for ipt_file in file_list(self.game_data, 'ipt'):
-    #         result = []
-    #         lines, current_encoding = self.get_lines_encoding(ipt_file)
-    #         for line in lines:
-    #             keyn_ls = ['x', 'y', 'w', 'h', 'ax', 'ay']
-    #             for keyn in keyn_ls:
-    #                 pattern = re.compile(rf'(.*\W+{keyn}\W+)(\d+)(.*)')
-    #                 line_c = re.match(pattern, line)
-    #                 if line_c:
-    #                     line = pattern_num2x(line, line_c, self.scale_ratio)
-    #             result.append(line)
-    #         with open(self.a2p(ipt_file), 'w', newline='', encoding=current_encoding) as f:
-    #             for line in result:
-    #                 f.write(line)
+        result = []
+        lines, current_encoding = self.get_lines_encoding(tbl_file)
+        for line in lines:
+            ls1 = ['game_scale', 'game_wasmbar', 'fontsize', 'line_size', 'line_window', 'line_back', 'line_scroll', 'line_name01', 'line_name02']
+            # ls1 = ['game_scale', 'game_wasmbar', 'title_anime', 'fontsize', 'line_size', 'line_window', 'line_back', 'line_scroll', 'line_name01', 'line_name02']
+            for keyn1 in ls1:
+                if line.startswith(keyn1):
+                    pattern_rule1 = '('+keyn1+r'\W+?\{'+')'+'(.*?)'+r'(\}.*)'
+                    pattern1 = re.compile(pattern_rule1)
+                    line_c1 = re.match(pattern1, line)
+                    if line_c1:
+                        line_ls = list(line_c1.groups())
+                        tmp_ls = line_ls[1].split(',')
+                        for i in range(len(tmp_ls)):
+                            if real_digit(tmp_ls[i]):
+                                tmp_ls[i] = str(int(int(tmp_ls[i])*self.scale_ratio))
+                        line_ls[1] = ','.join(tmp_ls)
+                        line = ''.join([i for i in line_ls if i != None])
+            ls2 = ['x', 'y', 'w', 'h', 'r', 'cx', 'cy', 'cw', 'ch', 'fx', 'fy', 'fw', 'fh', 'left', 'top', 'size', 'width', 'height', 'spacetop', 'spacemiddle', 'spacebottom', 'kerning', 'rubysize']
+            for keyn2 in ls2:
+                pattern2 = re.compile(rf'(.*\W+{keyn2}\W+)(\d+)(.*)')
+                line_c2 = re.match(pattern2, line)
+                if line_c2:
+                    line = pattern_num2x(line, line_c2, self.scale_ratio)
+            ls3 = ['clip', 'clip_a', 'clip_c', 'clip_d']
+            for keyn3 in ls3:
+                pattern3 = re.compile(rf'(.*\W+{keyn3}\W+?")(.*?)(".*)')
+                line_c3 = re.match(pattern3, line)
+                if line_c3:
+                    line_ls = list(line_c3.groups())
+                    tmp_ls = line_ls[1].split(',')
+                    for i in range(len(tmp_ls)):
+                        if real_digit(tmp_ls[i]):
+                            tmp_ls[i] = str(int(int(tmp_ls[i])*self.scale_ratio))
+                    line_ls[1] = ','.join(tmp_ls)
+                    line = ''.join([i for i in line_ls if i != None])
+            ls4 = ['game_width', 'game_height']
+            for keyn4 in ls4:
+                pattern4 = re.compile(rf'^({keyn4}\W+)(\d+)(.*)')
+                line_c4 = re.match(pattern4, line)
+                if line_c4:
+                    line = pattern_num2x(line, line_c4, self.scale_ratio)
+            result.append(line)
+        with open(self.a2p(tbl_file), 'w', newline='', encoding=current_encoding) as f:
+            for line in result:
+                f.write(line)
 
     def ipt2x(self):
         '''
@@ -352,21 +346,20 @@ class Artemis(GeneralEngine):
     def png2x(self):
         print('正在复制图片至临时文件夹......')
         for png_file in file_list(self.game_data, 'png'):
-            fcopy(png_file, os.path.dirname(self.a2t(png_file)))
+            fcopy(png_file, self.a2t(png_file).parent)
         print('图片复制完成，正在放大中......')
         show_image2x_p = Process(target=show_image2x_status, args=(self.tmp_folder, 'png'))
         show_image2x_p.start()
-        self.image_scale(self.tmp_folder, output_extention='png')
+        self.image_scale(self.tmp_folder, 'png')
         show_image2x_p.join()
         print('正在将立绘坐标信息写入到png图片')
         png_text_dict = self.get_all_png_text()
         for png_file, png_text in png_text_dict.items():
             write_png_text(png_file, png_text)
         for png_file in file_list(self.tmp_folder, 'png'):
-            fmove(png_file, os.path.dirname(self.t2p(png_file)))
-        for folder in os.listdir(self.tmp_folder):
-            folder_path = os.path.join(self.tmp_folder, folder)
-            shutil.rmtree(folder_path)
+            fmove(png_file, self.t2p(png_file).parent)
+        for folder in self.tmp_folder.iterdir():
+            shutil.rmtree(folder)
 
     def get_all_png_text(self) -> dict:
         '''
@@ -397,10 +390,10 @@ class Artemis(GeneralEngine):
     def ogv2x(self):
         ogv_file_ls = file_list(self.game_data, 'ogv')
         if ogv_file_ls:
-            [fcopy(ogv_file, os.path.dirname(self.a2t(ogv_file))) for ogv_file in ogv_file_ls]
+            [fcopy(ogv_file, self.a2t(ogv_file).parent) for ogv_file in ogv_file_ls]
             for ogv_file in file_list(self.tmp_folder, 'ogv'):
                 tmp_ogv_path = self.video_scale(ogv_file)
-                fmove(tmp_ogv_path, os.path.dirname(self.t2p(tmp_ogv_path)))
+                fmove(tmp_ogv_path, self.t2p(tmp_ogv_path).parent)
 
     """
     ==================================================
@@ -417,19 +410,19 @@ class Artemis(GeneralEngine):
                 print(f'{video_extension}视频放大中......')
                 for video_file in video_file_ls:
                     if self.get_video_codec(video_file):
-                        fcopy(video_file, os.path.dirname(self.a2t(video_file)))
+                        fcopy(video_file, self.a2t(video_file).parent)
                 for video_file in file_list(self.tmp_folder, video_extension):
                     if video_extension == 'dat':
-                        os.rename(video_file, video_file.replace('.dat', '.wmv'))
-                        video_file = video_file.replace('.dat', '.wmv')
+                        video_file.replace(video_file.with_suffix('.wmv'))
+                        video_file = video_file.with_suffix('.wmv')
                     output_vcodec = None
                     if self.get_video_codec(video_file) == 'wmv3':
                         output_vcodec = 'wmv2'
                     tmp_video_path = self.video_scale(video_file, output_extension=None, output_vcodec=output_vcodec)
                     if video_extension == 'dat':
-                        os.rename(tmp_video_path, tmp_video_path.replace('.wmv', '.dat'))
-                        tmp_video_path = tmp_video_path.replace('.wmv', '.dat')
-                    fmove(tmp_video_path, os.path.dirname(self.t2p(tmp_video_path)))
+                        tmp_video_path.replace(tmp_video_path.with_suffix('.dat'))
+                        tmp_video_path = tmp_video_path.with_suffix('.dat')
+                    fmove(tmp_video_path, self.t2p(tmp_video_path).parent)
 
 
 def read_png_text(png_file) -> tuple:

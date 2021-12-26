@@ -1,4 +1,6 @@
 # -*- coding:utf-8 -*-
+# 调用Artemis_Pack_Tool一键封包
+# https://github.com/crskycode/Artemis_Pack_Tool
 
 import os
 import sys

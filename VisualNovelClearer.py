@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 from Globals import *
+from VNCConfig import vc
 from Kirikiri import Kirikiri
 from Artemis import Artemis
 
