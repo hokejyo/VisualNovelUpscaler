@@ -160,16 +160,31 @@ def get_encoding(script_file) -> str:
         return 'Unknown_Encoding'
 
 
-def file_list(folder, extension=None, walk_mode=True, ignored_folders=[], parent_folders=[]) -> list:
-    '''
-    默认获取目录树中所有文件的路径
+def get_parent_names(file_path) -> list:
+    """
+    @brief      获取文件父目录名的列表
 
-    可选：
-    指定扩展名(忽略大小写)
-    不遍历目录树
-    忽略遍历文件夹
-    指定上级目录(不包含子目录)
-    '''
+    @param      file_path  文件路径
+
+    @return     父目录名列表
+    """
+    parent_names = [i.name for i in Path(file_path).resolve().parents]
+    parent_names.remove('')
+    return parent_names
+
+
+def file_list(folder, extension=None, walk_mode=True, ignored_folders=[], parent_folder=None) -> list:
+    """
+    @brief      获取文件夹中文件的路径对象
+
+    @param      folder           指定文件夹
+    @param      extension        指定扩展名
+    @param      walk_mode        是否递归查找
+    @param      ignored_folders  忽略文件夹，不遍历子目录
+    @param      parent_folder    父级文件夹，包含子目录
+
+    @return     文件路径对象列表
+    """
     folder = Path(folder).resolve()
     file_path_ls = []
     for root, dirs, files in os.walk(folder, topdown=True):
@@ -183,9 +198,8 @@ def file_list(folder, extension=None, walk_mode=True, ignored_folders=[], parent
                     file_path_ls.append(file_path)
         if walk_mode == False:
             break
-    if parent_folders:
-        file_path_ls = [file_path for file_path in file_path_ls if file_path.parent.name in parent_folders]
-    file_path_ls = [Path(file) for file in file_path_ls]
+    if parent_folder:
+        file_path_ls = [file_path for file_path in file_path_ls if parent_folder in get_parent_names(file_path)]
     return file_path_ls
 
 

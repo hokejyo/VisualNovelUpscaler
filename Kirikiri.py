@@ -483,16 +483,13 @@ class Kirikiri(GeneralEngine):
         """
         @brief      复制ui文件
         """
-        # 重复uipsd文件夹合并
-        uipsd_folders = self.game_data.rglob('**/uipsd')
-        ui_files = []
-        for uipsd_folder in uipsd_folders:
-            ui_files += file_list(uipsd_folder)
-        ui_files = patch9_first(ui_files)
-        [fcopy(ui_file, self.uipsd_folder) for ui_file in ui_files]
+        # uipsd文件夹内的文件
+        uipsd_files = file_list(self.game_data, parent_folder='uipsd')
         # uipsd文件夹外的pimg文件
-        extra_pimg_file_ls = patch9_first(file_list(self.game_data, 'pimg', ignored_folders=['uipsd']))
-        [fcopy(pimg_file, self.uipsd_folder) for pimg_file in extra_pimg_file_ls]
+        extra_pimg_file_ls = file_list(self.game_data, 'pimg', ignored_folders=['uipsd'])
+        # 所有ui文件
+        ui_files = patch9_first(uipsd_files+extra_pimg_file_ls)
+        [fcopy(ui_file, self.uipsd_folder) for ui_file in ui_files]
 
     def csv2x(self):
         '''
