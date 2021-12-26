@@ -1,18 +1,15 @@
 # -*- coding:utf-8 -*-
 
 from Globals import *
-from VNCConfig import vc
+from Config import Config
 
 
-class GeneralEngine(object):
+class GeneralEngine(Config):
     """通用引擎"""
 
-    def __init__(self, game_data):
-
-        self.reload_vnc_config()
+    def __init__(self):
+        Config.__init__(self)
         # 默认必要参数
-        self.game_data = Path(game_data).resolve()
-        self.tmp_folder = self.game_data.parent/'vnc_tmp'
         self.encoding, self.scwidth, self.scheight = 'shift-jis', 1280, 720
 
     def get_default_scale_ratio(self) -> float:
@@ -71,7 +68,7 @@ class GeneralEngine(object):
 
     def image_scale(self, input_path, extention):
         """
-        @brief      对文件夹内的图片文件进行放大，文件夹内的图片格式需相同
+        @brief      对文件夹内的图片文件进行放大，文件夹内的图片格式需相同，速度较快
 
         @param      input_path  输入文件夹路径
         @param      extention   文件夹中的图片格式
@@ -124,48 +121,6 @@ class GeneralEngine(object):
         if zoom_factor != 1:
             self.vn_image_zoom(ori_image_ls, zoom_factor)
 
-    # def waifu2x_ncnn(self, input_folder, extention) -> Path:
-    #     """
-    #     @brief      使用waifu2x-ncnn-valkan放大单个文件夹中的图片，文件夹内图片格式需保持一致，目前的最佳选择，失真较小
-
-    #     @param      input_folder  输入文件夹
-    #     @param      extention     图片格式
-
-    #     @return     输出图片路径
-    #     """
-    #     input_folder = Path(input_folder)
-    #     # 记录原文件名/放大后的临时文件名
-    #     ori_image_ls = file_list(input_folder, extention, walk_mode=False)
-    #     tmp_image_ls = [ori_image.with_suffix('.png') for ori_image in ori_image_ls]
-    #     # 放大，全部输出为png格式
-    #     options = [self.waifu2x_ncnn_exe,
-    #                '-i', input_folder,
-    #                '-o', input_folder,
-    #                '-n', self.waifu2x_ncnn_noise_level,
-    #                '-s', '2',
-    #                '-t', self.waifu2x_ncnn_tile_size,
-    #                '-m', self.waifu2x_ncnn_model_path,
-    #                '-g', self.gpu_id,
-    #                '-j', self.waifu2x_ncnn_load_proc_save,
-    #                '-f', 'png',
-    #                '-x'
-    #                ]
-    #     if self.waifu2x_ncnn_tta == '0':
-    #         options.remove('-x')
-    #     current_scale_ratio = 1
-    #     while current_scale_ratio < self.scale_ratio:
-    #         waifu2x_ncnn_p = subprocess.run(options, capture_output=True)
-    #         if (extention != 'png') and (current_scale_ratio == 1):
-    #             [ori_image.unlink() for ori_image in ori_image_ls]
-    #         current_scale_ratio *= 2
-    #     # 缩放
-    #     zoom_factor = self.scale_ratio/current_scale_ratio
-    #     if zoom_factor != 1:
-    #         self.vn_image_zoom(tmp_image_ls, zoom_factor)
-    #     # 转格式
-    #     if extention != 'png':
-    #         self.vn_image_convert(tmp_image_ls, extention)
-
     def real_esrgan(self, input_folder, extention):
         """
         @brief      使用Real-ESRGAN放大单个文件夹中的图片，文件夹内图片格式需保持一致，画面更锐利
@@ -206,6 +161,141 @@ class GeneralEngine(object):
         zoom_factor = self.scale_ratio/current_scale_ratio
         if zoom_factor != 1:
             self.vn_image_zoom(ori_image_ls, zoom_factor)
+
+    def image_scale_single(self, input_path, output_folder=None, input_extentions=['png', 'jpg', 'jpeg', 'bmp', 'webp', 'tif', 'tiff'], output_extention=None) -> list:
+        """
+        @brief      对文件夹中的图片或单张图片进行放大，文件夹中图片的格式可以不一致，但速度较慢
+
+        @param      input_path        输入路径，可以是单张图片或文件夹
+        @param      output_folder     输出文件夹，默认为输入文件夹
+        @param      input_extentions  可只对文件夹中指定格式的图片进行放大
+        @param      output_extention  输出图片格式，默认为原图片格式
+
+        @return     放大后的图片文件路径
+        """
+        input_path = Path(input_path)
+        if input_path.is_dir():
+            image_file_path_ls = []
+            for input_extention in input_extentions:
+                image_file_path_ls += file_list(input_path, input_extention)
+        else:
+            image_file_path_ls = [input_path]
+        scaled_image_file_path_ls = []
+        for image_file in image_file_path_ls:
+            match self.super_resolution_engine:
+                case 'waifu2x_ncnn':
+                    scaled_image_file = self.waifu2x_ncnn_single(image_file, output_folder=output_folder, output_extention=output_extention)
+                case 'real_esrgan':
+                    scaled_image_file = self.real_esrgan_single(image_file, output_folder=output_folder, output_extention=output_extention)
+                case _:
+                    print('请选择正确的超分辨率引擎')
+            scaled_image_file_path_ls.append(scaled_image_file)
+        return scaled_image_file_path_ls
+
+    def waifu2x_ncnn_single(self, input_path, output_folder=None, output_extention=None) -> Path:
+        """
+        @brief      使用waifu2x-ncnn-valkan放大单张图片
+
+        @param      input_path        输入路径
+        @param      output_folder     输出文件夹
+        @param      output_extention  输出图片格式
+
+        @return     输出图片路径
+        """
+        input_path = Path(input_path)
+        if not output_folder:
+            output_folder = input_path.parent
+        else:
+            output_folder = Path(output_folder)
+            if not output_folder.exists():
+                output_folder.mkdir(parents=True)
+        if not output_extention:
+            output_extention = input_path.suffix.replace('.', '')
+        output_path = output_folder/(input_path.stem+'.'+output_extention)
+        tmp_path = output_folder/(input_path.stem+'_tmp_output.png')
+        # 放大
+        options = [self.waifu2x_ncnn_exe,
+                   '-i', input_path,
+                   '-o', tmp_path,
+                   '-n', self.waifu2x_ncnn_noise_level,
+                   '-s', '2',
+                   '-t', self.waifu2x_ncnn_tile_size,
+                   '-m', self.waifu2x_ncnn_model_path,
+                   '-g', self.gpu_id,
+                   '-j', self.waifu2x_ncnn_load_proc_save,
+                   '-f', 'png',
+                   '-x'
+                   ]
+        if self.waifu2x_ncnn_tta == '0':
+            options.remove('-x')
+        current_scale_ratio = 1
+        while current_scale_ratio < self.scale_ratio:
+            waifu2x_ncnn_p = subprocess.run(options, capture_output=True)
+            # 此时输入图片为临时图片
+            options[2] = tmp_path
+            current_scale_ratio *= 2
+        # 缩放
+        zoom_factor = self.scale_ratio/current_scale_ratio
+        if zoom_factor != 1:
+            image_zoom(tmp_path, zoom_factor)
+        # 转格式
+        if output_extention != 'png':
+            tmp_path = image_convert(tmp_path, output_extention, del_input=True)
+        tmp_path.replace(output_path)
+        return output_path
+
+    def real_esrgan_single(self, input_path, output_folder=None, output_extention=None) -> Path:
+        """
+        @brief      使用Real-ESRGAN放大单张图片
+
+        @param      input_path        输入路径
+        @param      output_folder     输出文件夹
+        @param      output_extention  输出图片格式
+
+        @return     输出图片路径
+        """
+        input_path = Path(input_path)
+        if not output_folder:
+            output_folder = input_path.parent
+        else:
+            output_folder = Path(output_folder)
+            if not output_folder.exists():
+                output_folder.mkdir(parents=True)
+        if not output_extention:
+            output_extention = input_path.suffix.replace('.', '')
+        output_path = output_folder/(input_path.stem+'.'+output_extention)
+        tmp_path = output_folder/(input_path.stem+'_tmp_output.png')
+        # 放大
+        options = [self.real_esrgan_exe,
+                   '-i', input_path,
+                   '-o', tmp_path,
+                   # 放大倍率为4时才能正常放大
+                   '-s', '4',
+                   '-t', self.real_esrgan_tile_size,
+                   '-m', self.real_esrgan_model_path,
+                   '-n', self.real_esrgan_model_name,
+                   '-g', self.gpu_id,
+                   '-j', self.real_esrgan_load_proc_save,
+                   '-f', 'png',
+                   '-x'
+                   ]
+        if self.real_esrgan_tta == '0':
+            options.remove('-x')
+        current_scale_ratio = 1
+        while current_scale_ratio < self.scale_ratio:
+            realesrgan_p = subprocess.run(options, capture_output=True)
+            # 此时输入图片为临时图片
+            options[2] = tmp_path
+            current_scale_ratio *= 4
+        # 缩放
+        zoom_factor = self.scale_ratio/current_scale_ratio
+        if zoom_factor != 1:
+            image_zoom(tmp_path, zoom_factor)
+        # 转格式
+        if output_extention != 'png':
+            tmp_path = image_convert(tmp_path, output_extention, del_input=True)
+        tmp_path.replace(output_path)
+        return output_path
 
     def vn_image_zoom(self, image_file_ls, zoom_factor):
         vn_image_zoom_pool = Pool(self.cpu_cores)
@@ -294,49 +384,7 @@ class GeneralEngine(object):
             codec_type = None
         return codec_type
 
-    def reload_vnc_config(self):
-        vc.read_vnc_config()
-        # # 工作目录
-        self.bundle_dir = vc.bundle_dir
-        # 超分辨率引擎
-        self.super_resolution_engine = vc.super_resolution_engine
-        # 并行核数
-        self.cpu_cores = vc.cpu_cores
-        # 显卡序号
-        self.gpu_id = vc.gpu_id
-        # waifu2x-ncnn-vulkan设置
-        self.waifu2x_ncnn_exe = vc.waifu2x_ncnn_exe
-        self.waifu2x_ncnn_noise_level = vc.waifu2x_ncnn_noise_level
-        self.waifu2x_ncnn_tile_size = vc.waifu2x_ncnn_tile_size
-        self.waifu2x_ncnn_model_path = vc.waifu2x_ncnn_model_path
-        self.waifu2x_ncnn_load_proc_save = vc.waifu2x_ncnn_load_proc_save
-        self.waifu2x_ncnn_tta = vc.waifu2x_ncnn_tta
-        # Real-ESRGAN设置
-        self.real_esrgan_exe = vc.real_esrgan_exe
-        self.real_esrgan_model_path = vc.real_esrgan_model_path
-        self.real_esrgan_tile_size = vc.real_esrgan_tile_size
-        self.real_esrgan_model_name = vc.real_esrgan_model_name
-        self.real_esrgan_load_proc_save = vc.real_esrgan_load_proc_save
-        self.real_esrgan_tta = vc.real_esrgan_tta
-        # ffmpeg设置
-        self.video_quality = vc.video_quality
-        # 依赖文件
-        self.vnc_config_file = vc.vnc_config_file
-        self.vnc_log_file = vc.vnc_log_file
-        self.vnc_lic_file = vc.vnc_lic_file
-        self.ffmpeg = vc.ffmpeg
-        self.ffprobe = vc.ffprobe
-        self.anime4k_exe = vc.anime4k_exe
-        self.psb_de_exe = vc.psb_de_exe
-        self.psb_en_exe = vc.psb_en_exe
-        self.tlg2png_exe = vc.tlg2png_exe
-        self.png2tlg6_exe = vc.png2tlg6_exe
-        self.krkrtpc_exe = vc.krkrtpc_exe
-        self.amv_de_exe = vc.amv_de_exe
-        self.amv_de_folder = vc.amv_de_folder
-        self.amv_en_exe = vc.amv_en_exe
-
-    def change_vnc_config(self):
+    def change_config(self):
         '''
         配置文件修改
         '''
@@ -380,20 +428,20 @@ class GeneralEngine(object):
             crop_size = '128'
         # 写入配置文件
         with open(self.vnc_config_file, 'w', newline='', encoding='utf-8') as vcf:
-            vc.vnc_config.set('General', 'cpu_cores', cpu_cores)
-            vc.vnc_config.set('General', 'gpu_id', gpu_id)
-            vc.vnc_config.set('waifu2x', 'process_mode', process_mode)
-            vc.vnc_config.set('waifu2x', 'style_mode', style_mode)
-            vc.vnc_config.set('waifu2x', 'crop_size', crop_size)
-            vc.vnc_config.write(vcf)
-        self.reload_vnc_config()
+            self.vnc_config.set('General', 'cpu_cores', cpu_cores)
+            self.vnc_config.set('General', 'gpu_id', gpu_id)
+            self.vnc_config.set('waifu2x', 'process_mode', process_mode)
+            self.vnc_config.set('waifu2x', 'style_mode', style_mode)
+            self.vnc_config.set('waifu2x', 'crop_size', crop_size)
+            self.vnc_config.write(vcf)
+        self.load_config()
         input('配置修改完成，按回车返回：')
 
     def reset_vnc_config(self):
         os.system('cls')
-        vc.reset_vnc_config()
-        self.reload_vnc_config()
-        input('配置重制完成，按回车返回：')
+        self.reset_config()
+        self.load_config()
+        input('配置文件重置完成，按回车返回：')
 
     def print_vnc_config(self):
         os.system('cls')

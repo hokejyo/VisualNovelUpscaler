@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 
 from Globals import *
-from VNCConfig import vc
 from GeneralEngine import GeneralEngine
 
 
@@ -9,8 +8,9 @@ class Kirikiri(GeneralEngine):
     """Kirikiri 2/Z Engine"""
 
     def __init__(self, game_data):
-        super().__init__(game_data)
-
+        GeneralEngine.__init__(self)
+        self.game_data = Path(game_data).resolve()
+        self.tmp_folder = self.game_data.parent/'vnc_tmp'
         self.patch_folder = self.game_data.parent/'patch'
         self.encoding, self.scwidth, self.scheight = self.get_encoding_resolution()
         self.scale_ratio = self.get_default_scale_ratio()

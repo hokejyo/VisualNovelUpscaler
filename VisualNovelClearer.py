@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 
 from Globals import *
-from VNCConfig import vc
 from Kirikiri import Kirikiri
 from Artemis import Artemis
 
@@ -20,8 +19,11 @@ def get_engine_type(game_data):
 if __name__ == '__main__':
     # 防止多进程内存泄漏
     freeze_support()
+    bundle_dir = Path(sys.argv[0]).resolve().parent
+    vnc_log_file = bundle_dir/'log.txt'
+    os.chdir(bundle_dir)
     # 错误日志
-    logging.basicConfig(filename=vc.vnc_log_file, level=logging.DEBUG, filemode='a+', format='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
+    logging.basicConfig(filename=vnc_log_file, level=logging.DEBUG, filemode='a+', format='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
     try:
         try:
             game_data = sys.argv[1]

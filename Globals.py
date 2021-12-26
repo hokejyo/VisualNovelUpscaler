@@ -160,16 +160,6 @@ def get_encoding(script_file) -> str:
         return 'Unknown_Encoding'
 
 
-def extension_name(file) -> str:
-    '''
-    获取文件扩展名
-    '''
-    try:
-        return file.split('.')[-1]
-    except:
-        return 'Unknown_Extension'
-
-
 def file_list(folder, extension=None, walk_mode=True, ignored_folders=[], parent_folders=[]) -> list:
     '''
     默认获取目录树中所有文件的路径
@@ -180,21 +170,21 @@ def file_list(folder, extension=None, walk_mode=True, ignored_folders=[], parent
     忽略遍历文件夹
     指定上级目录(不包含子目录)
     '''
-    folder = Path(folder)
+    folder = Path(folder).resolve()
     file_path_ls = []
     for root, dirs, files in os.walk(folder, topdown=True):
         dirs[:] = [d for d in dirs if d not in ignored_folders]
         for file in files:
-            file_path = os.path.join(root, file)
+            file_path = Path(root)/file
             if not extension:
                 file_path_ls.append(file_path)
             else:
-                if extension_name(file).lower() == extension.lower():
+                if file_path.suffix.lower() == '.'+extension.lower():
                     file_path_ls.append(file_path)
         if walk_mode == False:
             break
     if parent_folders:
-        file_path_ls = [file_path for file_path in file_path_ls if os.path.basename(os.path.dirname(file_path)) in parent_folders]
+        file_path_ls = [file_path for file_path in file_path_ls if file_path.parent.name in parent_folders]
     file_path_ls = [Path(file) for file in file_path_ls]
     return file_path_ls
 
