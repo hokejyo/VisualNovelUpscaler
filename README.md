@@ -5,7 +5,8 @@
 2.拆包游戏，放到一个文件夹中  
 3.将文件夹拖拽到VisualNovelClearer.exe运行  
 ## Credit  
-[waifu2x-caffe](https://github.com/lltcggie/waifu2x-caffe)  
+[waifu2x-ncnn-vulkan](https://github.com/nihui/waifu2x-ncnn-vulkan)  
+[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)  
 [Anime4KCPP](https://github.com/TianZerL/Anime4KCPP)  
 [FFmpeg](https://github.com/FFmpeg/FFmpeg)  
 [FreeMote](https://github.com/UlyssesWu/FreeMote)  
@@ -14,6 +15,4 @@
 [png2tlg](https://github.com/zhiyb/png2tlg)  
 [AlphaMovieDecoder](https://github.com/xmoeproject/AlphaMovieDecoder)  
 [AlphaMovieEncoder](https://github.com/zhiyb/AlphaMovieEncoder)  
-[Artemis_Pack_Tool](https://github.com/crskycode/Artemis_Pack_Tool)  
-[pypng](https://github.com/drj11/pypng)  
 [QuickBMS](http://aluigi.altervista.org/quickbms.htm)  

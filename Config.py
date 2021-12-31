@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from Globals import *
+from GeneralFunctions import *
 
 
 class Config(object):
@@ -10,22 +10,23 @@ class Config(object):
         self.bundle_dir = Path(sys.argv[0]).resolve().parent
         self.vnc_config = configparser.ConfigParser()
         self.vnc_config_file = self.bundle_dir/'config.ini'
-        self.vnc_log_file = self.bundle_dir/'log_records.txt'
+        self.vnc_log_file = self.bundle_dir/'log.txt'
         self.vnc_lic_file = self.bundle_dir/'LICENSE'
         try:
             self.load_config()
         except:
             print('设置文件未正确配置或不存在，将重置设置')
             self.reset_config()
-            self.load_config()
 
     def reset_config(self):
+        # 初始化
         self.vnc_config = configparser.ConfigParser()
         with open(self.vnc_config_file, 'w', newline='', encoding='utf-8') as vcf:
             self.vnc_config.add_section('General')
             self.vnc_config.set('General', 'super_resolution_engine', 'waifu2x_ncnn')
             self.vnc_config.set('General', 'cpu_cores', str(cpu_count()))
             self.vnc_config.set('General', 'gpu_id', '0')
+            self.vnc_config.set('General', 'encoding_list', 'shift-jis,utf-8,gbk,utf-16,CP932')
             # waifu2x-ncnn-vulkan相关配置
             self.vnc_config.add_section('waifu2x_ncnn')
             self.vnc_config.set('waifu2x_ncnn', 'noise_level', '3')
@@ -39,10 +40,23 @@ class Config(object):
             self.vnc_config.set('real_esrgan', 'model_name', 'realesrgan-x4plus-anime')
             self.vnc_config.set('real_esrgan', 'load_proc_save', '1:2:2')
             self.vnc_config.set('real_esrgan', 'tta', '0')
+            # srmd-ncnn-vulkan相关配置
+            self.vnc_config.add_section('srmd_ncnn')
+            self.vnc_config.set('srmd_ncnn', 'noise_level', '3')
+            self.vnc_config.set('srmd_ncnn', 'tile_size', '0')
+            self.vnc_config.set('srmd_ncnn', 'load_proc_save', '1:2:2')
+            self.vnc_config.set('srmd_ncnn', 'tta', '0')
+            # realsr-ncnn-vulkan相关配置
+            self.vnc_config.add_section('realsr_ncnn')
+            self.vnc_config.set('realsr_ncnn', 'tile_size', '0')
+            self.vnc_config.set('realsr_ncnn', 'model_name', 'models-DF2K_JPEG')
+            self.vnc_config.set('realsr_ncnn', 'load_proc_save', '1:2:2')
+            self.vnc_config.set('realsr_ncnn', 'tta', '0')
             # ffmpeg相关配置
             self.vnc_config.add_section('ffmpeg')
             self.vnc_config.set('ffmpeg', 'video_quality', '2')
             self.vnc_config.write(vcf)
+        self.load_config()
 
     def load_config(self):
         # 依赖工具集文件路径
@@ -53,8 +67,13 @@ class Config(object):
         # https://github.com/nihui/waifu2x-ncnn-vulkan
         self.waifu2x_ncnn_exe = self.toolkit_path/'waifu2x-ncnn-vulkan'/'waifu2x-ncnn-vulkan.exe'
         # https://github.com/xinntao/Real-ESRGAN
-        self.real_esrgan_exe = self.toolkit_path/'Real-ESRGAN'/'realesrgan-ncnn-vulkan.exe'
+        self.real_esrgan_exe = self.toolkit_path/'realesrgan-ncnn-vulkan'/'realesrgan-ncnn-vulkan.exe'
         self.real_esrgan_model_path = self.real_esrgan_exe.parent/'models'
+        # https://github.com/nihui/srmd-ncnn-vulkan
+        self.srmd_ncnn_exe = self.toolkit_path/'srmd-ncnn-vulkan'/'srmd-ncnn-vulkan.exe'
+        self.srmd_ncnn_model_path = self.srmd_ncnn_exe.parent/'models-srmd'
+        # https://github.com/nihui/realsr-ncnn-vulkan
+        self.realsr_ncnn_exe = self.toolkit_path/'realsr-ncnn-vulkan'/'realsr-ncnn-vulkan.exe'
         # https://github.com/TianZerL/Anime4KCPP
         self.anime4k_exe = self.toolkit_path/'Anime4KCPP_CLI'/'Anime4KCPP_CLI.exe'
         # https://github.com/UlyssesWu/FreeMote
@@ -76,6 +95,7 @@ class Config(object):
         self.super_resolution_engine = self.vnc_config.get('General', 'super_resolution_engine')
         self.cpu_cores = self.vnc_config.getint('General', 'cpu_cores')
         self.gpu_id = self.vnc_config.get('General', 'gpu_id')
+        self.encoding_list = self.vnc_config.get('General', 'encoding_list').split(',')
         # waifu2x-ncnn-vulkan相关配置
         self.waifu2x_ncnn_noise_level = self.vnc_config.get('waifu2x_ncnn', 'noise_level')
         self.waifu2x_ncnn_tile_size = self.vnc_config.get('waifu2x_ncnn', 'tile_size')
@@ -87,5 +107,15 @@ class Config(object):
         self.real_esrgan_model_name = self.vnc_config.get('real_esrgan', 'model_name')
         self.real_esrgan_load_proc_save = self.vnc_config.get('real_esrgan', 'load_proc_save')
         self.real_esrgan_tta = self.vnc_config.get('real_esrgan', 'tta')
+        # srmd-ncnn-vulkan相关配置
+        self.srmd_ncnn_noise_level = self.vnc_config.get('srmd_ncnn', 'noise_level')
+        self.srmd_ncnn_tile_size = self.vnc_config.get('srmd_ncnn', 'tile_size')
+        self.srmd_ncnn_load_proc_save = self.vnc_config.get('srmd_ncnn', 'load_proc_save')
+        self.srmd_ncnn_tta = self.vnc_config.get('srmd_ncnn', 'tta')
+        # realsr-ncnn-vulkan相关配置
+        self.realsr_ncnn_tile_size = self.vnc_config.get('realsr_ncnn', 'tile_size')
+        self.realsr_ncnn_model_path = (self.realsr_ncnn_exe.parent)/(self.vnc_config.get('realsr_ncnn', 'model_name'))
+        self.realsr_ncnn_load_proc_save = self.vnc_config.get('realsr_ncnn', 'load_proc_save')
+        self.realsr_ncnn_tta = self.vnc_config.get('realsr_ncnn', 'tta')
         # ffmpeg相关配置
         self.video_quality = self.vnc_config.get('ffmpeg', 'video_quality')

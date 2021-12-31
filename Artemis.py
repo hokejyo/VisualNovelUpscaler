@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from Globals import *
+from GeneralFunctions import *
 from GeneralEngine import GeneralEngine
 
 
@@ -95,7 +95,7 @@ class Artemis(GeneralEngine):
         '''
         for ini_file in file_list(self.game_data, 'ini'):
             if ini_file.name == 'system.ini':
-                encoding = get_encoding(ini_file)
+                encoding = self.get_encoding(ini_file)
                 with open(ini_file, newline='', encoding=encoding) as f:
                     lines = f.readlines()
                     pattern = re.compile(r'(WIDTH|HEIGHT|CHARSET)\W+([A-Za-z0-9]+-?[A-Za-z0-9]+).*')
@@ -320,6 +320,7 @@ class Artemis(GeneralEngine):
         部分游戏音量值位置修正
         '''
         for lua_file in file_list(self.game_data, 'lua'):
+            changed_sign = 0
             lines, current_encoding = self.get_lines_encoding(lua_file)
             result = []
             keyn_ls = ['width', 'height', 'left', 'top', 'x', 'y']
@@ -328,11 +329,13 @@ class Artemis(GeneralEngine):
                     pattern = re.compile(rf'(.*\W+{keyn}\W+)(\d+)(.*)')
                     line_c = re.match(pattern, line)
                     if line_c:
+                        changed_sign = 1
                         line = pattern_num2x(line, line_c, self.scale_ratio)
                 result.append(line)
-            with open(self.a2p(lua_file), 'w', newline='', encoding=current_encoding) as f:
-                for line in result:
-                    f.write(line)
+            if changed_sign == 1:
+                with open(self.a2p(lua_file), 'w', newline='', encoding=current_encoding) as f:
+                    for line in result:
+                        f.write(line)
 
     """
     ==================================================
@@ -348,14 +351,14 @@ class Artemis(GeneralEngine):
         for png_file in file_list(self.game_data, 'png'):
             fcopy(png_file, self.a2t(png_file).parent)
         print('图片复制完成，正在放大中......')
-        show_image2x_p = Process(target=show_image2x_status, args=(self.tmp_folder, 'png'))
+        show_image2x_p = Process(target=self.show_image2x_status, args=('png',))
         show_image2x_p.start()
-        self.image_scale(self.tmp_folder, 'png')
+        self.image_upscale(self.tmp_folder, self.tmp_folder, 'png')
         show_image2x_p.join()
         print('正在将立绘坐标信息写入到png图片')
         png_text_dict = self.get_all_png_text()
         for png_file, png_text in png_text_dict.items():
-            write_png_text(png_file, png_text)
+            self.write_png_text(png_file, png_text)
         for png_file in file_list(self.tmp_folder, 'png'):
             fmove(png_file, self.t2p(png_file).parent)
         for folder in self.tmp_folder.iterdir():
@@ -371,9 +374,9 @@ class Artemis(GeneralEngine):
             # 放大后的png图片在临时文件夹中的路径
             scaled_png_path = self.a2t(png_file)
             # 获取原始图片中的png坐标信息
-            png_text = read_png_text(png_file)
+            png_text = self.read_png_text(png_file)
             if png_text:
-                scaled_png_text = png_text_2x(png_text, self.scale_ratio)
+                scaled_png_text = self.png_text_2x(png_text, self.scale_ratio)
                 png_text_dict[scaled_png_path] = scaled_png_text
         return png_text_dict
 
@@ -423,53 +426,3 @@ class Artemis(GeneralEngine):
                         tmp_video_path.replace(tmp_video_path.with_suffix('.dat'))
                         tmp_video_path = tmp_video_path.with_suffix('.dat')
                     fmove(tmp_video_path, self.t2p(tmp_video_path).parent)
-
-
-def read_png_text(png_file) -> tuple:
-    '''
-    读取png图片中的立绘坐标信息
-    '''
-    text_sign = b'tEXt'
-    reader = png.Reader(filename=png_file)
-    chunks = reader.chunks()
-    text_chunk = [chunk for chunk in chunks if chunk[0] == text_sign]
-    if text_chunk:
-        return text_chunk[0]
-    else:
-        return None
-
-
-def png_text_2x(text_chunk, scale_ratio) -> tuple:
-    '''
-    将png图片中的文本信息中的坐标放大
-    '''
-    png_text_encoding_ls = ['shift-jis', 'utf-8', 'gbk', 'utf-16', 'CP932']
-    text_ls = list(text_chunk)
-    text = text_ls[1]
-    for png_text_encoding in png_text_encoding_ls:
-        try:
-            tmp_ls = str(text, png_text_encoding).split(',')
-            current_encoding = png_text_encoding
-            break
-        except:
-            continue
-    for i in range(len(tmp_ls)):
-        if real_digit(tmp_ls[i]):
-            tmp_ls[i] = str(int(int(tmp_ls[i])*scale_ratio))
-    new_text = ','.join(tmp_ls)
-    new_text2bytes = bytes(new_text, current_encoding)
-    text_ls[1] = new_text2bytes
-    return tuple(text_ls)
-
-
-def write_png_text(png_file, png_text):
-    '''
-    将文本信息写入到png图片
-    '''
-    text_sign = b'tEXt'
-    reader = png.Reader(filename=png_file)
-    old_chunks = reader.chunks()
-    new_chunks = [chunk for chunk in old_chunks if chunk[0] != text_sign]
-    new_chunks.insert(1, png_text)
-    with open(png_file, 'wb') as f:
-        png.write_chunks(f, new_chunks)

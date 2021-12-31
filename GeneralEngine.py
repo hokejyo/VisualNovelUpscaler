@@ -1,10 +1,13 @@
 # -*- coding:utf-8 -*-
 
-from Globals import *
+from GeneralFunctions import *
 from Config import Config
+from TextsUtils import TextsUtils
+from ImageUtils import ImageUtils
+from VideoUtils import VideoUtils
 
 
-class GeneralEngine(Config):
+class GeneralEngine(Config, TextsUtils, ImageUtils, VideoUtils):
     """通用引擎"""
 
     def __init__(self):
@@ -61,371 +64,16 @@ class GeneralEngine(Config):
                 lines = f.readlines()
                 current_encoding = self.encoding
         except UnicodeDecodeError:
-            current_encoding = get_encoding(text_file)
+            current_encoding = self.get_encoding(text_file)
             with open(text_file, newline='', encoding=current_encoding) as f:
                 lines = f.readlines()
         return lines, current_encoding
-
-    def image_scale(self, input_path, extention):
-        """
-        @brief      对文件夹内的图片文件进行放大，文件夹内的图片格式需相同，速度较快
-
-        @param      input_path  输入文件夹路径
-        @param      extention   文件夹中的图片格式
-        """
-        input_path = Path(input_path)
-        folders = input_path.rglob('**/')
-        for folder in folders:
-            match self.super_resolution_engine:
-                case 'waifu2x_ncnn':
-                    scaled_image_file = self.waifu2x_ncnn(folder, extention)
-                case 'real_esrgan':
-                    scaled_image_file = self.real_esrgan(folder, extention)
-                case _:
-                    print('请选择正确的超分辨率引擎')
-
-    def waifu2x_ncnn(self, input_folder, extention):
-        """
-        @brief      使用waifu2x-ncnn-valkan放大单个文件夹中的图片，文件夹内图片格式需保持一致，目前的最佳选择，失真较小
-
-        @param      input_folder  输入文件夹
-        @param      extention     图片格式
-        """
-        input_folder = Path(input_folder)
-        # 记录原文件名/放大后的临时文件名
-        ori_image_ls = file_list(input_folder, extention, walk_mode=False)
-        tmp_image_ls = [ori_image.with_suffix('.png') for ori_image in ori_image_ls]
-        # 将指定放大倍数转换成waifu2x-ncnn-valkan支持的放大倍数
-        actiual_scale_ratio = 2**ceil(log2(self.scale_ratio))
-        # 放大，全部输出为png格式
-        options = [self.waifu2x_ncnn_exe,
-                   '-i', input_folder,
-                   '-o', input_folder,
-                   '-n', self.waifu2x_ncnn_noise_level,
-                   '-s', str(actiual_scale_ratio),
-                   '-t', self.waifu2x_ncnn_tile_size,
-                   '-m', self.waifu2x_ncnn_model_path,
-                   '-g', self.gpu_id,
-                   '-j', self.waifu2x_ncnn_load_proc_save,
-                   '-f', 'png',
-                   '-x'
-                   ]
-        if self.waifu2x_ncnn_tta == '0':
-            options.remove('-x')
-        waifu2x_ncnn_p = subprocess.run(options, capture_output=True)
-        # 转格式
-        if extention != 'png':
-            self.vn_image_convert(tmp_image_ls, extention, del_input=True)
-        # 缩放
-        zoom_factor = self.scale_ratio/actiual_scale_ratio
-        if zoom_factor != 1:
-            self.vn_image_zoom(ori_image_ls, zoom_factor)
-
-    def real_esrgan(self, input_folder, extention):
-        """
-        @brief      使用Real-ESRGAN放大单个文件夹中的图片，文件夹内图片格式需保持一致，画面更锐利
-
-        @param      input_folder  输入文件夹
-        @param      extention     图片格式
-        """
-        input_folder = Path(input_folder)
-        # 记录原文件名/放大后的临时文件名
-        ori_image_ls = file_list(input_folder, extention, walk_mode=False)
-        tmp_image_ls = [ori_image.with_suffix('.png') for ori_image in ori_image_ls]
-        # 放大，全部输出为png格式
-        options = [self.real_esrgan_exe,
-                   '-i', input_folder,
-                   '-o', input_folder,
-                   # 放大倍率为4时才能正常放大
-                   '-s', '4',
-                   '-t', self.real_esrgan_tile_size,
-                   '-m', self.real_esrgan_model_path,
-                   '-n', self.real_esrgan_model_name,
-                   '-g', self.gpu_id,
-                   '-j', self.real_esrgan_load_proc_save,
-                   '-f', 'png',
-                   '-x'
-                   ]
-        if self.real_esrgan_tta == '0':
-            options.remove('-x')
-        current_scale_ratio = 1
-        while current_scale_ratio < self.scale_ratio:
-            realesrgan_p = subprocess.run(options, capture_output=True)
-            if (extention != 'png') and (current_scale_ratio == 1):
-                [ori_image.unlink() for ori_image in ori_image_ls]
-            current_scale_ratio *= 4
-        # 转格式
-        if extention != 'png':
-            self.vn_image_convert(tmp_image_ls, extention, del_input=True)
-        # 缩放
-        zoom_factor = self.scale_ratio/current_scale_ratio
-        if zoom_factor != 1:
-            self.vn_image_zoom(ori_image_ls, zoom_factor)
-
-    def image_scale_single(self, input_path, output_folder=None, input_extentions=['png', 'jpg', 'jpeg', 'bmp', 'webp', 'tif', 'tiff'], output_extention=None) -> list:
-        """
-        @brief      对文件夹中的图片或单张图片进行放大，文件夹中图片的格式可以不一致，但速度较慢
-
-        @param      input_path        输入路径，可以是单张图片或文件夹
-        @param      output_folder     输出文件夹，默认为输入文件夹
-        @param      input_extentions  可只对文件夹中指定格式的图片进行放大
-        @param      output_extention  输出图片格式，默认为原图片格式
-
-        @return     放大后的图片文件路径
-        """
-        input_path = Path(input_path)
-        if input_path.is_dir():
-            image_file_path_ls = []
-            for input_extention in input_extentions:
-                image_file_path_ls += file_list(input_path, input_extention)
-        else:
-            image_file_path_ls = [input_path]
-        scaled_image_file_path_ls = []
-        for image_file in image_file_path_ls:
-            match self.super_resolution_engine:
-                case 'waifu2x_ncnn':
-                    scaled_image_file = self.waifu2x_ncnn_single(image_file, output_folder=output_folder, output_extention=output_extention)
-                case 'real_esrgan':
-                    scaled_image_file = self.real_esrgan_single(image_file, output_folder=output_folder, output_extention=output_extention)
-                case _:
-                    print('请选择正确的超分辨率引擎')
-            scaled_image_file_path_ls.append(scaled_image_file)
-        return scaled_image_file_path_ls
-
-    def waifu2x_ncnn_single(self, input_path, output_folder=None, output_extention=None) -> Path:
-        """
-        @brief      使用waifu2x-ncnn-valkan放大单张图片
-
-        @param      input_path        输入路径
-        @param      output_folder     输出文件夹
-        @param      output_extention  输出图片格式
-
-        @return     输出图片路径
-        """
-        input_path = Path(input_path)
-        if not output_folder:
-            output_folder = input_path.parent
-        else:
-            output_folder = Path(output_folder)
-            if not output_folder.exists():
-                output_folder.mkdir(parents=True)
-        if not output_extention:
-            output_extention = input_path.suffix.replace('.', '')
-        output_path = output_folder/(input_path.stem+'.'+output_extention)
-        tmp_path = output_folder/(input_path.stem+'_tmp_output.png')
-        # 放大
-        options = [self.waifu2x_ncnn_exe,
-                   '-i', input_path,
-                   '-o', tmp_path,
-                   '-n', self.waifu2x_ncnn_noise_level,
-                   '-s', '2',
-                   '-t', self.waifu2x_ncnn_tile_size,
-                   '-m', self.waifu2x_ncnn_model_path,
-                   '-g', self.gpu_id,
-                   '-j', self.waifu2x_ncnn_load_proc_save,
-                   '-f', 'png',
-                   '-x'
-                   ]
-        if self.waifu2x_ncnn_tta == '0':
-            options.remove('-x')
-        current_scale_ratio = 1
-        while current_scale_ratio < self.scale_ratio:
-            waifu2x_ncnn_p = subprocess.run(options, capture_output=True)
-            # 此时输入图片为临时图片
-            options[2] = tmp_path
-            current_scale_ratio *= 2
-        # 缩放
-        zoom_factor = self.scale_ratio/current_scale_ratio
-        if zoom_factor != 1:
-            image_zoom(tmp_path, zoom_factor)
-        # 转格式
-        if output_extention != 'png':
-            tmp_path = image_convert(tmp_path, output_extention, del_input=True)
-        tmp_path.replace(output_path)
-        return output_path
-
-    def real_esrgan_single(self, input_path, output_folder=None, output_extention=None) -> Path:
-        """
-        @brief      使用Real-ESRGAN放大单张图片
-
-        @param      input_path        输入路径
-        @param      output_folder     输出文件夹
-        @param      output_extention  输出图片格式
-
-        @return     输出图片路径
-        """
-        input_path = Path(input_path)
-        if not output_folder:
-            output_folder = input_path.parent
-        else:
-            output_folder = Path(output_folder)
-            if not output_folder.exists():
-                output_folder.mkdir(parents=True)
-        if not output_extention:
-            output_extention = input_path.suffix.replace('.', '')
-        output_path = output_folder/(input_path.stem+'.'+output_extention)
-        tmp_path = output_folder/(input_path.stem+'_tmp_output.png')
-        # 放大
-        options = [self.real_esrgan_exe,
-                   '-i', input_path,
-                   '-o', tmp_path,
-                   # 放大倍率为4时才能正常放大
-                   '-s', '4',
-                   '-t', self.real_esrgan_tile_size,
-                   '-m', self.real_esrgan_model_path,
-                   '-n', self.real_esrgan_model_name,
-                   '-g', self.gpu_id,
-                   '-j', self.real_esrgan_load_proc_save,
-                   '-f', 'png',
-                   '-x'
-                   ]
-        if self.real_esrgan_tta == '0':
-            options.remove('-x')
-        current_scale_ratio = 1
-        while current_scale_ratio < self.scale_ratio:
-            realesrgan_p = subprocess.run(options, capture_output=True)
-            # 此时输入图片为临时图片
-            options[2] = tmp_path
-            current_scale_ratio *= 4
-        # 缩放
-        zoom_factor = self.scale_ratio/current_scale_ratio
-        if zoom_factor != 1:
-            image_zoom(tmp_path, zoom_factor)
-        # 转格式
-        if output_extention != 'png':
-            tmp_path = image_convert(tmp_path, output_extention, del_input=True)
-        tmp_path.replace(output_path)
-        return output_path
-
-    def vn_image_zoom(self, image_file_ls, zoom_factor):
-        vn_image_zoom_pool = Pool(self.cpu_cores)
-        for image_file in image_file_ls:
-            vn_image_zoom_pool.apply_async(image_zoom, args=(image_file, zoom_factor))
-        vn_image_zoom_pool.close()
-        vn_image_zoom_pool.join()
-
-    def vn_image_convert(self, image_file_ls, extention, del_input=True):
-        vn_image_convert_pool = Pool(self.cpu_cores)
-        for image_file in image_file_ls:
-            vn_image_convert_pool.apply_async(image_convert, args=(image_file, extention, del_input))
-        vn_image_convert_pool.close()
-        vn_image_convert_pool.join()
-
-    def video_scale(self, input_video, output_extension=None, output_vcodec=None) -> str:
-        '''
-        视频放大、转码、压制，如果不指定扩展名和视频编码，将使用源视频的扩展名和编码
-        '''
-        input_video = Path(input_video)
-        if output_extension:
-            output_video = input_video.with_suffix('.'+output_extension)
-        else:
-            output_video = input_video
-        if not output_vcodec:
-            output_vcodec = self.get_video_codec(input_video)
-        tmp_video = self.anime4k_video_scale(input_video)
-        self.video_codec_trans(tmp_video, output_video=output_video, output_vcodec=output_vcodec)
-        tmp_video.unlink()
-        return output_video
-
-    def anime4k_video_scale(self, input_video, output_video_name='tmp.mkv') -> str:
-        '''
-        使用anime4k放大视频(非机器学习)，默认输出tmp.mkv视频文件
-        '''
-        output_video = Path(input_video).parent/output_video_name
-        options = [self.anime4k_exe,
-                   '-i', input_video,
-                   '-z', str(self.scale_ratio),
-                   '-d', self.gpu_id,
-                   '-v',
-                   '-q',
-                   '-o', output_video
-                   ]
-        anime4k_video_p = subprocess.run(options, capture_output=True)
-        with open(self.vnc_log_file, 'a+', newline='', encoding='UTF-8') as vlogf:
-            vlogf.write('*'*30+'\r\n')
-            vlogf.write(anime4k_video_p.stdout.decode('UTF-8'))
-        return output_video
-
-    def video_codec_trans(self, input_video, output_video, output_vcodec):
-        '''
-        视频转码、压制
-        '''
-        special_vcodecs = ['theora']
-        if output_vcodec not in special_vcodecs:
-            video_quality = self.video_quality
-        else:
-            # 特殊编码视频的质量设定与常规视频不统一
-            video_quality = str(10 - int(self.video_quality))
-        options = [self.ffmpeg,
-                   '-i', input_video,
-                   '-c:v', output_vcodec,
-                   '-q:v', video_quality,
-                   '-y',
-                   output_video
-                   ]
-        format_trans_p = subprocess.run(options, capture_output=True)
-        with open(self.vnc_log_file, 'a+', newline='', encoding='UTF-8') as vlogf:
-            vlogf.write('*'*30+'\r\n')
-            vlogf.write(format_trans_p.stdout.decode('UTF-8'))
-
-    def get_video_codec(self, video_file) -> str:
-        '''
-        获取视频编码格式
-        '''
-        get_codec_p = subprocess.run([self.ffprobe, video_file], capture_output=True)
-        with open(self.vnc_log_file, 'a+', newline='', encoding='UTF-8') as vlogf:
-            vlogf.write('*'*30+'\r\n')
-            vlogf.write(get_codec_p.stdout.decode('UTF-8'))
-        pattern = re.compile(r'Stream.*\WVideo\W+([a-zA-Z0-9]+)\W')
-        codec_type_c = re.search(pattern, str(get_codec_p))
-        if codec_type_c:
-            codec_type = codec_type_c.group(1)
-        else:
-            codec_type = None
-        return codec_type
 
     def change_config(self):
         '''
         配置文件修改
         '''
-        os.system('cls')
-        cpu_cores = input('\n请输入使用的CPU核数：')
-        gpu_id_choice = input('\n请选择显卡序号：\n[0]0\n[1]1\n[2]其它\n显卡序号可以在任务管理器查看，如果指定的显卡不存在，则会使用默认显卡进行处理\n请选择显卡序号(默认0)：')
-        if gpu_id_choice == '0':
-            gpu_id = '0'
-        elif gpu_id_choice == '1':
-            gpu_id = '1'
-        elif gpu_id_choice == '2':
-            gpu_id = input('请输入指定的显卡序号：')
-        else:
-            gpu_id = '0'
-        process_mode_choice = input('\n请选择图片处理模式：\n[1]cdunn\n[2]gpu\n[3]cpu\n图片处理速度：cudnn>gpu>>cpu。建议10系以上的N卡，记得装好驱动\n请选择(默认cudnn)：')
-        if process_mode_choice == '1':
-            process_mode = 'cudnn'
-        elif process_mode_choice == '2':
-            process_mode = 'gpu'
-        elif process_mode_choice == '3':
-            process_mode = 'cpu'
-        else:
-            process_mode = 'cudnn'
-        style_mode_choice = input('\n请选择图片处理模型：\n[1]UpRGB\n[2]UpResNet10\n[3]CUnet\nCUnet模型显存占用较高，但风格最适合Galgame\n请选择(默认CUnet)：')
-        if style_mode_choice == '1':
-            style_mode = 'upconv_7_anime_style_art_rgb'
-        elif process_mode_choice == '2':
-            style_mode = 'upresnet10'
-        elif process_mode_choice == '3':
-            style_mode = 'cunet'
-        else:
-            style_mode = 'cunet'
-        crop_size_choice = input('\n请选择图片拆分尺寸：\n[1]64\n[2]128\n[3]256\n拆分尺寸越大，处理速度越快，但若显存不足会崩溃\n请选择(默认128)：')
-        if crop_size_choice == '1':
-            crop_size = '64'
-        elif crop_size_choice == '2':
-            crop_size = '128'
-        elif crop_size_choice == '3':
-            crop_size = '256'
-        else:
-            crop_size = '128'
+        cpu_cores = input()
         # 写入配置文件
         with open(self.vnc_config_file, 'w', newline='', encoding='utf-8') as vcf:
             self.vnc_config.set('General', 'cpu_cores', cpu_cores)
@@ -440,7 +88,6 @@ class GeneralEngine(Config):
     def reset_vnc_config(self):
         os.system('cls')
         self.reset_config()
-        self.load_config()
         input('配置文件重置完成，按回车返回：')
 
     def print_vnc_config(self):
@@ -456,3 +103,41 @@ class GeneralEngine(Config):
             print(vlicf.read())
         print('-'*80)
         input('按回车返回：')
+
+    def show_image2x_status(self, image_extension):
+        '''
+        显示图片处理进度条，根据时间戳判断图片是否被放大
+        '''
+        target_count = len(file_list(self.tmp_folder, image_extension))
+        if target_count == 0:
+            now_percent = 1
+            print(f'未发现需要放大的{image_extension}图片')
+        else:
+            now_percent = 0
+        start_time = time.time()
+        # 百分比小于100%时循环
+        while now_percent < 1:
+            now_time = time.time()
+            # 时间戳判断图片是否被放大
+            now_count = len([image_file for image_file in file_list(self.tmp_folder, image_extension) if image_file.stat().st_mtime > start_time])
+            now_percent = now_count/target_count
+            if now_percent == 0:
+                print('处理进度：[%s]' % (format('>'*int(35*now_percent), '<35')), format(now_percent, ' >7.2%'), f'预计剩余时间：统计中...', end=' \r')
+                time.sleep(2)
+                continue
+            left_time = int((now_time-start_time)/now_percent - (now_time-start_time))
+            print('处理进度：[%s]' % (format('>'*int(35*now_percent), '<35')), format(now_percent, ' >7.2%'), f'预计剩余时间：{seconds_format(left_time)}', end=' \r')
+            time.sleep(2)
+            if now_percent == 1:
+                print()
+
+
+if __name__ == '__main__':
+    input_path = Path(r"D:\trail\krkr\sy\test1")
+    # input_path = Path(r"D:\trail\krkr\sy\test2\image\logface\logface_花子.png"))
+    output_folder = Path(r"D:\trail\krkr\sy\test2")
+    a = GeneralEngine()
+    a.scale_ratio = 1.5
+    # a.super_resolution_engine = 'real_esrgan'
+    b = a.image_upscale(input_path, output_folder, 'jpg')
+    print(b)

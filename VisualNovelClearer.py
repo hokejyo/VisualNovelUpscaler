@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from Globals import *
+from GeneralFunctions import *
 from Kirikiri import Kirikiri
 from Artemis import Artemis
 
