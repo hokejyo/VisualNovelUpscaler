@@ -130,7 +130,6 @@ dmypy.json
 
 # 自定义
 /Dependencies
-/GUI
 /old_modules
 /config.ini
 /py2exe.py

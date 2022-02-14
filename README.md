@@ -4,7 +4,7 @@
 1.下载并解压到纯英文目录  
 2.拆包游戏，放到一个文件夹中  
 3.将文件夹拖拽到VisualNovelClearer.exe运行  
-## Credit  
+## Credits  
 [waifu2x-ncnn-vulkan](https://github.com/nihui/waifu2x-ncnn-vulkan)  
 [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)  
 [Anime4KCPP](https://github.com/TianZerL/Anime4KCPP)  
