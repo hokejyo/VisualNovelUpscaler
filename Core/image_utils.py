@@ -127,7 +127,7 @@ class ImageUtils(object):
         actual_scale_ratio = legal_scale_ratio**ceil(log(self.scale_ratio, legal_scale_ratio))
         return actual_scale_ratio
 
-    def image_upscale(self, input_path, output_folder, output_extention) -> list:
+    def image_upscale(self, input_path, output_folder, output_extention='png') -> list:
         """
         @brief      放大图片
 

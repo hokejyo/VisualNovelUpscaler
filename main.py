@@ -113,12 +113,19 @@ class VisualNovelClearer(Core, SettingPageUIConnection):
 if __name__ == '__main__':
     # 防止打包运行后多进程内存泄漏
     freeze_support()
-    # 防止打包运行后工作路径改变，pyinstaller坑真多
+    # 防止打包后拖拽运行工作路径改变
     bundle_dir = Path(sys.argv[0]).resolve().parent
     os.chdir(bundle_dir)
+    # 错误日志
     vnc_log_file = bundle_dir/'log.txt'
+    logging.basicConfig(filename=vnc_log_file, level=logging.DEBUG, filemode='a+', format='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
     # 启动
-    app = QApplication(sys.argv)
-    visual_novel_clearer = VisualNovelClearer()
-    visual_novel_clearer.ui.show()
-    sys.exit(app.exec())
+    try:
+        app = QApplication(sys.argv)
+        visual_novel_clearer = VisualNovelClearer()
+        visual_novel_clearer.ui.show()
+        sys.exit(app.exec())
+    except Exception as e:
+        logging.error(e)
+        logging.error(traceback.format_exc())
+        sys.exit()

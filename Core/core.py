@@ -18,7 +18,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
     def show_image2x_status(self, image_extension):
         '''
-        显示图片处理进度条，根据时间戳判断图片是否被放大
+        显示图片处理进度条，根据时间戳判断图片是否被处理
         '''
         target_count = len(file_list(self.tmp_folder, image_extension))
         if target_count == 0:
@@ -30,7 +30,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
         # 百分比小于100%时循环
         while now_percent < 1:
             now_time = time.time()
-            # 时间戳判断图片是否被放大
+            # 时间戳判断图片是否被处理
             now_count = len([image_file for image_file in file_list(self.tmp_folder, image_extension) if image_file.stat().st_mtime > start_time])
             now_percent = now_count/target_count
             if now_percent == 0:
@@ -45,9 +45,9 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
     def pool_run(self, target, runs: list, *args) -> list:
         """
-        @brief      使用进程池多进程加速
+        @brief      使用进程池多进程加速计算
 
-        @param      target  需要执行函数
+        @param      target  目标执行函数
         @param      runs    执行可变参数列表
         @param      args    其它固定参数，按执行函数参数顺序输入
 
@@ -108,6 +108,6 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
         try:
             shutil.rmtree(self.tmp_folder)
         except:
-            print('临时文件夹不存在')
+            print('warning:临时文件夹不存在')
         finally:
             self.tmp_folder.mkdir(parents=True)

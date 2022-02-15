@@ -102,7 +102,6 @@ class KirikiriPart(FTabWidget):
         layout1.addRow(self.game_part_lb, layout2)
 
         self.text_part = QCheckBox('文本')
-        # self.ui_part = QCheckBox('UI')
         self.image_part = QCheckBox('图片')
         self.animation_part = QCheckBox('动画')
         self.video_part = QCheckBox('视频')
@@ -113,7 +112,6 @@ class KirikiriPart(FTabWidget):
         hlayout.addWidget(self.select_none_btn)
 
         layout2.addWidget(self.text_part)
-        # layout2.addWidget(self.ui_part)
         layout2.addWidget(self.image_part)
         layout2.addWidget(self.animation_part)
         layout2.addWidget(self.video_part)
@@ -142,9 +140,6 @@ class KirikiriPart(FTabWidget):
         self.work_up_group.addButton(self.stand_crt_btn)
         self.work_up_group.addButton(self.tlg_convert_btn)
         self.work_up_group.addButton(self.amv_cvt_btn)
-        # self.work_up_group.addButton(self.s4k_btn)
-        # self.work_up_group.addButton(self.custiom_ratio_btn)
-        # self.work_up_group.addButton(self.custom_resolution_btn)
 
     def setup_amv_cvt(self):
         self.amv_cvt_btn = QRadioButton('AMV动画格式转换：')
