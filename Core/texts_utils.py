@@ -62,3 +62,15 @@ class TextsUtils(object):
             with open(output_csv, 'w', newline='', encoding=current_encoding) as f:
                 content2x = csv.writer(f)
                 content2x.writerows(result)
+
+    def line_pattern_num2x(self, re_result, test_mode=False, line=None) -> str:
+        """
+        @brief      将正则匹配结果中的数字乘以放大倍数
+
+        @param      re_result  re.match()捕获的正则匹配结果
+        @param      test_mode  测试模式
+        @param      line       原始行字符串，需要test_mode为True
+
+        @return     放大数字后的行字符串
+        """
+        return pattern_num2x(re_result, self.scale_ratio, test_mode=False, line=None)

@@ -159,46 +159,10 @@ class VideoUtils(object):
             output_video.parent.mkdir(parents=True)
         if not output_vcodec:
             output_vcodec = self.video_info(input_video)['vcodec']
-        tmp_output_png_folder = output_video.parent/'vnc_tmp_png_sequence'
+        tmp_output_png_folder = output_video.parent/(output_video.stem+'vnc_tmp_png_sequence')
         tmp_output_png_folder.mkdir(parents=True, exist_ok=True)
         png_sequence = self.video2png(input_video, tmp_output_png_folder)
-        self.image_upscale(tmp_output_png_folder, tmp_output_png_folder)
+        self.image_upscale(tmp_output_png_folder, tmp_output_png_folder, video_mode=True)
         self.png2video(png_sequence, input_video, output_video, output_vcodec)
         shutil.rmtree(tmp_output_png_folder)
         return output_video
-
-    def video_scale(self, input_video, output_extension=None, output_vcodec=None) -> str:
-        '''
-        视频放大、转码、压制，如果不指定扩展名和视频编码，将使用源视频的扩展名和编码
-        '''
-        input_video = Path(input_video)
-        if output_extension:
-            output_video = input_video.with_suffix('.'+output_extension)
-        else:
-            output_video = input_video
-        if not output_vcodec:
-            output_vcodec = self.video_info(input_video)['vcodec']
-        tmp_video = self.anime4k_video_scale(input_video)
-        self.video_codec_trans(tmp_video, output_video=output_video, output_vcodec=output_vcodec)
-        tmp_video.unlink()
-        return output_video
-
-    def anime4k_video_scale(self, input_video, output_video_name='tmp.mkv') -> str:
-        '''
-        使用anime4k放大视频(非机器学习)，默认输出tmp.mkv视频文件
-        '''
-        output_video = Path(input_video).parent/output_video_name
-        options = [self.anime4k_exe,
-                   '-i', input_video,
-                   '-z', str(self.scale_ratio),
-                   '-d', self.gpu_id,
-                   '-v',
-                   '-q',
-                   '-o', output_video
-                   ]
-        anime4k_video_p = subprocess.run(options, capture_output=True)
-        with open(self.vnc_log_file, 'a+', newline='', encoding='UTF-8') as vlogf:
-            vlogf.write('*'*30+'\r\n')
-            vlogf.write(anime4k_video_p.stdout.decode('UTF-8'))
-        return output_video
-        

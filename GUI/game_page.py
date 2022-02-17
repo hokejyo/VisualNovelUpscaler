@@ -98,6 +98,8 @@ class GamePage(QFrame):
 
     def auto_fill_output_folder(self):
         output_folder_path = Path(self.select_input_folder_line_edit.text().strip()).resolve().parent/'VNC_Output'
+        # while output_folder_path.exists():
+        #     output_folder_path = output_folder_path.with_name(output_folder_path.name+'_Output')
         self.select_output_folder_line_edit.setText(str(output_folder_path))
 
     def choose_output_folder(self):

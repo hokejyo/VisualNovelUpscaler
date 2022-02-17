@@ -33,14 +33,22 @@ class SettingPageUIConnection(object):
         # 文本编码列表
         self.ui.settingpage.text_encoding_line_edit.setText(','.join(self.encoding_list))
         # 超分引擎
-        self.ui.settingpage.image_sr_combobox.setCurrentText(self.super_resolution_engine)
+        self.ui.settingpage.image_sr_engine_combobox.setCurrentText(self.image_sr_engine)
+        self.ui.settingpage.video_sr_engine_combobox.setCurrentText(self.video_sr_engine)
         tta_bool = False if self.tta == '0' else True
         self.ui.settingpage.tta_checkbox.setChecked(tta_bool)
+        # self.ui.settingpage.sr_engine_combobox.setCurrentText('real_cugan')
         # waifu2x_ncnn
         self.ui.settingpage.waifu2x_ncnn_settings.noise_level_spinbox.setValue(int(self.waifu2x_ncnn_noise_level))
         self.ui.settingpage.waifu2x_ncnn_settings.tile_size_line_edit.setText(self.waifu2x_ncnn_tile_size)
         self.ui.settingpage.waifu2x_ncnn_settings.modle_name_combobox.setCurrentText(self.waifu2x_ncnn_model_name)
         self.ui.settingpage.waifu2x_ncnn_settings.load_proc_save_line_edit.setText(self.waifu2x_ncnn_load_proc_save)
+        # real_cugan
+        self.ui.settingpage.real_cugan_settings.noise_level_spinbox.setValue(int(self.real_cugan_noise_level))
+        self.ui.settingpage.real_cugan_settings.tile_size_line_edit.setText(self.real_cugan_tile_size)
+        self.ui.settingpage.real_cugan_settings.sync_gap_mode_spinbox.setValue(int(self.real_cugan_sync_gap_mode))
+        self.ui.settingpage.real_cugan_settings.modle_name_combobox.setCurrentText(self.real_cugan_model_name)
+        self.ui.settingpage.real_cugan_settings.load_proc_save_line_edit.setText(self.real_cugan_load_proc_save)
         # real_esrgan
         self.ui.settingpage.real_esrgan_settings.tile_size_line_edit.setText(self.real_esrgan_tile_size)
         self.ui.settingpage.real_esrgan_settings.modle_name_combobox.setCurrentText(self.real_esrgan_model_name)
@@ -53,9 +61,10 @@ class SettingPageUIConnection(object):
         self.ui.settingpage.realsr_ncnn_settings.tile_size_line_edit.setText(self.realsr_ncnn_tile_size)
         self.ui.settingpage.realsr_ncnn_settings.modle_name_combobox.setCurrentText(self.realsr_ncnn_model_name)
         self.ui.settingpage.realsr_ncnn_settings.load_proc_save_line_edit.setText(self.realsr_ncnn_load_proc_save)
+        # anime4kcpp
+        acnet_bool = False if self.anime4k_acnet == '0' else True
+        self.ui.settingpage.anime4k_settings.acnet_checkbox.setChecked(acnet_bool)
         # 视频设置
-        video_sr_engine = '与图像超分辨引擎一致' if self.video_sr_engine == '0' else 'Anime4KCPP'
-        self.ui.settingpage.video_sr_combobox.setCurrentText(video_sr_engine)
         self.ui.settingpage.video_quality_spinbox.setValue(int(self.video_quality))
 
     def ui_config_save(self):
@@ -65,7 +74,8 @@ class SettingPageUIConnection(object):
             self.vnc_config.set('General', 'gpu_id', get_gpu_id(self.ui.settingpage.gpu_combobox.currentText()))
             self.vnc_config.set('General', 'encoding_list', self.ui.settingpage.text_encoding_line_edit.text())
             # 超分引擎
-            self.vnc_config.set('General', 'super_resolution_engine', self.ui.settingpage.image_sr_combobox.currentText())
+            self.vnc_config.set('General', 'image_sr_engine', self.ui.settingpage.image_sr_engine_combobox.currentText())
+            self.vnc_config.set('General', 'video_sr_engine', self.ui.settingpage.video_sr_engine_combobox.currentText())
             tta = '1' if self.ui.settingpage.tta_checkbox.isChecked() else '0'
             self.vnc_config.set('General', 'tta', tta)
             # waifu2x_ncnn
@@ -73,6 +83,12 @@ class SettingPageUIConnection(object):
             self.vnc_config.set('waifu2x_ncnn', 'tile_size', self.ui.settingpage.waifu2x_ncnn_settings.tile_size_line_edit.text())
             self.vnc_config.set('waifu2x_ncnn', 'model_name', self.ui.settingpage.waifu2x_ncnn_settings.modle_name_combobox.currentText())
             self.vnc_config.set('waifu2x_ncnn', 'load_proc_save', self.ui.settingpage.waifu2x_ncnn_settings.load_proc_save_line_edit.text())
+            # Real-CUGAN
+            self.vnc_config.set('real_cugan', 'noise_level', str(self.ui.settingpage.real_cugan_settings.noise_level_spinbox.value()))
+            self.vnc_config.set('real_cugan', 'tile_size', self.ui.settingpage.real_cugan_settings.tile_size_line_edit.text())
+            self.vnc_config.set('real_cugan', 'sync_gap_mode', str(self.ui.settingpage.real_cugan_settings.sync_gap_mode_spinbox.value()))
+            self.vnc_config.set('real_cugan', 'model_name', self.ui.settingpage.real_cugan_settings.modle_name_combobox.currentText())
+            self.vnc_config.set('real_cugan', 'load_proc_save', self.ui.settingpage.real_cugan_settings.load_proc_save_line_edit.text())
             # real_esrgan
             self.vnc_config.set('real_esrgan', 'tile_size', self.ui.settingpage.real_esrgan_settings.tile_size_line_edit.text())
             self.vnc_config.set('real_esrgan', 'model_name', self.ui.settingpage.real_esrgan_settings.modle_name_combobox.currentText())
@@ -85,9 +101,10 @@ class SettingPageUIConnection(object):
             self.vnc_config.set('realsr_ncnn', 'tile_size', self.ui.settingpage.realsr_ncnn_settings.tile_size_line_edit.text())
             self.vnc_config.set('realsr_ncnn', 'model_name', self.ui.settingpage.realsr_ncnn_settings.modle_name_combobox.currentText())
             self.vnc_config.set('realsr_ncnn', 'load_proc_save', self.ui.settingpage.realsr_ncnn_settings.load_proc_save_line_edit.text())
+            # anime4kcpp
+            acnet = '1' if self.ui.settingpage.anime4k_settings.acnet_checkbox.isChecked() else '0'
+            self.vnc_config.set('anime4k', 'acnet', acnet)
             # 视频设置
-            video_sr_engine = '0' if self.ui.settingpage.video_sr_combobox.currentIndex() == 0 else '1'
-            self.vnc_config.set('video', 'video_sr_engine', video_sr_engine)
             self.vnc_config.set('ffmpeg', 'video_quality', str(self.ui.settingpage.video_quality_spinbox.value()))
             self.vnc_config.write(vcf)
         self.ui_config_load()

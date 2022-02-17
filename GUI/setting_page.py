@@ -10,6 +10,12 @@ class SettingPage(QFrame):
     def __init__(self):
         QFrame.__init__(self)
         self.theme = {'MainContent_background': '#282a36', 'MainContent_font': '#6272a4', 'MainContent_bar': '#21232d', }
+        self.sr_engine_list = ['waifu2x_ncnn',
+                               'real_cugan',
+                               'real_esrgan',
+                               'srmd_ncnn',
+                               'realsr_ncnn',
+                               'anime4k']
         self.initUI()
 
     def initUI(self):
@@ -22,7 +28,7 @@ class SettingPage(QFrame):
         layout.setContentsMargins(20, 0, 20, 20)
         self.setup_general_settings()
         layout.addWidget(self.general_setting_frame)
-        self.setup_image_settings()
+        self.setup_sr_engine_settings()
         layout.addWidget(self.image_setting_frame)
 
         self.setup_video_settings()
@@ -39,7 +45,7 @@ class SettingPage(QFrame):
         layout.addWidget(self.bottom_bar)
 
     def setup_connections(self):
-        self.image_sr_combobox.currentTextChanged.connect(self.switch_image_sr_engine_settings)
+        self.sr_engine_combobox.currentTextChanged.connect(self.switch_image_sr_engine_settings)
 
     def setup_general_settings(self):
         self.general_setting_frame = QFrame()
@@ -49,6 +55,7 @@ class SettingPage(QFrame):
         layout.addRow(self.general_setting_lb)
         self.cpu_lb = QLabel('CPU并发核数：')
         self.cpu_spinbox = QSpinBox()
+        self.cpu_spinbox.setMinimum(1)
         layout.addRow(self.cpu_lb, self.cpu_spinbox)
         self.gpu_lb = QLabel('GPU型号：')
         self.gpu_combobox = QComboBox()
@@ -57,6 +64,19 @@ class SettingPage(QFrame):
         self.text_encoding_lb = QLabel('文本编码列表：')
         self.text_encoding_line_edit = FLineEdit(place_holder_text='使用英文逗号分隔，优先级从左到右')
         layout.addRow(self.text_encoding_lb, self.text_encoding_line_edit)
+        self.image_sr_engine_lb = QLabel('图片超分引擎：')
+        self.image_sr_engine_combobox = QComboBox()
+        image_sr_engine_list = [sr_engine for sr_engine in self.sr_engine_list]
+        image_sr_engine_list.remove('anime4k')
+        self.image_sr_engine_combobox.addItems(image_sr_engine_list)
+        layout.addRow(self.image_sr_engine_lb, self.image_sr_engine_combobox)
+        self.video_sr_engine_lb = QLabel('视频超分引擎：')
+        self.video_sr_engine_combobox = QComboBox()
+        self.video_sr_engine_combobox.addItems(self.sr_engine_list)
+        layout.addRow(self.video_sr_engine_lb, self.video_sr_engine_combobox)
+        self.tta_lb = QLabel('TTA模式：')
+        self.tta_checkbox = QCheckBox()
+        layout.addRow(self.tta_lb, self.tta_checkbox)
 
     def setup_bottom_bar(self):
         width = 60
@@ -76,24 +96,17 @@ class SettingPage(QFrame):
         layout.addWidget(self.cancle_btn)
         layout.addWidget(self.reset_btn)
 
-    def setup_image_settings(self):
+    def setup_sr_engine_settings(self):
         self.image_setting_frame = QFrame()
         layout = QFormLayout(self.image_setting_frame)
         layout.setSpacing(5)
 
-        self.image_setting_lb = QLabel('图像设置')
-        layout.addRow(self.image_setting_lb)
-        self.image_sr_lb = QLabel('超分辨率引擎：')
-        self.image_sr_combobox = QComboBox()
-        sr_engine_list = ['waifu2x_ncnn',
-                          'real_esrgan',
-                          'srmd_ncnn',
-                          'realsr_ncnn']
-        self.image_sr_combobox.addItems(sr_engine_list)
-        layout.addRow(self.image_sr_lb, self.image_sr_combobox)
-        self.tta_lb = QLabel('TTA模式：')
-        self.tta_checkbox = QCheckBox()
-        layout.addRow(self.tta_lb, self.tta_checkbox)
+        self.sr_engine_setting_lb = QLabel('超分引擎设置')
+        layout.addRow(self.sr_engine_setting_lb)
+        self.sr_engine_lb = QLabel('超分辨率引擎：')
+        self.sr_engine_combobox = QComboBox()
+        self.sr_engine_combobox.addItems(self.sr_engine_list)
+        layout.addRow(self.sr_engine_lb, self.sr_engine_combobox)
 
         self.image_setting_stacks = QStackedWidget()
         # self.image_setting_frame.setMinimumHeight(188)
@@ -101,24 +114,32 @@ class SettingPage(QFrame):
         layout.addRow(self.image_setting_stacks)
         self.waifu2x_ncnn_settings = Waifu2xNCNNSettings()
         self.image_setting_stacks.addWidget(self.waifu2x_ncnn_settings)
+        self.real_cugan_settings = RealCUGNSettings()
+        self.image_setting_stacks.addWidget(self.real_cugan_settings)
         self.real_esrgan_settings = RealESRGANSettings()
         self.image_setting_stacks.addWidget(self.real_esrgan_settings)
         self.srmd_ncnn_settings = SRMDNCNNSettings()
         self.image_setting_stacks.addWidget(self.srmd_ncnn_settings)
         self.realsr_ncnn_settings = RealSRNCNNSettings()
         self.image_setting_stacks.addWidget(self.realsr_ncnn_settings)
+        self.anime4k_settings = Anime4KSettings()
+        self.image_setting_stacks.addWidget(self.anime4k_settings)
 
     def switch_image_sr_engine_settings(self):
-        sr_engine = self.image_sr_combobox.currentText()
+        sr_engine = self.sr_engine_combobox.currentText()
         match sr_engine:
             case 'waifu2x_ncnn':
                 self.image_setting_stacks.setCurrentWidget(self.waifu2x_ncnn_settings)
+            case 'real_cugan':
+                self.image_setting_stacks.setCurrentWidget(self.real_cugan_settings)
             case 'real_esrgan':
                 self.image_setting_stacks.setCurrentWidget(self.real_esrgan_settings)
             case 'srmd_ncnn':
                 self.image_setting_stacks.setCurrentWidget(self.srmd_ncnn_settings)
             case 'realsr_ncnn':
                 self.image_setting_stacks.setCurrentWidget(self.realsr_ncnn_settings)
+            case 'anime4k':
+                self.image_setting_stacks.setCurrentWidget(self.anime4k_settings)
 
     def setup_video_settings(self):
         self.video_setting_frame = QFrame()
@@ -126,10 +147,6 @@ class SettingPage(QFrame):
         layout.setSpacing(5)
         self.video_setting_lb = QLabel('视频设置')
         layout.addRow(self.video_setting_lb)
-        self.video_sr_lb = QLabel('超分辨率引擎：')
-        self.video_sr_combobox = QComboBox()
-        self.video_sr_combobox.addItems(['与图像超分辨引擎一致', 'Anime4KCPP'])
-        layout.addRow(self.video_sr_lb, self.video_sr_combobox)
         self.video_quality_lb = QLabel('输出视频质量：')
         self.video_quality_spinbox = QSpinBox()
         self.video_quality_spinbox.setRange(0, 10)

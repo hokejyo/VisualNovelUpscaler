@@ -12,6 +12,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
     def __init__(self):
         Config.__init__(self)
+        self.uuid_list = []
         # 默认必要参数
         # self.encoding, self.scwidth, self.scheight = 'shift-jis', 1280, 720
         # self.scale_ratio = 2
@@ -70,10 +71,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
         @return     目标文件路径对象
         """
-        target_file = self.patch_folder/file_path.relative_to(self.game_data)
-        if not target_file.parent.exists():
-            target_file.parent.mkdir(parents=True)
-        return target_file
+        return p2p(file_path, self.game_data, self.patch_folder)
 
     def a2t(self, file_path) -> Path:
         """
@@ -83,10 +81,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
         @return     目标文件路径对象
         """
-        target_file = self.tmp_folder/file_path.relative_to(self.game_data)
-        if not target_file.parent.exists():
-            target_file.parent.mkdir(parents=True)
-        return target_file
+        return p2p(file_path, self.game_data, self.tmp_folder)
 
     def t2p(self, file_path) -> Path:
         """
@@ -96,18 +91,27 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
         @return     目标文件路径对象
         """
-        target_file = self.patch_folder/file_path.relative_to(self.tmp_folder)
-        if not target_file.parent.exists():
-            target_file.parent.mkdir(parents=True)
-        return target_file
+        return p2p(file_path, self.tmp_folder, self.patch_folder)
 
-    def clear(self):
+    def tmp_clear(self):
         """
-        @brief      清空临时文件夹
+        @brief      初始化临时文件夹
         """
-        try:
+        if self.tmp_folder.exists():
             shutil.rmtree(self.tmp_folder)
-        except:
-            print('warning:临时文件夹不存在')
-        finally:
-            self.tmp_folder.mkdir(parents=True)
+        self.tmp_folder.mkdir(parents=True)
+
+    def create_str(self, len_num=8) -> str:
+        """
+        @brief      生成不重复的指定位数的字符串
+
+        @param      len_num  字符串长度
+
+        @return     字符串
+        """
+        while True:
+            uuid_str = str(uuid.uuid4())[:len_num]
+            if uuid_str not in self.uuid_list:
+                break
+        self.uuid_list.append(uuid_str)
+        return uuid_str

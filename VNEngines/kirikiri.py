@@ -15,6 +15,7 @@ class Kirikiri(Core):
     def set_game_data(self, game_data):
         self.game_data = Path(game_data).resolve()
         self.tmp_folder = self.game_data.parent/'vnc_tmp'
+        self.tmp_clear()
         self.encoding, self.scwidth, self.scheight = self.get_encoding_resolution()
 
     def upscale(self):
@@ -38,17 +39,10 @@ class Kirikiri(Core):
         if self.run_dict['video']:
             self.video2x()
             print('视频文件处理完成')
-        # if self.run_dict['stand']:
-        #     self.stand_correction()
-        #     print('对话框人物立绘手动调整完成')
-        # if self.run_dict['tlg5']:
-        #     self.tlg6totlg5()
-        #     print('tlg6转换tlg5完成')
+
         shutil.rmtree(self.tmp_folder)
         timing_count = time.time() - self.start_time
         print(seconds_format(timing_count))
-        # tmp = input(f'\n高清重制完成，共耗时{seconds_format(timing_count)}\n请将patch文件夹打包，放到游戏根目录下(或使用Universal Patch方法)\n按回车键退出：')
-        # sys.exit()
 
     def get_encoding_resolution(self):
         '''
@@ -87,13 +81,13 @@ class Kirikiri(Core):
         for tjs_file in tjs_file_ls:
             if tjs_file.name == 'Config.tjs':
                 self.Configtjs2x(tjs_file)
-            if tjs_file.name == 'envinit.tjs':
+            elif tjs_file.name == 'envinit.tjs':
                 self.envinit2x(tjs_file)
-            if tjs_file.name == 'custom.tjs':
+            elif tjs_file.name == 'custom.tjs':
                 self.customtjs2x(tjs_file)
-            if tjs_file.name == 'default.tjs':
+            elif tjs_file.name == 'default.tjs':
                 self.default2x(tjs_file)
-            if 'particle' in tjs_file.name:
+            elif 'particle' in tjs_file.name:
                 self.particle2x(tjs_file)
 
     def ks2x(self):
@@ -101,7 +95,7 @@ class Kirikiri(Core):
         for ks_file in ks_file_ls:
             if ks_file.name == 'custom.ks':
                 self.customks2x(ks_file)
-            if ks_file.name in ['macro.ks', 'macro_old.ks']:
+            elif ks_file.name in ['macro.ks', 'macro_old.ks']:
                 self.macro2x(ks_file)
 
     def Configtjs2x(self, tjs_file):
@@ -124,15 +118,15 @@ class Kirikiri(Core):
         for line in lines:
             for config_c in config_dict.values():
                 pattern1 = re.compile(rf'(^{config_c}\W+)(\d+)(\W+)(\d*)(.*)')
-                line_c = re.match(pattern1, line)
-                if line_c:
-                    line = pattern_num2x(line, line_c, self.scale_ratio)
+                re_result = re.match(pattern1, line)
+                if re_result:
+                    line = self.line_pattern_num2x(re_result)
             pattern2 = re.compile(r'(^;mt.*?)(\d+)(.*)')
-            line_c = re.match(pattern2, line)
-            if line_c:
-                line = pattern_num2x(line, line_c, self.scale_ratio)
+            re_result = re.match(pattern2, line)
+            if re_result:
+                line = self.line_pattern_num2x(re_result)
             result.append(line)
-        with open((self.patch_folder/'Config.tjs'), 'w', newline='', encoding=current_encoding) as f:
+        with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
             for line in result:
                 if line.startswith(';saveDataLocation'):
                     continue
@@ -153,11 +147,11 @@ class Kirikiri(Core):
         for line in lines:
             for i in pattern_dict.values():
                 pattern = re.compile(i)
-                line_c = re.match(pattern, line)
-                if line_c:
-                    line = pattern_num2x(line, line_c, self.scale_ratio)
+                re_result = re.match(pattern, line)
+                if re_result:
+                    line = self.line_pattern_num2x(re_result)
             result.append(line)
-        with open((self.patch_folder/'envinit.tjs'), 'w', newline='', encoding=current_encoding) as f:
+        with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
             tmp_count = 0
             for line in result:
                 # 开启对话框头像位置修正模式，使对stand文件的修改生效
@@ -178,11 +172,11 @@ class Kirikiri(Core):
         for line in lines:
             for rule_keyword in pattern_rule_keywords:
                 pattern = re.compile(rf'(.*?\W+)({rule_keyword})(\W+)(\d+)(.*)', re.IGNORECASE)
-                line_c = re.match(pattern, line)
-                if line_c:
-                    line = pattern_num2x(line, line_c, self.scale_ratio)
+                re_result = re.match(pattern, line)
+                if re_result:
+                    line = self.line_pattern_num2x(re_result)
             result.append(line)
-        with open((self.patch_folder/'custom.tjs'), 'w', newline='', encoding=current_encoding) as f:
+        with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
             for line in result:
                 f.write(line)
 
@@ -196,20 +190,20 @@ class Kirikiri(Core):
         lines, current_encoding = self.get_lines_encoding(tjs_file)
         for line in lines:
             # backlog头像裁剪
-            line_c1 = re.match(pattern1, line)
-            if line_c1:
-                line = pattern_num2x(line, line_c1, self.scale_ratio)
+            re_result1 = re.match(pattern1, line)
+            if re_result1:
+                line = self.line_pattern_num2x(re_result1)
             # 字体等
             for rule_keyword in pattern2_rule_keywords:
                 pattern2 = re.compile(rf'(.*?\W+)({rule_keyword})(\W+)(\d+)(.*)', re.IGNORECASE)
-                line_c2 = re.match(pattern2, line)
-                if line_c2:
-                    line = pattern_num2x(line, line_c2, self.scale_ratio)
+                re_result2 = re.match(pattern2, line)
+                if re_result2:
+                    line = self.line_pattern_num2x(re_result2)
             # 跳过验证
             if ('CHECK_PRODUCTKEY' and 'FORCE_PRODUCTKEY') in line:
                 break
             result.append(line)
-        with open((self.patch_folder/'default.tjs'), 'w', newline='', encoding=current_encoding) as f:
+        with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
             for line in result:
                 f.write(line)
 
@@ -224,18 +218,18 @@ class Kirikiri(Core):
             if 'genpos' in line:
                 pattern1 = re.compile(
                     r'(.*genpos)([\D]*)(\d+)([\D]*)(\d+)([\D]*)(\d+)([\D]*)(\d+)(.*)')
-                line_c = re.match(pattern1, line)
-                if line_c:
-                    line = pattern_num2x(line, line_c, self.scale_ratio)
+                re_result = re.match(pattern1, line)
+                if re_result:
+                    line = self.line_pattern_num2x(re_result)
             # 死亡判定
             if 'term' in line:
                 pattern2 = re.compile(
                     r'(.*return)([\D]*)(\d+)([\D]*)([\d]*)([\D]*)')
-                line_c = re.match(pattern2, line)
-                if line_c:
-                    line = pattern_num2x(line, line_c, self.scale_ratio)
+                re_result = re.match(pattern2, line)
+                if re_result:
+                    line = self.line_pattern_num2x(re_result)
             result.append(line)
-        with open((self.patch_folder/(tjs_file.name)), 'w', newline='', encoding=current_encoding) as f:
+        with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
             for line in result:
                 f.write(line)
 
@@ -250,11 +244,11 @@ class Kirikiri(Core):
             if 'select_normal' in line:
                 pattern = re.compile(
                     r'(.*left\W+)(\d+)(.*top\W+)(\d+)(.*width\W+)(\d+)(.*height\W+)(\d+)(.*)')
-                line_c = re.match(pattern, line)
-                if line_c:
-                    line = pattern_num2x(line, line_c, self.scale_ratio)
+                re_result = re.match(pattern, line)
+                if re_result:
+                    line = self.line_pattern_num2x(re_result)
             result.append(line)
-        with open((self.patch_folder/'custom.ks'), 'w', newline='', encoding=current_encoding) as f:
+        with open(self.a2p(ks_file), 'w', newline='', encoding=current_encoding) as f:
             for line in result:
                 f.write(line)
 
@@ -269,11 +263,11 @@ class Kirikiri(Core):
             for keyn in keyn_ls:
                 pattern_rule = rf'(.*?)({keyn})(\W+)(\d+)(\W+)(\d*)(.*)'
                 pattern = re.compile(pattern_rule, re.IGNORECASE)
-                line_c = re.match(pattern, line)
-                if line_c:
-                    line = pattern_num2x(line, line_c, self.scale_ratio)
+                re_result = re.match(pattern, line)
+                if re_result:
+                    line = self.line_pattern_num2x(re_result)
             result.append(line)
-        with open((self.patch_folder/(ks_file.name)), 'w', newline='', encoding=current_encoding) as f:
+        with open(self.a2p(ks_file), 'w', newline='', encoding=current_encoding) as f:
             for line in result:
                 f.write(line)
 
@@ -282,7 +276,7 @@ class Kirikiri(Core):
         ui相关csv文件中的坐标处理
         '''
         for input_csv in file_list(self.game_data, 'csv', parent_folder='uipsd'):
-            output_csv = self.patch_folder/csv_file.name
+            output_csv = self.a2p(input_csv)
             self.csv2x(input_csv, output_csv)
 
     def asd2x(self):
@@ -308,38 +302,43 @@ class Kirikiri(Core):
                             tmp_ls[i] = '='.join(tmp)
                 line = ' '.join(tmp_ls) + '\r\n'
                 result.append(line)
-            with open((self.patch_folder/(asd_file.name)), 'w', newline='', encoding=current_encoding) as f:
+            with open(self.a2p(asd_file), 'w', newline='', encoding=current_encoding) as f:
                 for line in result:
                     f.write(line)
 
     def scn2x(self):
-        self.scn_folder = self.tmp_folder/'scn'
-        self.scn_folder.mkdir(parents=True)
         ori_scn_file_ls = patch9_first(file_list(self.game_data, 'scn'))
-        [fcopy(scn_file, self.scn_folder) for scn_file in ori_scn_file_ls]
-        scn_file_ls = file_list(self.scn_folder)
-        # 多进程拆scn
-        self.pool_run(self.scn_de, scn_file_ls)
-        # 获得json文件列表并删除原scn
-        scn_json_file_ls = []
-        for scn_file in scn_file_ls:
-            scn_json_file_ls.append(scn_file.with_suffix('.json'))
-            scn_file.unlink()
-        # 处理坐标
-        self.pool_run(self.scn_json2x, scn_json_file_ls)
-        # 合并scn
-        self.pool_run(self.scn_en, scn_json_file_ls)
-        renamed_files = [scn_file.replace(scn_file.parent/(scn_file.name.replace('.pure', ''))) for scn_file in file_list(self.tmp_folder, 'scn', walk_mode=False)]
-        [fmove(scn_file, self.patch_folder) for scn_file in renamed_files]
-        shutil.rmtree(self.scn_folder)
+        if ori_scn_file_ls:
+            scn_file_ls = [fcopy(scn_file, self.a2t(scn_file).parent) for scn_file in ori_scn_file_ls]
+            # 多进程拆scn
+            self.pool_run(self.scn_de, scn_file_ls)
+            # 获得json文件列表并删除原scn
+            scn_json_file_ls = []
+            for scn_file in scn_file_ls:
+                scn_json_file_ls.append(scn_file.with_suffix('.json'))
+                scn_file.unlink()
+            # 处理坐标
+            self.pool_run(self.scn_json2x_, scn_json_file_ls)
+            # 合并scn
+            scn_json_files_and_output_folders = [(scn_json_file, scn_json_file.parent) for scn_json_file in scn_json_file_ls]
+            scaled_scn_file_ls = self.pool_run(self.scn_en, scn_json_files_and_output_folders)
+            [fmove(scn_file, self.t2p(scn_file).parent) for scn_file in scaled_scn_file_ls]
+            self.tmp_clear()
 
     def scn_de(self, scn_file):
         scn_de_p = subprocess.run([self.psb_de_exe, scn_file], capture_output=True)
 
-    def scn_en(self, scn_json_file):
-        scn_en_p = subprocess.run([self.psb_en_exe, scn_json_file], shell=True, cwd=self.tmp_folder, capture_output=True)
+    def scn_en(self, scn_json_file_and_output_folder: tuple):
+        scn_json_file = scn_json_file_and_output_folder[0]
+        output_folder = scn_json_file_and_output_folder[1]
+        scn_en_p = subprocess.run([self.psb_en_exe, scn_json_file], shell=True, cwd=output_folder, capture_output=True)
+        # 重命名
+        tmp_scn_file = (output_folder/scn_json_file.name).with_suffix('.pure.scn')
+        out_scn_file = (output_folder/scn_json_file.name).with_suffix('.scn')
+        tmp_scn_file.replace(out_scn_file)
+        return out_scn_file
 
-    def scn_json2x(self, scn_json_file):
+    def scn_json2x_(self, scn_json_file):
         with open(scn_json_file, newline='', encoding='utf-8') as f:
             lines = f.readlines()
             result = []
@@ -347,9 +346,9 @@ class Kirikiri(Core):
                 keyn_ls = ['originx', 'originy', 'xpos', 'ypos', 'zpos', 'zoomx', 'zoomy']
                 for keyn in keyn_ls:
                     pattern = re.compile(rf'(.*\W+{keyn}\W+?)(-?\d+)(.*)')
-                    line_c = re.match(pattern, line)
-                    if line_c:
-                        line = pattern_num2x(line, line_c, self.scale_ratio)
+                    re_result = re.match(pattern, line)
+                    if re_result:
+                        line = self.line_pattern_num2x(re_result)
                 result.append(line)
         with open(scn_json_file, 'w', newline='', encoding='utf-8') as f:
             for line in result:
@@ -367,29 +366,27 @@ class Kirikiri(Core):
             for line in lines:
                 # 水平方向位置修正
                 if 'facexoff' in line:
-                    line_c = re.match(pattern, line)
-                    if line_c:
-                        line_cc = list(line_c.groups())
-                        line_cc[1] = str(int(line_cc[1]) - int((self.scwidth*self.scale_ratio-self.scwidth)/2))
-                        line_cc = [i for i in line_cc if i != None]
-                        line = ''.join(line_cc)
+                    re_result = re.match(pattern, line)
+                    if re_result:
+                        re_result_ls = list(re_result.groups())
+                        re_result_ls[1] = str(int(re_result_ls[1]) - int((self.scwidth*self.scale_ratio-self.scwidth)/2))
+                        re_result_ls = [i for i in re_result_ls if i != None]
+                        line = ''.join(re_result_ls)
                 # 大小修正
                 if 'facezoom' in line:
-                    line_c = re.match(pattern, line)
-                    if line_c:
-                        line = pattern_num2x(line, line_c, self.scale_ratio)
+                    re_result = re.match(pattern, line)
+                    if re_result:
+                        line = self.line_pattern_num2x(re_result)
                 result.append(line)
-            with open((self.patch_folder/(stand_file.name)), 'w', newline='', encoding=current_encoding) as f:
+            with open(self.a2p(stand_file), 'w', newline='', encoding=current_encoding) as f:
                 for line in result:
                     f.write(line)
 
-    def stand_correction(self):
+    def stand_correction(self, input_folder, output_folder, face_zoom, xpos_move):
         '''
         对话框人物立绘后处理
         '''
-        xpos_move = int(input('请输入向右移动像素距离：'))
-        face_zoom = float(input('请输入人物头像缩放系数：'))
-        stand_file_ls = file_list(self.patch_folder, 'stand')
+        stand_file_ls = file_list(self.input_folder, 'stand')
         pattern = re.compile(r'(.*?)(-?\d+)(.*)')
         for stand_file in stand_file_ls:
             result = []
@@ -397,61 +394,76 @@ class Kirikiri(Core):
             for line in lines:
                 # 水平方向位置修正
                 if 'facexoff' in line:
-                    line_c = re.match(pattern, line)
-                    if line_c:
-                        line_cc = list(line_c.groups())
-                        line_cc[1] = str(int(line_cc[1]) + xpos_move)
-                        line_cc = [i for i in line_cc if i != None]
-                        line = ''.join(line_cc)
+                    re_result = re.match(pattern, line)
+                    if re_result:
+                        re_result_ls = list(re_result.groups())
+                        re_result_ls[1] = str(int(re_result_ls[1]) + xpos_move)
+                        re_result_ls = [i for i in re_result_ls if i != None]
+                        line = ''.join(re_result_ls)
                 # 大小修正
                 if 'facezoom' in line:
-                    line_c = re.match(pattern, line)
-                    if line_c:
-                        line = pattern_num2x(line, line_c, face_zoom)
+                    re_result = re.match(pattern, line)
+                    if re_result:
+                        line = pattern_num2x(re_result, face_zoom)
                 result.append(line)
-            with open((self.patch_folder/(stand_file.name)), 'w', newline='', encoding=current_encoding) as f:
+            with open(p2p(stand_file, input_folder, output_folder), 'w', newline='', encoding=current_encoding) as f:
                 for line in result:
                     f.write(line)
 
     """
     ==================================================
-    Kirikiri引擎图片文件：pimg, tlg, png, jpg, jpeg, bmp, eri
+    Kirikiri引擎图片文件：pimg, tlg, png, jpg, jpeg, bmp, webp, eri
     ==================================================
     """
 
     def image2x(self):
         print('开始放大图片，处理时间较长，请耐心等待......')
-        self.pimg2x()
-        print('UI图片处理完成')
         self.general_image2x()
         print('常规图片处理完成')
-        self.tlg_folder = self.tmp_folder/'tlg'
-        self.tlg_folder.mkdir()
-        [fcopy(tlg_file, self.tlg_folder) for tlg_file in patch9_first(file_list(self.game_data, 'tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))]
+        self.pimg2x()
+        print('pimg图片处理完成')
         self.tlg2x()
-        shutil.rmtree(self.tlg_folder)
+        print('tlg图片处理完成')
+        self.eri2x()
+        print('eri图片处理完成')
+
+    def general_image2x(self):
+        '''
+        对常规格式图片进行放大处理
+        '''
+        image_extension_ls = ['bmp', 'jpg', 'jpeg', 'png', 'webp']
+        for image_extension in image_extension_ls:
+            image_file_list = patch9_first(file_list(self.game_data, image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+            if image_file_list:
+                [fcopy(image_file, self.a2t(image_file).parent) for image_file in image_file_list]
+                print(f'开始放大{image_extension}图片......')
+                # show_image2x_p = Process(target=self.show_image2x_status, args=(image_extension,))
+                # show_image2x_p.start()
+                self.image_upscale(self.tmp_folder, self.patch_folder, image_extension)
+                # show_image2x_p.join()
+                self.tmp_clear()
 
     def pimg2x(self):
-        for pimg_file in file_list(self.game_data, 'pimg'):
-            shutil.copy(pimg_file, self.a2t(pimg_file).parent)
-        pimg_file_ls = file_list(self.tmp_folder, 'pimg')
-        print('正在拆分pimg文件')
-        self.pool_run(self.pimg_de, pimg_file_ls)
-        print('pimg文件拆分完成')
-        print('pimg图片放大中......')
-        self.image_upscale(self.patch_folder, self.patch_folder, 'png')
-        # 获得json文件列表并删除原pimg
-        pimg_json_file_ls = []
-        for pimg_file in pimg_file_ls:
-            pimg_json_file_ls.append(pimg_file.with_suffix('.json'))
-            pimg_file.unlink()
-        print('pimg图片放大完成，正在修正坐标')
-        self.pool_run(self.pimg_json2x, pimg_json_file_ls)
-        print('正在组装中......')
-        pimg_json_files_and_output_folders = [(pimg_json_file, pimg_json_file.parent) for pimg_json_file in pimg_json_file_ls]
-        scaled_pimg_file_ls = self.pool_run(self.pimg_en, pimg_json_files_and_output_folders)
-        [fmove(scaled_pimg_file, self.t2p(scaled_pimg_file).parent) for scaled_pimg_file in scaled_pimg_file_ls]
-        self.clear()
+        org_pimg_file_ls = patch9_first(file_list(self.game_data, 'pimg'))
+        if org_pimg_file_ls:
+            pimg_file_ls = [fcopy(pimg_file, self.a2t(pimg_file).parent) for pimg_file in org_pimg_file_ls]
+            print('正在拆分pimg文件')
+            self.pool_run(self.pimg_de, pimg_file_ls)
+            print('pimg文件拆分完成')
+            print('pimg图片放大中......')
+            self.image_upscale(self.tmp_folder, self.tmp_folder, 'png')
+            # 获得json文件列表并删除原pimg
+            pimg_json_file_ls = []
+            for pimg_file in pimg_file_ls:
+                pimg_json_file_ls.append(pimg_file.with_suffix('.json'))
+                pimg_file.unlink()
+            print('pimg图片放大完成，正在修正坐标')
+            self.pool_run(self.pimg_json2x_, pimg_json_file_ls)
+            print('正在组装中......')
+            pimg_json_files_and_output_folders = [(pimg_json_file, pimg_json_file.parent) for pimg_json_file in pimg_json_file_ls]
+            scaled_pimg_file_ls = self.pool_run(self.pimg_en, pimg_json_files_and_output_folders)
+            [fmove(scaled_pimg_file, self.t2p(scaled_pimg_file).parent) for scaled_pimg_file in scaled_pimg_file_ls]
+            self.tmp_clear()
 
     def pimg_de(self, pimg_file):
         '''
@@ -472,7 +484,7 @@ class Kirikiri(Core):
         tmp_pimg_file.replace(out_pimg_file)
         return out_pimg_file
 
-    def pimg_json2x(self, pimg_json_file):
+    def pimg_json2x_(self, pimg_json_file):
         '''
         pimg坐标修正
         '''
@@ -496,101 +508,96 @@ class Kirikiri(Core):
         with open(pimg_json_file, 'w', newline='', encoding='utf-8') as f:
             f.write(result)
 
-    def general_image2x(self):
-        '''
-        对常规格式图片进行放大处理
-        '''
-        image_extension_ls = ['bmp', 'jpg', 'jpeg', 'png', 'webp']
-        for image_extension in image_extension_ls:
-            image_file_list = patch9_first(file_list(self.game_data, image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
-            if image_file_list:
-                image_folder = self.tmp_folder/image_extension
-                image_folder.mkdir()
-                [fcopy(image_file, image_folder) for image_file in image_file_list]
-                print(f'开始放大{image_extension}图片......')
-                show_image2x_p = Process(target=self.show_image2x_status, args=(image_extension,))
-                show_image2x_p.start()
-                self.image_upscale(image_folder, image_folder, image_extension)
-                show_image2x_p.join()
-                [fmove(image_file, self.patch_folder) for image_file in file_list(image_folder, image_extension)]
-                shutil.rmtree(image_folder)
-
     def tlg2x(self):
         '''
         对tlg格式图片进行放大处理
         '''
-        tlg_file_ls = file_list(self.tlg_folder, 'tlg')
-        if tlg_file_ls:
+        ori_tlg_file_ls = patch9_first(file_list(self.game_data, 'tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+        if ori_tlg_file_ls:
+            [fcopy(tlg_file, self.a2t(tlg_file).parent) for tlg_file in ori_tlg_file_ls]
+            tlg_file_ls = file_list(self.tmp_folder)
             print('tlg图片转换中......')
-            # tlg2png_pool = Pool(self.cpu_cores)
-            # for tlg_file in tlg_file_ls:
-            #     tlg2png_pool.apply_async(self.tlg2png, args=(tlg_file,))
-            # tlg2png_pool.close()
-            # tlg2png_pool.join()
-            self.pool_run(self.tlg2png, tlg_file_ls)
+            png_file_ls = self.pool_run(self.tlg2png, tlg_file_ls)
             [tlg_file.unlink() for tlg_file in tlg_file_ls]
             print('tlg转换完成，正在放大中......')
-            show_tlg2x_p = Process(target=self.show_image2x_status, args=('png',))
-            show_tlg2x_p.start()
-            self.image_upscale(self.tlg_folder, self.tlg_folder, 'png')
-            show_tlg2x_p.join()
+            # show_tlg2x_p = Process(target=self.show_image2x_status, args=('png',))
+            # show_tlg2x_p.start()
+            self.image_upscale(self.tmp_folder, self.tmp_folder, 'png')
+            # show_tlg2x_p.join()
             print('tlg格式图片放大完成，正在进行格式转换......')
-            # png2tlg6_pool = Pool(self.cpu_cores)
-            # for png_file in file_list(self.tlg_folder, 'png'):
-            #     png2tlg6_pool.apply_async(self.png2tlg6, args=(png_file,))
-            # png2tlg6_pool.close()
-            # png2tlg6_pool.join()
-            tlg2png_file_ls = file_list(self.tlg_folder, 'png')
-            self.pool_run(self.png2tlg6, tlg2png_file_ls)
-            [fmove(tlg_file, self.patch_folder) for tlg_file in tlg_file_ls]
+            scaled_tlg_file_ls = self.pool_run(self.png2tlg6, png_file_ls)
+            [fmove(tlg_file, self.t2p(tlg_file).parent) for tlg_file in scaled_tlg_file_ls]
+            self.tmp_clear()
         else:
             print('未发现需要处理的tlg图片')
 
-    def tlg2png(self, tlg_file):
+    def tlg2png_batch(self, input_folder, output_folder) -> list:
+        """
+        @brief      tlg转png
+
+        @param      input_folder   输入文件夹
+        @param      output_folder  输出文件夹
+
+        @return     输出png图片路径列表
+        """
+        input_folder = Path(input_folder)
+        output_folder = Path(output_folder)
+        tlg_file_ls = file_list(input_folder, 'tlg')
+        output_png_file_ls = pool_run(self.tlg2png, tlg_file_ls)
+        target_png_file_ls = []
+        for output_png_file in output_png_file_ls:
+            target_png_file = p2p(output_png_file, input_folder, output_folder)
+            fmove(output_png_file, target_png_file.parent)
+            target_png_file_ls.append(target_png_file)
+        return target_png_file_ls
+
+    def png2tlg_batch(self, input_folder, output_folder, tlg5_mode=False) -> list:
+        """
+        @brief      png转tlg
+
+        @param      input_folder   输入文件夹
+        @param      output_folder  输出文件夹
+        @param      tlg5_mode      输出为tlg5，适用于krkr2.24以下版本
+
+        @return     输出tlg图片路径列表
+        """
+        input_folder = Path(input_folder)
+        output_folder = Path(output_folder)
+        png_file_ls = file_list(input_folder, 'png')
+        if tlg5_mode:
+            print('请将弹出文件夹中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
+            os.system(f'start {input_folder}')
+            os.system(self.krkrtpc_exe)
+            tmp_tlg_file_ls = [png_file.with_suffix('.tlg') for png_file in png_file_ls]
+        else:
+            tmp_tlg_file_ls = self.pool_run(self.png2tlg6, png_file_ls)
+        target_tlg_file_ls = []
+        for tlg_file in tmp_tlg_file_ls:
+            target_tlg_file = p2p(tlg_file, input_folder, output_folder)
+            fmove(tlg_file, target_tlg_file.parent)
+            target_tlg_file_ls.append(target_tlg_file)
+        return target_tlg_file_ls
+
+    def tlg2png(self, tlg_file) -> Path:
         '''
         将tlg图片转化为png格式
         '''
-        tlg2png_p = subprocess.run([self.tlg2png_exe, tlg_file, tlg_file.with_suffix('.png')], capture_output=True)
+        output_png_file = tlg_file.with_suffix('.png')
+        tlg2png_p = subprocess.run([self.tlg2png_exe, tlg_file, output_png_file], capture_output=True)
+        return output_png_file
 
-    def png2tlg6(self, png_file):
+    def png2tlg6(self, png_file) -> Path:
         '''
         将png图片转化为tlg6格式，适用于krkr2.24及以上版本
         '''
-        png2tlg6_p = subprocess.run([self.png2tlg6_exe, png_file, png_file.with_suffix('.tlg')], capture_output=True)
-
-    def png2tlg5(self):
-        '''
-        将png图片转换回tlg5格式，手动处理，兼容性好
-        '''
-        print('请将弹出文件夹中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
-        os.system(f'start {self.tlg5_folder}')
-        os.system(self.krkrtpc_exe)
-
-    def tlg6totlg5(self):
-        '''
-        tlg6不兼容时后处理
-        '''
-        tlg_file_ls = file_list(self.patch_folder, 'tlg')
-        if tlg_file_ls:
-            self.tlg5_folder = self.patch_folder/'tlg5'
-            self.tlg5_folder.mkdir()
-            print('tlg图片转换中......')
-            # tlg2png_pool = Pool(self.cpu_cores)
-            # for tlg_file in tlg_file_ls:
-            #     tlg2png_pool.apply_async(self.tlg2png, args=(tlg_file,))
-            # tlg2png_pool.close()
-            # tlg2png_pool.join()
-            self.pool_run(self.tlg2png, tlg_file_ls)
-            [os.remove(tlg_file) for tlg_file in tlg_file_ls]
-            [fmove(tlg2png_file.with_suffix('.png'), self.tlg5_folder) for tlg2png_file in tlg_file_ls]
-            self.png2tlg5()
-            [fmove(tlg_file, self.patch_folder) for tlg_file in file_list(self.tlg5_folder, 'tlg')]
-            shutil.rmtree(self.tlg5_folder)
-        else:
-            print('未发现需要处理的tlg图片')
+        output_tlg_file = png_file.with_suffix('.tlg')
+        png2tlg6_p = subprocess.run([self.png2tlg6_exe, png_file, output_tlg_file], capture_output=True)
+        return output_tlg_file
 
     def eri2x(self):
-        print('暂不支持eri图片格式')
+        eri_file_ls = file_list(self.game_data, 'eri')
+        if eri_file_ls:
+            print('暂不支持eri图片格式')
 
     """
     ==================================================
@@ -616,42 +623,48 @@ class Kirikiri(Core):
             print('swf这东西没见过有游戏用过，有需求再加进去')
 
     def amv2x(self):
-        amv_file_ls = patch9_first(file_list(self.game_data, 'amv'))
-        if amv_file_ls:
-            amv_folder = self.tmp_folder/'amv'
-            amv_folder.mkdir()
-
-            png_sequence_folder_ls = self.amv2png(amv_file_ls, amv_folder)
+        ori_amv_file_ls = patch9_first(file_list(self.game_data, 'amv'))
+        if ori_amv_file_ls:
+            amv_file_ls = [fcopy(amv_file, self.a2t(amv_file).parent) for amv_file in ori_amv_file_ls]
+            png_sequence_folder_ls = self.amv2png(self.tmp_folder, self.tmp_folder)
+            [amv_file.unlink() for amv_file in amv_file_ls]
             print('AMV动画拆帧完成，正在放大中......')
-            show_amv2x_p = Process(target=self.show_image2x_status, args=('png',))
-            show_amv2x_p.start()
-            self.image_upscale(amv_folder, amv_folder, 'png')
-            show_amv2x_p.join()
-
+            # show_amv2x_p = Process(target=self.show_image2x_status, args=('png',))
+            # show_amv2x_p.start()
+            self.image_upscale(self.tmp_folder, self.tmp_folder, 'png')
+            # show_amv2x_p.join()
             scaled_amv_file_ls = self.pool_run(self.amv_en, png_sequence_folder_ls)
-            [fmove(scaled_amv_file, self.patch_folder) for scaled_amv_file in scaled_amv_file_ls]
-            shutil.rmtree(amv_folder)
+            [fmove(scaled_amv_file, self.t2p(scaled_amv_file).parent) for scaled_amv_file in scaled_amv_file_ls]
             print('AMV动画组装完成')
+            self.tmp_clear()
 
-    def amv2png(self, amv_file_ls, output_folder):
+    def amv2png(self, input_folder, output_folder) -> list:
+        """
+        @brief      将amv文件拆分为png图片
+
+        @param      input_folder   输入文件夹
+        @param      output_folder  输出文件夹
+
+        @return     输出文件夹路径列表
+        """
+        input_folder = Path(input_folder)
         output_folder = Path(output_folder)
         # 复制并重命名
-        amv_newfile_oldstem_dict = self.format_copy_amvfile(amv_file_ls)
+        amv_file_ls = file_list(input_folder, 'amv')
+        newamv_orgamv_dict = self.format_copy_amvfile(amv_file_ls)
         # 拆帧
-        self.pool_run(amv_de, amv_newfile_oldstem_dict.keys())
+        self.pool_run(self.amv_de, newamv_orgamv_dict.keys())
         # 将图片改名并移动到目标文件夹
         png_sequence_folder_ls = []
-        for new_amv_file in amv_newfile_oldstem_dict.keys():
-            new_amv_file.unlink()
-            png_sequence_folder = output_folder/amv_newfile_oldstem_dict[new_amv_file]
-            png_sequence_folder.mkdir(parents=True)
+        for new_amv_file, org_amv_file in newamv_orgamv_dict.items():
+            png_sequence_folder = output_folder/org_amv_file.with_name(org_amv_file.stem).relative_to(input_folder)
+            png_sequence_folder.mkdir(parents=True, exist_ok=True)
             png_sequence_folder_ls.append(png_sequence_folder)
             # 重命名图片并移动
             for png_file in file_list(self.amv_de_folder, 'png'):
                 name_part_ls = png_file.stem.split('_')
                 if name_part_ls[0] == new_amv_file.stem:
-                    name_part_ls[0] = amv_newfile_oldstem_dict[new_amv_file]
-                    name_part_ls[1] = '%04d' % int(name_part_ls[1])
+                    name_part_ls[1] = '%05d' % int(name_part_ls[1])
                     name_fmt = ''.join(name_part_ls)+'.png'
                     tmp_path = self.amv_de_folder/name_fmt
                     png_file.replace(tmp_path)
@@ -659,69 +672,121 @@ class Kirikiri(Core):
         return png_sequence_folder_ls
 
     def format_copy_amvfile(self, amv_file_ls):
-        [fcopy(amv_file, self.amv_de_folder) for amv_file in amv_file_ls]
-        old_amv_file_ls = file_list(self.amv_de_folder, 'amv')
-        amv_newfile_oldstem_dict = {}
-        for new_amv_name_index, old_amv_file in enumerate(old_amv_file_ls, start=1):
-            new_amv_file = self.amv_de_folder/('%03d.amv' % new_amv_name_index)
-            amv_newfile_oldstem_dict[new_amv_file] = old_amv_file.stem
-            old_amv_file.replace(new_amv_file)
-        return amv_newfile_oldstem_dict
+        """
+        @brief      复制列表中的amv文件并改名
+
+        @param      amv_file_ls  amv文件路径列表
+
+        @return     返回键为新amv文件路径，对应值为原amv文件路径的字典
+        """
+        # 清空文件夹
+        if self.amv_de_folder.exists():
+            shutil.rmtree(self.amv_de_folder)
+        self.amv_de_folder.mkdir(parents=True)
+        newamv_orgamv_dict = {}
+        for new_amv_name_index, amv_file in enumerate(amv_file_ls, start=1):
+            tmp_amv_file = fcopy(amv_file, self.amv_de_folder)
+            new_amv_file = tmp_amv_file.with_name('%03d.amv' % new_amv_name_index)
+            newamv_orgamv_dict[new_amv_file] = amv_file
+            tmp_amv_file.replace(new_amv_file)
+        return newamv_orgamv_dict
 
     def amv_de(self, amv_file):
         '''
         拆分amv动画为png序列
         '''
         amv_de_p = subprocess.run([self.amv_de_exe, '-amvpath='+str(amv_file)], capture_output=True)
+        amv_file.unlink()
 
     def amv_en(self, png_sequence_folder):
         '''
         将png序列合并为amv动画
         '''
-        output_amv = png_sequence_folder.with_suffix('.amv')
-        amv_en_p = subprocess.run([self.amv_en_exe, '--quality', '100', png_sequence_folder, output_amv], capture_output=True)
-        return output_amv
+        # 目标amv文件
+        target_amv = png_sequence_folder.with_suffix('.amv')
+        # 临时名称防乱码和空格及特殊字符
+        tmp_stem = self.create_str()
+        tmp_folder = png_sequence_folder.with_name(tmp_stem)
+        png_sequence_folder.replace(tmp_folder)
+        tmp_amv = tmp_folder.with_suffix('.amv')
+        # 运行
+        options = [self.amv_en_exe,
+                   '--png', '--zlib',
+                   '--quality', '100',
+                   tmp_folder, tmp_amv
+                   ]
+        amv_en_p = subprocess.run(options, capture_output=True)
+        # 改名
+        tmp_folder.replace(png_sequence_folder)
+        tmp_amv.replace(target_amv)
+        return target_amv
 
     """
     ==================================================
-    Kirikiri引擎视频文件：mpg, mpeg, wmv, avi
+    Kirikiri引擎视频文件：mpg, mpeg, wmv, avi, mkv
     ==================================================
     """
 
     def video2x(self):
         print('开始处理游戏视频......')
-        video_extension_ls = ['mpg', 'mpeg', 'wmv', 'avi']
+        video_extension_ls = ['mpg', 'mpeg', 'wmv', 'avi', 'mkv']
         for video_extension in video_extension_ls:
-            video_folder = self.tmp_folder/video_extension
-            video_ls = file_list(self.game_data, video_extension)
-            if video_ls:
-                print(f'{video_extension}视频放大中......')
-                os.mkdir(video_folder)
-                [fcopy(video_file, video_folder) for video_file in video_ls]
-                for video_file in file_list(video_folder, video_extension):
+            org_video_ls = patch9_first(file_list(self.game_data, video_extension))
+            if org_video_ls:
+                for video_file in org_video_ls:
+                    output_video = self.a2t(video_file)
                     output_vcodec = None
-                    if self.get_video_codec(video_file) == 'wmv3':
+                    if self.video_info(video_file)['vcodec'] == 'wmv3':
                         output_vcodec = 'wmv2'
-                    tmp_video_path = self.video_scale(video_file, output_extension=None, output_vcodec=output_vcodec)
-                    fmove(tmp_video_path, self.patch_folder)
-                shutil.rmtree(video_folder)
+                    output_video = self.video_upscale(video_file, output_video, output_vcodec=output_vcodec)
+                    fmove(output_video, self.t2p(output_video).parent)
+                self.tmp_clear()
 
 
 def patch9_first(file_ls) -> list:
-    '''
-    适用于Kirikiri 2/Z Engine引擎：如果存在重复文件，文件优先级依次从patch9文件夹到patch文件夹
-    '''
+    """
+    @brief      对于重名文件，含有patch后缀数字大的文件夹子目录中的文件优先
+
+    @param      file_ls  文件列表
+
+    @return     筛选后的文件列表
+    """
+    path_name_dict = {}
+    for file in file_ls:
+        path_name_dict[file] = file.name
     new_file_ls = []
-    for i in file_ls:
+    for i, i_name in path_name_dict.items():
         still_alive = True
-        for j in file_ls:
-            if j.name == i.name:
-                if 'patch' in j.parent.name:
-                    if 'patch' in i.parent.name:
-                        if j.parent.name > i.parent.name:
+        for j, j_name in path_name_dict.items():
+            if j_name == i_name:
+                a = patch_num(i)
+                b = patch_num(j)
+                if b is not False:
+                    if a is not False:
+                        if b > a:
                             still_alive = False
                     else:
                         still_alive = False
         if still_alive == True:
             new_file_ls.append(i)
     return new_file_ls
+
+
+def patch_num(file_path):
+    """
+    @brief      如果是patch文件夹，返回patch文件夹后缀数字，否则False
+
+    @param      file_path  文件路径
+
+    @return     数字或False
+    """
+    for folder_name in get_parent_names(file_path):
+        try:
+            if folder_name[:5] == 'patch':
+                if len(folder_name) == 5:
+                    return 0
+                else:
+                    return int(folder_name[5:])
+        except:
+            pass
+    return False

@@ -23,7 +23,7 @@ class KirikiriPart(FTabWidget):
         self.addTab(self.work_up_frame, '重制后处理')
 
         self.setup_krkr_zip()
-        self.addTab(self.krkr_zip_frame, '一键高压')
+        self.addTab(self.krkr_zip_frame, '存储优化')
 
         self.setup_connections()
 
@@ -170,6 +170,7 @@ class KirikiriPart(FTabWidget):
 
     def setup_stand_correction(self):
         self.stand_crt_btn = QRadioButton('对话框头像修正：')
+        self.stand_crt_btn.setChecked(True)
         layout = QHBoxLayout()
         self.work_up_layout.addRow(self.stand_crt_btn, layout)
 

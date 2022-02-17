@@ -37,7 +37,7 @@ class MainUI(QMainWindow):
 
     def initUI(self):
         # 设置标题
-        self.setWindowTitle('VNC')
+        self.setWindowTitle('Visual Novel Clearer')
         # 移除标题栏
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)

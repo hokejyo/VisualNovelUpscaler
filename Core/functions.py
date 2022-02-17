@@ -7,6 +7,7 @@ import csv
 import png
 import json
 import time
+import uuid
 import shutil
 import logging
 import traceback
@@ -44,38 +45,63 @@ def get_gpu_id(GPU_name) -> str:
     return GPU_ID
 
 
-def fcopy(src, dst):
+def p2p(input_file, input_folder, output_folder) -> Path:
+    """
+    @brief      返回相对于输入文件夹目录结构在输出文件夹的路径
+
+    @param      input_file     输入文件
+    @param      input_folder   输入文件夹路径
+    @param      output_folder  输出文件夹路径
+
+    @return     目标文件路径
+    """
+    input_file = Path(input_file).resolve()
+    input_folder = Path(input_folder).resolve()
+    output_folder = Path(output_folder).resolve()
+    target_file = output_folder/input_file.relative_to(input_folder)
+    if not target_file.parent.exists():
+        target_file.parent.mkdir(parents=True)
+    return target_file
+
+
+def fcopy(src, dst) -> Path:
     """
     @brief      复制文件到文件夹
-
+    
     @param      src   源文件
     @param      dst   目标文件夹
+    
+    @return     目标文件路径
     """
-    src = Path(src)
-    dst = Path(dst)
+    src = Path(src).resolve()
+    dst = Path(dst).resolve()
     target_file = dst/(src.name)
     if target_file.exists():
         target_file.unlink()
     if not dst.exists():
-        dst.makedir(parents=True)
+        dst.mkdir(parents=True)
     shutil.copy(src, dst)
+    return target_file
 
 
-def fmove(src, dst):
+def fmove(src, dst) -> Path:
     """
     @brief      移动文件到文件夹
-
+    
     @param      src   源文件
     @param      dst   目标文件夹
+    
+    @return     目标文件路径
     """
-    src = Path(src)
-    dst = Path(dst)
+    src = Path(src).resolve()
+    dst = Path(dst).resolve()
     target_file = dst/(src.name)
     if target_file.exists():
         target_file.unlink()
     if not dst.exists():
-        dst.makedir(parents=True)
+        dst.mkdir(parents=True)
     shutil.move(src, dst)
+    return target_file
 
 
 def get_parent_names(file_path) -> list:
@@ -132,21 +158,28 @@ def real_digit(str1) -> bool:
         return False
 
 
-def pattern_num2x(line, line_c, scale_ratio, test_mode=False) -> str:
-    '''
-    将正则匹配结果中的行中的数字乘以放大倍数
-    '''
-    if test_mode == True:
+def pattern_num2x(re_result, scale_ratio, test_mode=False, line=None) -> str:
+    """
+    @brief      将正则匹配结果中的数字乘以放大倍数
+
+    @param      re_result    re.match()捕获的正则匹配结果
+    @param      scale_ratio  放大倍数
+    @param      test_mode    测试模式
+    @param      line         原始行字符串，需要test_mode为True
+
+    @return     放大数字后的行字符串
+    """
+    if test_mode:
         print(line, end='')
-    line_cc = list(line_c.groups())
-    for i in range(len(line_cc)):
-        if real_digit(line_cc[i]):
-            if test_mode == True:
-                print(line_cc[i])
-            line_cc[i] = str(int(float(line_cc[i])*scale_ratio))
-    line_cc = [i for i in line_cc if i != None]
-    line = ''.join(line_cc)
-    if test_mode == True:
+    re_result_ls = list(re_result.groups())
+    for i in range(len(re_result_ls)):
+        if real_digit(re_result_ls[i]):
+            if test_mode:
+                print(re_result_ls[i])
+            re_result_ls[i] = str(int(float(re_result_ls[i])*scale_ratio))
+    re_result_ls = [i for i in re_result_ls if i != None]
+    line = ''.join(re_result_ls)
+    if test_mode:
         print(line, end='\n'*2)
     return line
 

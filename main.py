@@ -27,87 +27,49 @@ class VisualNovelClearer(Core, SettingPageUIConnection):
     def game_page_run(self):
         self.input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip()).resolve()
         self.output_folder = Path(self.ui.gamepage.select_output_folder_line_edit.text().strip()).resolve()
-        if self.input_folder.exists() and self.input_folder.is_dir() and self.input_folder != Path('./').resolve():
+        # if self.input_folder.exists() and self.input_folder.is_dir() and self.input_folder != Path('./').resolve() and self.input_folder != self.output_folder:
+        #     if not self.output_folder.exists():
+        #         self.output_folder.mkdir(parents=True)
+        #     self.game_page_runner = GamePageRunner(self)
+        #     # 开始时锁定，防止重复操作
+        #     self.game_page_runner.start_sig.connect(self.start_game_page_runner_and_lock)
+        #     self.game_page_runner.finish_sig.connect(self.finish_game_page_runner_and_open)
+        #     self.game_page_runner.start()
+        # else:
+        #     warn_msg = QMessageBox()
+        #     reply = warn_msg.warning(self.ui, '输入路径错误', '请排除：\n1.输入路径必须是文件夹\n2.输出路径不能与输入路径相同', QMessageBox.Yes)
+
+        warn_message = None
+        if not self.input_folder.exists():
+            warn_message = '输入路径不存在'
+        elif not self.input_folder.is_dir():
+            warn_message = '输入路径需要是文件夹'
+        elif self.input_folder == Path('./').resolve() or self.output_folder == Path('./').resolve():
+            warn_message = '输入路径或输出路径不能与工作目录相同'
+        elif self.input_folder == self.output_folder:
+            warn_message = '输入路径和输出路径不能相同'
+        elif (self.image_sr_engine == 'real_cugan' or self.video_sr_engine == 'real_cugan') and self.ui.gamepage.kirikiri.custiom_ratio_spinbox.value() > 4:
+            warn_message = 'Real-Cugan仅支持4倍以下放大倍率'
+        if warn_message:
+            warn_msg = QMessageBox()
+            reply = warn_msg.warning(self.ui, '警告', warn_message+'!', QMessageBox.Yes)
+        else:
             if not self.output_folder.exists():
                 self.output_folder.mkdir(parents=True)
-            # # Kirikiri
-            # if self.ui.gamepage.game_engine_area.currentWidget() is self.ui.gamepage.kirikiri:
-            #     self.kirikiri_run()
-            # # Artemis
-            # elif self.ui.gamepage.game_engine_area.currentWidget() is self.ui.gamepage.artemis:
-            #     self.artemis_run()
-
             self.game_page_runner = GamePageRunner(self)
             # 开始时锁定，防止重复操作
-            self.game_page_runner.start_sig.connect(self.start_game_page_runner)
+            self.game_page_runner.start_sig.connect(self.start_game_page_runner_and_lock)
+            self.game_page_runner.finish_sig.connect(self.finish_game_page_runner_and_open)
             self.game_page_runner.start()
-        else:
-            path_warn_msg = QMessageBox()
-            reply = path_warn_msg.warning(self.ui, '输入路径错误', '输入路径必须是文件夹！', QMessageBox.Yes)
 
-    def start_game_page_runner(self):
+    def start_game_page_runner_and_lock(self):
         start_info_msg = QMessageBox()
         reply = start_info_msg.information(self.ui, '开始处理中', '请耐心等待，切勿重复操作！', QMessageBox.Yes)
 
-    # def game_page_run_behaviour(self):
-    #     self.input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip()).resolve()
-    #     self.output_folder = Path(self.ui.gamepage.select_output_folder_line_edit.text().strip()).resolve()
-    #     if self.input_folder.exists() and self.input_folder.is_dir() and self.input_folder != Path('./').resolve():
-    #         # Kirikiri
-    #         if self.ui.gamepage.game_engine_area.currentWidget() is self.ui.gamepage.kirikiri:
-    #             self.kirikiri_run()
-    #         # Artemis
-    #         elif self.ui.gamepage.game_engine_area.currentWidget() is self.ui.gamepage.artemis:
-    #             self.artemis_run()
-    #     else:
-    #         tip_msg = QMessageBox()
-    #         reply = tip_msg.warning(self.ui, '输入路径错误', '输入路径必须是文件夹！', QMessageBox.Yes)
-
-    # def kirikiri_run(self):
-    #     # 给ui起个别名
-    #     ugk = self.ui.gamepage.kirikiri
-    #     if ugk.currentWidget() is ugk.hd_parts_frame:
-    #         # 设置放大部分
-    #         run_dict = {}
-    #         run_dict['script'] = ugk.text_part.isChecked()
-    #         run_dict['ui'] = ugk.ui_part.isChecked()
-    #         run_dict['image'] = ugk.image_part.isChecked()
-    #         run_dict['animation'] = ugk.animation_part.isChecked()
-    #         run_dict['video'] = ugk.video_part.isChecked()
-
-    #         kirikiri_upscaler = KirikiriUpscaler(self.input_folder,self.output_folder,run_dict)
-    #         kirikiri_upscaler.strat()
-
-        # # 设置输入、输出路径及放大倍率
-        # kirikiri.set_game_data(self.input_folder)
-        # kirikiri.patch_folder = self.output_folder
-        # kirikiri.scale_ratio = ugk.custiom_ratio_spinbox.value()
-        # # 设置放大部分
-        # kirikiri.run_dict['script'] = ugk.text_part.isChecked()
-        # kirikiri.run_dict['ui'] = ugk.ui_part.isChecked()
-        # kirikiri.run_dict['image'] = ugk.image_part.isChecked()
-        # kirikiri.run_dict['animation'] = ugk.animation_part.isChecked()
-        # kirikiri.run_dict['video'] = ugk.video_part.isChecked()
-        # kirikiri.upscale()
-        # elif ugk.currentWidget() is ugk.work_up_frame:
-        #     pass
-    # def artemis_run(self):
-    #     artemis = Artemis()
-    #     # 给ui起个别名
-    #     uga = self.ui.gamepage.artemis
-    #     if uga.currentWidget() is uga.hd_parts_frame:
-    #         # 设置输入、输出路径及放大倍率
-    #         artemis.set_game_data(self.input_folder)
-    #         artemis.patch_folder = self.output_folder
-    #         artemis.scale_ratio = uga.custiom_ratio_spinbox.value()
-    #         # 设置放大部分
-    #         artemis.run_dict['script'] = uga.text_part.isChecked()
-    #         artemis.run_dict['image'] = uga.image_part.isChecked()
-    #         artemis.run_dict['animation'] = uga.animation_part.isChecked()
-    #         artemis.run_dict['video'] = uga.video_part.isChecked()
-    #         artemis.upscale()
-    #     elif uga.currentWidget() is uga.work_up_frame:
-    #         pass
+    def finish_game_page_runner_and_open(self, info_str=''):
+        finish_info_msg = QMessageBox()
+        reply = finish_info_msg.information(self.ui, '处理完成', f'{info_str}\n是否打开输出文件夹?', QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        os.system(f'start {self.output_folder}') if reply == QMessageBox.Yes else None
 
 
 if __name__ == '__main__':

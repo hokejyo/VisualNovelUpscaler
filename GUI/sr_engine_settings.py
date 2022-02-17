@@ -32,6 +32,39 @@ class Waifu2xNCNNSettings(QFrame):
         layout.addRow(self.load_proc_save_lb, self.load_proc_save_line_edit)
 
 
+class RealCUGNSettings(QFrame):
+
+    def __init__(self):
+        QFrame.__init__(self)
+        layout = QFormLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
+
+        self.noise_level_lb = QLabel('降噪等级：')
+        self.noise_level_spinbox = QSpinBox()
+        self.noise_level_spinbox.setRange(-1, 3)
+        layout.addRow(self.noise_level_lb, self.noise_level_spinbox)
+
+        self.tile_size_lb = QLabel('分割尺寸：')
+        self.tile_size_line_edit = FLineEdit()
+        layout.addRow(self.tile_size_lb, self.tile_size_line_edit)
+
+        self.sync_gap_mode_lb = QLabel('同步间隙等级：')
+        self.sync_gap_mode_spinbox = QSpinBox()
+        self.sync_gap_mode_spinbox.setRange(0, 2)
+        layout.addRow(self.sync_gap_mode_lb, self.sync_gap_mode_spinbox)
+
+        self.modle_name_lb = QLabel('超分模型选择：')
+        self.modle_name_combobox = QComboBox()
+        layout.addRow(self.modle_name_lb, self.modle_name_combobox)
+        self.modle_name_combobox.addItems(['models-se', 'models-nose'])
+
+        self.load_proc_save_lb = QLabel('显卡线程分配：')
+        self.load_proc_save_line_edit = FLineEdit()
+        self.load_proc_save_line_edit = FLineEdit(place_holder_text='解码:放大:编码')
+        layout.addRow(self.load_proc_save_lb, self.load_proc_save_line_edit)
+
+
 class RealESRGANSettings(QFrame):
 
     def __init__(self):
@@ -99,3 +132,16 @@ class RealSRNCNNSettings(QFrame):
         self.load_proc_save_line_edit = FLineEdit()
         self.load_proc_save_line_edit = FLineEdit(place_holder_text='解码:放大:编码')
         layout.addRow(self.load_proc_save_lb, self.load_proc_save_line_edit)
+
+
+class Anime4KSettings(QFrame):
+
+    def __init__(self):
+        QFrame.__init__(self)
+        layout = QFormLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
+
+        self.acnet_lb = QLabel('ACNet')
+        self.acnet_checkbox = QCheckBox()
+        layout.addRow(self.acnet_lb, self.acnet_checkbox)
