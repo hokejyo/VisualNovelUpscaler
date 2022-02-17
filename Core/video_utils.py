@@ -14,7 +14,7 @@ class VideoUtils(object):
 
         @param      input_video  输入视频
 
-        @return     视频信息字典
+        @return     返回视频信息字典，非常规编码视频返回空字典
         """
         input_video = Path(input_video)
         options = [self.ffprobe,
@@ -25,29 +25,33 @@ class VideoUtils(object):
                    ]
         get_video_info_p = subprocess.run(options, capture_output=True)
         unsort_video_info = json.loads(get_video_info_p.stdout.decode('utf-8'))
-        if len(unsort_video_info['streams']) == 1:
-            video = 0
-            audio = None
-        elif unsort_video_info['streams'][0]['codec_type'] == 'video' and unsort_video_info['streams'][1]['codec_type'] == 'audio':
-            video = 0
-            audio = 1
-        elif unsort_video_info['streams'][1]['codec_type'] == 'video' and unsort_video_info['streams'][0]['codec_type'] == 'audio':
-            video = 1
-            audio = 0
-        video_info = {}
-        video_info['vcodec'] = unsort_video_info['streams'][video]['codec_name']
-        video_info['width'] = unsort_video_info['streams'][video]['width']
-        video_info['height'] = unsort_video_info['streams'][video]['height']
-        try:
-            video_info['frame_rate'] = '%.2f' % eval(unsort_video_info['streams'][video]['avg_frame_rate'])
-        except:
-            video_info['frame_rate'] = '%.2f' % eval(unsort_video_info['streams'][video]['r_frame_rate'])
-        # video_info['bit_rate'] = unsort_video_info['streams'][video]['bit_rate']
-        video_info['video_duration'] = unsort_video_info['streams'][video]['duration']
-        if audio != None:
-            video_info['acodec'] = unsort_video_info['streams'][audio]['codec_name']
-            video_info['audio_duration'] = unsort_video_info['streams'][audio]['duration']
-        return video_info
+        # 非常规编码视频返回空字典
+        if not unsort_video_info:
+            return unsort_video_info
+        else:
+            if len(unsort_video_info['streams']) == 1:
+                video = 0
+                audio = None
+            elif unsort_video_info['streams'][0]['codec_type'] == 'video' and unsort_video_info['streams'][1]['codec_type'] == 'audio':
+                video = 0
+                audio = 1
+            elif unsort_video_info['streams'][1]['codec_type'] == 'video' and unsort_video_info['streams'][0]['codec_type'] == 'audio':
+                video = 1
+                audio = 0
+            video_info = {}
+            video_info['vcodec'] = unsort_video_info['streams'][video]['codec_name']
+            video_info['width'] = unsort_video_info['streams'][video]['width']
+            video_info['height'] = unsort_video_info['streams'][video]['height']
+            try:
+                video_info['frame_rate'] = '%.2f' % eval(unsort_video_info['streams'][video]['avg_frame_rate'])
+            except:
+                video_info['frame_rate'] = '%.2f' % eval(unsort_video_info['streams'][video]['r_frame_rate'])
+            # video_info['bit_rate'] = unsort_video_info['streams'][video]['bit_rate']
+            video_info['video_duration'] = unsort_video_info['streams'][video]['duration']
+            if audio != None:
+                video_info['acodec'] = unsort_video_info['streams'][audio]['codec_name']
+                video_info['audio_duration'] = unsort_video_info['streams'][audio]['duration']
+            return video_info
 
     def vcodec_trans(self, input_video, output_video, output_vcodec):
         """
@@ -65,7 +69,7 @@ class VideoUtils(object):
                    '-q:v', self.output_video_quality(output_vcodec),
                    output_video
                    ]
-        format_trans_p = subprocess.run(options, capture_output=False)
+        format_trans_p = subprocess.run(options, capture_output=True)
         return output_video
 
     def video2png(self, input_video, output_folder):
@@ -91,7 +95,7 @@ class VideoUtils(object):
                    '-threads', str(self.cpu_cores),
                    png_sequence
                    ]
-        video2png_p = subprocess.run(options, capture_output=False)
+        video2png_p = subprocess.run(options, capture_output=True)
         return png_sequence
 
     def output_video_quality(self, output_vcodec) -> str:
@@ -140,7 +144,7 @@ class VideoUtils(object):
                    '-threads', str(self.cpu_cores),
                    output_video
                    ]
-        png2video_p = subprocess.run(options, capture_output=False)
+        png2video_p = subprocess.run(options, capture_output=True)
         return output_video
 
     def video_upscale(self, input_video, output_video, output_vcodec=None):
@@ -163,6 +167,9 @@ class VideoUtils(object):
         tmp_output_png_folder.mkdir(parents=True, exist_ok=True)
         png_sequence = self.video2png(input_video, tmp_output_png_folder)
         self.image_upscale(tmp_output_png_folder, tmp_output_png_folder, video_mode=True)
+        # 输入输出相同时将输入文件夹重命名
+        if input_video == output_video:
+            input_video = input_video.replace(input_video.with_name(f'{input_video.stem}_old_{input_video.suffix}'))
         self.png2video(png_sequence, input_video, output_video, output_vcodec)
         shutil.rmtree(tmp_output_png_folder)
         return output_video

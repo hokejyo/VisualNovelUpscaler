@@ -22,14 +22,14 @@ class KirikiriPart(FTabWidget):
         self.setup_work_up()
         self.addTab(self.work_up_frame, '重制后处理')
 
-        self.setup_krkr_zip()
-        self.addTab(self.krkr_zip_frame, '存储优化')
+        self.setup_zip()
+        self.addTab(self.zip_frame, '存储优化')
 
         self.setup_connections()
 
-    def setup_krkr_zip(self):
-        self.krkr_zip_frame = QFrame()
-        layout = QVBoxLayout(self.krkr_zip_frame)
+    def setup_zip(self):
+        self.zip_frame = QFrame()
+        layout = QVBoxLayout(self.zip_frame)
         layout.addWidget(QLabel('正在开发中...'))
 
     def setup_hd_parts(self):
@@ -118,13 +118,13 @@ class KirikiriPart(FTabWidget):
         layout2.addLayout(hlayout)
 
         self.patch_mode_lb = QLabel('高清补丁输出：')
-        layout3 = QHBoxLayout()
-        layout1.addRow(self.patch_mode_lb, layout3)
-        self.rp_mode_btn = QRadioButton('覆盖模式')
-        self.ad_mode_btn = QRadioButton('增量模式')
-        layout3.addWidget(self.rp_mode_btn)
-        layout3.addWidget(self.ad_mode_btn)
-        self.rp_mode_btn.setChecked(True)
+        self.keep_mode_btn = QCheckBox('保持目录结构')
+        layout1.addRow(self.patch_mode_lb, self.keep_mode_btn)
+        # layout3 = QHBoxLayout()
+        # self.ad_mode_btn = QRadioButton('增量模式')
+        # layout3.addWidget(self.rp_mode_btn)
+        # layout3.addWidget(self.ad_mode_btn)
+        self.keep_mode_btn.setChecked(True)
 
     def setup_work_up(self):
         self.work_up_frame = QFrame()
@@ -169,7 +169,7 @@ class KirikiriPart(FTabWidget):
                 self.amv_out.addItems(['amv'])
 
     def setup_stand_correction(self):
-        self.stand_crt_btn = QRadioButton('对话框头像修正：')
+        self.stand_crt_btn = QRadioButton('对话框头像调整：')
         self.stand_crt_btn.setChecked(True)
         layout = QHBoxLayout()
         self.work_up_layout.addRow(self.stand_crt_btn, layout)

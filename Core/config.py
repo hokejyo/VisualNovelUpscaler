@@ -33,7 +33,7 @@ class Config(object):
             # Real-CUGAN相关配置
             self.vnc_config.add_section('real_cugan')
             self.vnc_config.set('real_cugan', 'noise_level', '3')
-            self.vnc_config.set('real_cugan', 'tile_size', '0')
+            self.vnc_config.set('real_cugan', 'tile_size', '200')
             self.vnc_config.set('real_cugan', 'sync_gap_mode', '2')
             self.vnc_config.set('real_cugan', 'model_name', 'models-se')
             self.vnc_config.set('real_cugan', 'load_proc_save', '1:2:2')
@@ -85,7 +85,7 @@ class Config(object):
         self.vnc_config.read(self.vnc_config_file)
         self.cpu_cores = self.vnc_config.getint('General', 'cpu_cores')
         self.gpu_id = self.vnc_config.get('General', 'gpu_id')
-        self.encoding_list = self.vnc_config.get('General', 'encoding_list').split(',')
+        self.encoding_list = [encoding.strip() for encoding in self.vnc_config.get('General', 'encoding_list').split(',')]
         self.image_sr_engine = self.vnc_config.get('General', 'image_sr_engine')
         self.video_sr_engine = self.vnc_config.get('General', 'video_sr_engine')
         self.tta = self.vnc_config.get('General', 'tta')
@@ -103,6 +103,7 @@ class Config(object):
         self.real_cugan_noise_level = self.vnc_config.get('real_cugan', 'noise_level')
         self.real_cugan_tile_size = self.vnc_config.get('real_cugan', 'tile_size')
         self.real_cugan_sync_gap_mode = self.vnc_config.get('real_cugan', 'sync_gap_mode')
+        # self.real_cugan_model_path = self.vnc_config.get('real_cugan', 'model_name')
         self.real_cugan_model_name = self.vnc_config.get('real_cugan', 'model_name')
         self.real_cugan_model_path = self.real_cugan_exe.parent/self.real_cugan_model_name
         self.real_cugan_load_proc_save = self.vnc_config.get('real_cugan', 'load_proc_save')

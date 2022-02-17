@@ -386,7 +386,9 @@ class Kirikiri(Core):
         '''
         对话框人物立绘后处理
         '''
-        stand_file_ls = file_list(self.input_folder, 'stand')
+        input_folder = Path(input_folder).resolve()
+        output_folder = Path(output_folder).resolve()
+        stand_file_ls = file_list(input_folder, 'stand')
         pattern = re.compile(r'(.*?)(-?\d+)(.*)')
         for stand_file in stand_file_ls:
             result = []
@@ -543,7 +545,7 @@ class Kirikiri(Core):
         input_folder = Path(input_folder)
         output_folder = Path(output_folder)
         tlg_file_ls = file_list(input_folder, 'tlg')
-        output_png_file_ls = pool_run(self.tlg2png, tlg_file_ls)
+        output_png_file_ls = self.pool_run(self.tlg2png, tlg_file_ls)
         target_png_file_ls = []
         for output_png_file in output_png_file_ls:
             target_png_file = p2p(output_png_file, input_folder, output_folder)
@@ -576,6 +578,26 @@ class Kirikiri(Core):
             target_tlg_file = p2p(tlg_file, input_folder, output_folder)
             fmove(tlg_file, target_tlg_file.parent)
             target_tlg_file_ls.append(target_tlg_file)
+        return target_tlg_file_ls
+
+    def tlg2tlg_batch(self, input_folder, output_folder, tlg5_mode=False) -> list:
+        """
+        @brief      tlg转tlg6或tlg5
+
+        @param      input_folder   输入文件夹
+        @param      output_folder  输出文件夹
+        @param      tlg5_mode      输出tlg5
+
+        @return     tlg图片路径列表
+        """
+        input_folder = Path(input_folder)
+        output_folder = Path(output_folder)
+        tmp_folder = output_folder.parent/('tmp_'+self.create_str())
+        if not tmp_folder.exists():
+            tmp_folder.mkdir(parents=True)
+        tmp_png_ls = self.tlg2png_batch(input_folder, tmp_folder)
+        target_tlg_file_ls = self.png2tlg_batch(tmp_folder, output_folder, tlg5_mode=tlg5_mode)
+        shutil.rmtree(tmp_folder)
         return target_tlg_file_ls
 
     def tlg2png(self, tlg_file) -> Path:

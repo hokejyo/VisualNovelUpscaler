@@ -27,17 +27,6 @@ class VisualNovelClearer(Core, SettingPageUIConnection):
     def game_page_run(self):
         self.input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip()).resolve()
         self.output_folder = Path(self.ui.gamepage.select_output_folder_line_edit.text().strip()).resolve()
-        # if self.input_folder.exists() and self.input_folder.is_dir() and self.input_folder != Path('./').resolve() and self.input_folder != self.output_folder:
-        #     if not self.output_folder.exists():
-        #         self.output_folder.mkdir(parents=True)
-        #     self.game_page_runner = GamePageRunner(self)
-        #     # 开始时锁定，防止重复操作
-        #     self.game_page_runner.start_sig.connect(self.start_game_page_runner_and_lock)
-        #     self.game_page_runner.finish_sig.connect(self.finish_game_page_runner_and_open)
-        #     self.game_page_runner.start()
-        # else:
-        #     warn_msg = QMessageBox()
-        #     reply = warn_msg.warning(self.ui, '输入路径错误', '请排除：\n1.输入路径必须是文件夹\n2.输出路径不能与输入路径相同', QMessageBox.Yes)
 
         warn_message = None
         if not self.input_folder.exists():
@@ -52,7 +41,7 @@ class VisualNovelClearer(Core, SettingPageUIConnection):
             warn_message = 'Real-Cugan仅支持4倍以下放大倍率'
         if warn_message:
             warn_msg = QMessageBox()
-            reply = warn_msg.warning(self.ui, '警告', warn_message+'!', QMessageBox.Yes)
+            reply = warn_msg.warning(self.ui, '提示', warn_message+'!', QMessageBox.Yes)
         else:
             if not self.output_folder.exists():
                 self.output_folder.mkdir(parents=True)

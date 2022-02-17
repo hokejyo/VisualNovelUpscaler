@@ -25,9 +25,10 @@ class ImageUtils(object):
     def png_text_2x(self, text_chunk, scale_ratio) -> tuple:
         """
         @brief      将png图片中的文本信息中的数字放大(适用于部分将坐标存储在png图片中的游戏)
-
-        @param      text_chunk  文本信息元组
-
+        
+        @param      text_chunk   文本信息元组
+        @param      scale_ratio  放大倍数
+        
         @return     放大后的文本信息元组
         """
         text_ls = list(text_chunk)
@@ -198,6 +199,9 @@ class ImageUtils(object):
                 # 将指定放大倍数转换成Real-CUGAN支持的放大倍数
                 if self.scale_ratio <= 4:
                     actiual_scale_ratio = ceil(self.scale_ratio)
+                    # 等bug修复后删除下面两行
+                    # if actual_scale_ratio == 3:
+                    #     actual_scale_ratio = 4
                 else:
                     raise Exception('Real-Cugan仅支持4倍以下放大倍率!')
                     # actiual_scale_ratio = self.get_actual_scale_ratio(2)
@@ -263,7 +267,7 @@ class ImageUtils(object):
                            ]
         if self.tta == '0':
             options.remove('-x')
-        ncnn_vulkan_p=subprocess.run(options, capture_output=False)
+        ncnn_vulkan_p=subprocess.run(options, capture_output=True)
         # 获取临时文件夹中的图片列表
         tmp_image_ls=file_list(tmp_folder, 'png', walk_mode=False)
         # 缩放
@@ -310,12 +314,12 @@ class ImageUtils(object):
                    '-q',
                    '-d', self.gpu_id,
                    '-w',
-                   '-A',
+                   # '-A',
                    '-o', output_path
                    ]
         if self.anime4k_acnet == '0':
             options.remove('-w')
-        anime4k_p=subprocess.run(options, capture_output=False)
+        anime4k_p=subprocess.run(options, capture_output=True)
         # 获取临时文件夹中的图片列表
         tmp_image_ls=file_list(tmp_folder)
         # 缩放

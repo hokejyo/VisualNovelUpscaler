@@ -34,7 +34,8 @@ class TextsUtils(object):
             with open(text_file, newline='', encoding=self.encoding) as f:
                 lines = f.readlines()
                 current_encoding = self.encoding
-        except UnicodeDecodeError:
+        # except UnicodeDecodeError:
+        except:
             current_encoding = self.get_encoding(text_file)
             with open(text_file, newline='', encoding=current_encoding) as f:
                 lines = f.readlines()
@@ -73,4 +74,4 @@ class TextsUtils(object):
 
         @return     放大数字后的行字符串
         """
-        return pattern_num2x(re_result, self.scale_ratio, test_mode=False, line=None)
+        return pattern_num2x(re_result, self.scale_ratio, test_mode=test_mode, line=line)

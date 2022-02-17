@@ -9,6 +9,7 @@ class SettingPageUIConnection(object):
     def __init__(self):
         self.ui_setting_connections()
         self.ui_config_load()
+        self.ui.settingpage.sr_engine_combobox.setCurrentText('real_cugan')
 
     def ui_setting_connections(self):
         # 配置页面应用
@@ -72,7 +73,7 @@ class SettingPageUIConnection(object):
             # 通用设置
             self.vnc_config.set('General', 'cpu_cores', str(self.ui.settingpage.cpu_spinbox.value()))
             self.vnc_config.set('General', 'gpu_id', get_gpu_id(self.ui.settingpage.gpu_combobox.currentText()))
-            self.vnc_config.set('General', 'encoding_list', self.ui.settingpage.text_encoding_line_edit.text())
+            self.vnc_config.set('General', 'encoding_list', self.ui.settingpage.text_encoding_line_edit.text().strip())
             # 超分引擎
             self.vnc_config.set('General', 'image_sr_engine', self.ui.settingpage.image_sr_engine_combobox.currentText())
             self.vnc_config.set('General', 'video_sr_engine', self.ui.settingpage.video_sr_engine_combobox.currentText())
@@ -115,3 +116,4 @@ class SettingPageUIConnection(object):
         if reply == QMessageBox.Yes:
             self.reset_config()
             self.ui_config_load()
+            self.ui.settingpage.sr_engine_combobox.setCurrentText('real_cugan')

@@ -46,6 +46,8 @@ class SettingPage(QFrame):
 
     def setup_connections(self):
         self.sr_engine_combobox.currentTextChanged.connect(self.switch_image_sr_engine_settings)
+        self.image_sr_engine_combobox.currentTextChanged.connect(self.image_engine_auto_switch)
+        self.video_sr_engine_combobox.currentTextChanged.connect(self.video_engine_auto_switch)
 
     def setup_general_settings(self):
         self.general_setting_frame = QFrame()
@@ -112,10 +114,10 @@ class SettingPage(QFrame):
         # self.image_setting_frame.setMinimumHeight(188)
         # self.image_setting_frame.setMaximumHeight(188)
         layout.addRow(self.image_setting_stacks)
-        self.waifu2x_ncnn_settings = Waifu2xNCNNSettings()
-        self.image_setting_stacks.addWidget(self.waifu2x_ncnn_settings)
         self.real_cugan_settings = RealCUGNSettings()
         self.image_setting_stacks.addWidget(self.real_cugan_settings)
+        self.waifu2x_ncnn_settings = Waifu2xNCNNSettings()
+        self.image_setting_stacks.addWidget(self.waifu2x_ncnn_settings)
         self.real_esrgan_settings = RealESRGANSettings()
         self.image_setting_stacks.addWidget(self.real_esrgan_settings)
         self.srmd_ncnn_settings = SRMDNCNNSettings()
@@ -140,6 +142,14 @@ class SettingPage(QFrame):
                 self.image_setting_stacks.setCurrentWidget(self.realsr_ncnn_settings)
             case 'anime4k':
                 self.image_setting_stacks.setCurrentWidget(self.anime4k_settings)
+
+    def image_engine_auto_switch(self):
+        sr_engine = self.image_sr_engine_combobox.currentText()
+        self.sr_engine_combobox.setCurrentText(sr_engine)
+
+    def video_engine_auto_switch(self):
+        sr_engine = self.video_sr_engine_combobox.currentText()
+        self.sr_engine_combobox.setCurrentText(sr_engine)
 
     def setup_video_settings(self):
         self.video_setting_frame = QFrame()

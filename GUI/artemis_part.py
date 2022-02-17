@@ -4,9 +4,9 @@ from .qt_core import *
 from .flat_widgets import *
 
 
-class ArtemisPart(QFrame):
+class ArtemisPart(FTabWidget):
     def __init__(self):
-        QFrame.__init__(self)
+        FTabWidget.__init__(self, height=40, position='top')
         self.icon_folder = Path('./').resolve()/'Icons'
         self.initUI()
         self.set_ratio_state()
@@ -15,24 +15,22 @@ class ArtemisPart(QFrame):
         self.set_game_resolution(1280, 720)
 
     def initUI(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 0, 10, 0)
-
-        self.super_resolution_lb = QLabel('高清重制')
-        self.super_resolution_lb.setStyleSheet("font: 700 12pt 'Segoe UI'")
-        layout.addWidget(self.super_resolution_lb)
 
         self.setup_hd_parts()
-        layout.addWidget(self.hd_parts_frame)
-
-        self.work_up_lb = QLabel('后处理')
-        self.work_up_lb.setStyleSheet("font: 700 12pt 'Segoe UI'")
-        layout.addWidget(self.work_up_lb)
+        self.addTab(self.hd_parts_frame, '高清重制')
 
         self.setup_work_up()
-        layout.addWidget(self.work_up_frame)
+        self.addTab(self.work_up_frame, '重制后处理')
+
+        # self.setup_zip()
+        # self.addTab(self.zip_frame, '存储优化')
 
         self.setup_connections()
+
+    def setup_zip(self):
+        self.zip_frame = QFrame()
+        layout = QVBoxLayout(self.zip_frame)
+        layout.addWidget(QLabel('正在开发中...'))
 
     def setup_hd_parts(self):
         self.hd_parts_frame = QFrame()
@@ -45,7 +43,6 @@ class ArtemisPart(QFrame):
         layout.addWidget(self.select_run_parts_frame, 1)
 
     def setup_choose_resolution(self):
-
         self.choose_resolution_Frame = QFrame()
         layout1 = QFormLayout(self.choose_resolution_Frame)
         self.choose_resolution_lb = QLabel('分辨率设定：')
@@ -88,12 +85,12 @@ class ArtemisPart(QFrame):
         layout2.addWidget(self.s4k_btn)
         layout2.addLayout(formlayout2)
         # 分组
-        self.buttonGroup = QButtonGroup()
-        self.buttonGroup.addButton(self.s1080p_btn)
-        self.buttonGroup.addButton(self.s2k_btn)
-        self.buttonGroup.addButton(self.s4k_btn)
-        self.buttonGroup.addButton(self.custiom_ratio_btn)
-        self.buttonGroup.addButton(self.custom_resolution_btn)
+        self.sr_group = QButtonGroup()
+        self.sr_group.addButton(self.s1080p_btn)
+        self.sr_group.addButton(self.s2k_btn)
+        self.sr_group.addButton(self.s4k_btn)
+        self.sr_group.addButton(self.custiom_ratio_btn)
+        self.sr_group.addButton(self.custom_resolution_btn)
 
     def setup_select_run_parts(self):
         self.select_run_parts_frame = QFrame()
@@ -103,6 +100,7 @@ class ArtemisPart(QFrame):
         layout2 = QVBoxLayout()
         layout2.setContentsMargins(0, 4, 0, 0)
         layout1.addRow(self.game_part_lb, layout2)
+
         self.text_part = QCheckBox('文本')
         self.image_part = QCheckBox('图片')
         self.animation_part = QCheckBox('动画')
@@ -119,12 +117,21 @@ class ArtemisPart(QFrame):
         layout2.addWidget(self.video_part)
         layout2.addLayout(hlayout)
 
+        self.patch_mode_lb = QLabel('高清补丁输出：')
+        self.keep_mode_btn = QCheckBox('保持目录结构')
+        layout1.addRow(self.patch_mode_lb, self.keep_mode_btn)
+        # layout3 = QHBoxLayout()
+        # self.ad_mode_btn = QRadioButton('增量模式')
+        # layout3.addWidget(self.rp_mode_btn)
+        # layout3.addWidget(self.ad_mode_btn)
+        self.keep_mode_btn.setChecked(True)
+        self.keep_mode_btn.setDisabled(True)
+
     def setup_work_up(self):
         self.work_up_frame = QFrame()
-        layout = QFormLayout(self.work_up_frame)
-
-        self.tlg6_convert = QLabel('TLG图片格式转换')
-        layout.addWidget(self.tlg6_convert)
+        self.work_up_layout = QFormLayout(self.work_up_frame)
+        self.work_up_layout.setContentsMargins(15, 25, 15, 0)
+        self.work_up_layout.setSpacing(15)
 
     def setup_connections(self):
         self.s1080p_btn.toggled.connect(self.s1080p_btn_ratio)
