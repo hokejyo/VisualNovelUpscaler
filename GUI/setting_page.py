@@ -28,11 +28,12 @@ class SettingPage(QFrame):
         layout.setContentsMargins(20, 0, 20, 20)
         self.setup_general_settings()
         layout.addWidget(self.general_setting_frame)
-        self.setup_sr_engine_settings()
+        self.setup_image_settings()
         layout.addWidget(self.image_setting_frame)
-
         self.setup_video_settings()
         layout.addWidget(self.video_setting_frame)
+        self.setup_sr_engine_settings()
+        layout.addWidget(self.image_setting_frame)
 
         spacer_mid1 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
         spacer_mid2 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
@@ -66,19 +67,6 @@ class SettingPage(QFrame):
         self.text_encoding_lb = QLabel('文本编码列表：')
         self.text_encoding_line_edit = FLineEdit(place_holder_text='使用英文逗号分隔，优先级从左到右')
         layout.addRow(self.text_encoding_lb, self.text_encoding_line_edit)
-        self.image_sr_engine_lb = QLabel('图片超分引擎：')
-        self.image_sr_engine_combobox = QComboBox()
-        image_sr_engine_list = [sr_engine for sr_engine in self.sr_engine_list]
-        image_sr_engine_list.remove('anime4k')
-        self.image_sr_engine_combobox.addItems(image_sr_engine_list)
-        layout.addRow(self.image_sr_engine_lb, self.image_sr_engine_combobox)
-        self.video_sr_engine_lb = QLabel('视频超分引擎：')
-        self.video_sr_engine_combobox = QComboBox()
-        self.video_sr_engine_combobox.addItems(self.sr_engine_list)
-        layout.addRow(self.video_sr_engine_lb, self.video_sr_engine_combobox)
-        self.tta_lb = QLabel('TTA模式：')
-        self.tta_checkbox = QCheckBox()
-        layout.addRow(self.tta_lb, self.tta_checkbox)
 
     def setup_bottom_bar(self):
         width = 60
@@ -110,9 +98,16 @@ class SettingPage(QFrame):
         self.sr_engine_combobox.addItems(self.sr_engine_list)
         layout.addRow(self.sr_engine_lb, self.sr_engine_combobox)
 
+        self.upscale_batch_size_lb = QLabel('单次批量大小：')
+        self.upscale_batch_size_spinbox = QSpinBox()
+        self.upscale_batch_size_spinbox.setRange(0, 100)
+        layout.addRow(self.upscale_batch_size_lb, self.upscale_batch_size_spinbox)
+
+        self.tta_lb = QLabel('TTA模式：')
+        self.tta_checkbox = QCheckBox()
+        layout.addRow(self.tta_lb, self.tta_checkbox)
+
         self.image_setting_stacks = QStackedWidget()
-        # self.image_setting_frame.setMinimumHeight(188)
-        # self.image_setting_frame.setMaximumHeight(188)
         layout.addRow(self.image_setting_stacks)
         self.real_cugan_settings = RealCUGNSettings()
         self.image_setting_stacks.addWidget(self.real_cugan_settings)
@@ -157,7 +152,24 @@ class SettingPage(QFrame):
         layout.setSpacing(5)
         self.video_setting_lb = QLabel('视频设置')
         layout.addRow(self.video_setting_lb)
+        self.video_sr_engine_lb = QLabel('视频超分引擎：')
+        self.video_sr_engine_combobox = QComboBox()
+        self.video_sr_engine_combobox.addItems(self.sr_engine_list)
+        layout.addRow(self.video_sr_engine_lb, self.video_sr_engine_combobox)
         self.video_quality_lb = QLabel('输出视频质量：')
         self.video_quality_spinbox = QSpinBox()
         self.video_quality_spinbox.setRange(0, 10)
         layout.addRow(self.video_quality_lb, self.video_quality_spinbox)
+
+    def setup_image_settings(self):
+        self.image_setting_frame = QFrame()
+        layout = QFormLayout(self.image_setting_frame)
+        layout.setSpacing(5)
+        self.image_setting_lb = QLabel('图片设置')
+        layout.addRow(self.image_setting_lb)
+        self.image_sr_engine_lb = QLabel('图片超分引擎：')
+        self.image_sr_engine_combobox = QComboBox()
+        image_sr_engine_list = [sr_engine for sr_engine in self.sr_engine_list]
+        image_sr_engine_list.remove('anime4k')
+        self.image_sr_engine_combobox.addItems(image_sr_engine_list)
+        layout.addRow(self.image_sr_engine_lb, self.image_sr_engine_combobox)

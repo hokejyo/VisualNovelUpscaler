@@ -44,12 +44,12 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
             if now_percent == 1:
                 print()
 
-    def pool_run(self, target, runs: list, *args) -> list:
+    def pool_run(self, target, runs, *args) -> list:
         """
         @brief      使用进程池多进程加速计算
 
         @param      target  目标执行函数
-        @param      runs    执行可变参数列表
+        @param      runs    执行可变参数迭代器
         @param      args    其它固定参数，按执行函数参数顺序输入
 
         @return     将执行函数的返回值以列表返回

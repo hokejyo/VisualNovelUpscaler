@@ -147,10 +147,14 @@ class ArtemisPart(FTabWidget):
 
     def select_all_part(self):
         for check_box in self.select_run_parts_frame.findChildren(QCheckBox):
+            if check_box is self.keep_mode_btn:
+                continue
             check_box.setChecked(True)
 
     def select_none_part(self):
         for check_box in self.select_run_parts_frame.findChildren(QCheckBox):
+            if check_box is self.keep_mode_btn:
+                continue
             check_box.setChecked(False)
 
     def set_ratio_state(self):

@@ -6,9 +6,10 @@ from Core import *
 class Kirikiri(Core):
     """Kirikiri 2/Z Engine"""
 
-    def __init__(self):
+    def __init__(self, ui_runner=None):
         Core.__init__(self)
         self.load_config()
+        self.ui_runner = ui_runner
         # self.scale_ratio = self.get_default_scale_ratio()
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
 
@@ -89,6 +90,11 @@ class Kirikiri(Core):
                 self.default2x(tjs_file)
             elif 'particle' in tjs_file.name:
                 self.particle2x(tjs_file)
+            else:
+                try:
+                    pass
+                except:
+                    pass
 
     def ks2x(self):
         ks_file_ls = patch9_first(file_list(self.game_data, 'ks'))
@@ -97,6 +103,11 @@ class Kirikiri(Core):
                 self.customks2x(ks_file)
             elif ks_file.name in ['macro.ks', 'macro_old.ks']:
                 self.macro2x(ks_file)
+            else:
+                try:
+                    pass
+                except:
+                    pass
 
     def Configtjs2x(self, tjs_file):
         '''
@@ -567,7 +578,7 @@ class Kirikiri(Core):
         output_folder = Path(output_folder)
         png_file_ls = file_list(input_folder, 'png')
         if tlg5_mode:
-            print('请将弹出文件夹中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
+            print('请将弹出文件夹及其子文件中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
             os.system(f'start {input_folder}')
             os.system(self.krkrtpc_exe)
             tmp_tlg_file_ls = [png_file.with_suffix('.tlg') for png_file in png_file_ls]

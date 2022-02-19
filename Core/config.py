@@ -21,9 +21,17 @@ class Config(object):
             self.vnc_config.set('General', 'cpu_cores', str(cpu_count()))
             self.vnc_config.set('General', 'gpu_id', '0')
             self.vnc_config.set('General', 'encoding_list', 'shift-jis,utf-8,gbk,utf-16,cp932')
-            self.vnc_config.set('General', 'image_sr_engine', 'waifu2x_ncnn')
-            self.vnc_config.set('General', 'video_sr_engine', 'anime4k')
-            self.vnc_config.set('General', 'tta', '0')
+            # 图片设置
+            self.vnc_config.add_section('Image')
+            self.vnc_config.set('Image', 'image_sr_engine', 'waifu2x_ncnn')
+            # 视频设置
+            self.vnc_config.add_section('Video')
+            self.vnc_config.set('Video', 'video_sr_engine', 'anime4k')
+            self.vnc_config.set('Video', 'video_quality', '2')
+            # 超分引擎设置
+            self.vnc_config.add_section('SREngine')
+            self.vnc_config.set('SREngine', 'upscale_batch_size', '20')
+            self.vnc_config.set('SREngine', 'tta', '0')
             # waifu2x-ncnn-vulkan相关配置
             self.vnc_config.add_section('waifu2x_ncnn')
             self.vnc_config.set('waifu2x_ncnn', 'noise_level', '3')
@@ -33,8 +41,8 @@ class Config(object):
             # Real-CUGAN相关配置
             self.vnc_config.add_section('real_cugan')
             self.vnc_config.set('real_cugan', 'noise_level', '3')
-            self.vnc_config.set('real_cugan', 'tile_size', '200')
-            self.vnc_config.set('real_cugan', 'sync_gap_mode', '2')
+            self.vnc_config.set('real_cugan', 'tile_size', '0')
+            self.vnc_config.set('real_cugan', 'sync_gap_mode', '3')
             self.vnc_config.set('real_cugan', 'model_name', 'models-se')
             self.vnc_config.set('real_cugan', 'load_proc_save', '1:2:2')
             # Real-ESRGAN相关配置
@@ -55,9 +63,6 @@ class Config(object):
             # anime4kcpp相关配置
             self.vnc_config.add_section('anime4k')
             self.vnc_config.set('anime4k', 'acnet', '1')
-            # 视频设置
-            self.vnc_config.add_section('ffmpeg')
-            self.vnc_config.set('ffmpeg', 'video_quality', '2')
             self.vnc_config.write(vcf)
         self.load_config()
 
@@ -86,9 +91,14 @@ class Config(object):
         self.cpu_cores = self.vnc_config.getint('General', 'cpu_cores')
         self.gpu_id = self.vnc_config.get('General', 'gpu_id')
         self.encoding_list = [encoding.strip() for encoding in self.vnc_config.get('General', 'encoding_list').split(',')]
-        self.image_sr_engine = self.vnc_config.get('General', 'image_sr_engine')
-        self.video_sr_engine = self.vnc_config.get('General', 'video_sr_engine')
-        self.tta = self.vnc_config.get('General', 'tta')
+        # 图片设置
+        self.image_sr_engine = self.vnc_config.get('Image', 'image_sr_engine')
+        # 视频设置
+        self.video_quality = self.vnc_config.get('Video', 'video_quality')
+        self.video_sr_engine = self.vnc_config.get('Video', 'video_sr_engine')
+        # 超分引擎设置
+        self.upscale_batch_size = self.vnc_config.getint('SREngine', 'upscale_batch_size')
+        self.tta = self.vnc_config.get('SREngine', 'tta')
         # waifu2x-ncnn-vulkan相关配置
         # https://github.com/nihui/waifu2x-ncnn-vulkan
         self.waifu2x_ncnn_exe = self.toolkit_path/'waifu2x-ncnn-vulkan'/'waifu2x-ncnn-vulkan.exe'
@@ -132,5 +142,4 @@ class Config(object):
         # https://github.com/TianZerL/Anime4KCPP
         self.anime4k_exe = self.toolkit_path/'Anime4KCPP_CLI'/'Anime4KCPP_CLI.exe'
         self.anime4k_acnet = self.vnc_config.get('anime4k', 'acnet')
-        # 视频设置
-        self.video_quality = self.vnc_config.get('ffmpeg', 'video_quality')
+        

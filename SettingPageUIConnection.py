@@ -9,7 +9,7 @@ class SettingPageUIConnection(object):
     def __init__(self):
         self.ui_setting_connections()
         self.ui_config_load()
-        self.ui.settingpage.sr_engine_combobox.setCurrentText('real_cugan')
+        self.ui.settingpage.sr_engine_combobox.setCurrentIndex(0)
 
     def ui_setting_connections(self):
         # 配置页面应用
@@ -33,12 +33,17 @@ class SettingPageUIConnection(object):
         self.ui.settingpage.gpu_combobox.setCurrentIndex(int(self.gpu_id))
         # 文本编码列表
         self.ui.settingpage.text_encoding_line_edit.setText(','.join(self.encoding_list))
-        # 超分引擎
+        # 图片引擎
         self.ui.settingpage.image_sr_engine_combobox.setCurrentText(self.image_sr_engine)
+        # 视频超分引擎
         self.ui.settingpage.video_sr_engine_combobox.setCurrentText(self.video_sr_engine)
+        # 输出视频质量
+        self.ui.settingpage.video_quality_spinbox.setValue(int(self.video_quality))
+        # 超分单次批量
+        self.ui.settingpage.upscale_batch_size_spinbox.setValue(self.upscale_batch_size)
+        # TTA模式
         tta_bool = False if self.tta == '0' else True
         self.ui.settingpage.tta_checkbox.setChecked(tta_bool)
-        # self.ui.settingpage.sr_engine_combobox.setCurrentText('real_cugan')
         # waifu2x_ncnn
         self.ui.settingpage.waifu2x_ncnn_settings.noise_level_spinbox.setValue(int(self.waifu2x_ncnn_noise_level))
         self.ui.settingpage.waifu2x_ncnn_settings.tile_size_line_edit.setText(self.waifu2x_ncnn_tile_size)
@@ -65,8 +70,6 @@ class SettingPageUIConnection(object):
         # anime4kcpp
         acnet_bool = False if self.anime4k_acnet == '0' else True
         self.ui.settingpage.anime4k_settings.acnet_checkbox.setChecked(acnet_bool)
-        # 视频设置
-        self.ui.settingpage.video_quality_spinbox.setValue(int(self.video_quality))
 
     def ui_config_save(self):
         with open(self.vnc_config_file, 'w', newline='', encoding='utf-8') as vcf:
@@ -74,11 +77,15 @@ class SettingPageUIConnection(object):
             self.vnc_config.set('General', 'cpu_cores', str(self.ui.settingpage.cpu_spinbox.value()))
             self.vnc_config.set('General', 'gpu_id', get_gpu_id(self.ui.settingpage.gpu_combobox.currentText()))
             self.vnc_config.set('General', 'encoding_list', self.ui.settingpage.text_encoding_line_edit.text().strip())
-            # 超分引擎
-            self.vnc_config.set('General', 'image_sr_engine', self.ui.settingpage.image_sr_engine_combobox.currentText())
-            self.vnc_config.set('General', 'video_sr_engine', self.ui.settingpage.video_sr_engine_combobox.currentText())
+            # 图片设置
+            self.vnc_config.set('Image', 'image_sr_engine', self.ui.settingpage.image_sr_engine_combobox.currentText())
+            # 视频设置
+            self.vnc_config.set('Video', 'video_sr_engine', self.ui.settingpage.video_sr_engine_combobox.currentText())
+            self.vnc_config.set('Video', 'video_quality', str(self.ui.settingpage.video_quality_spinbox.value()))
+            # 超分引擎设置
+            self.vnc_config.set('SREngine', 'upscale_batch_size', str(self.ui.settingpage.upscale_batch_size_spinbox.value()))
             tta = '1' if self.ui.settingpage.tta_checkbox.isChecked() else '0'
-            self.vnc_config.set('General', 'tta', tta)
+            self.vnc_config.set('SREngine', 'tta', tta)
             # waifu2x_ncnn
             self.vnc_config.set('waifu2x_ncnn', 'noise_level', str(self.ui.settingpage.waifu2x_ncnn_settings.noise_level_spinbox.value()))
             self.vnc_config.set('waifu2x_ncnn', 'tile_size', self.ui.settingpage.waifu2x_ncnn_settings.tile_size_line_edit.text())
@@ -105,8 +112,6 @@ class SettingPageUIConnection(object):
             # anime4kcpp
             acnet = '1' if self.ui.settingpage.anime4k_settings.acnet_checkbox.isChecked() else '0'
             self.vnc_config.set('anime4k', 'acnet', acnet)
-            # 视频设置
-            self.vnc_config.set('ffmpeg', 'video_quality', str(self.ui.settingpage.video_quality_spinbox.value()))
             self.vnc_config.write(vcf)
         self.ui_config_load()
 
@@ -116,4 +121,4 @@ class SettingPageUIConnection(object):
         if reply == QMessageBox.Yes:
             self.reset_config()
             self.ui_config_load()
-            self.ui.settingpage.sr_engine_combobox.setCurrentText('real_cugan')
+            self.ui.settingpage.sr_engine_combobox.setCurrentIndex(0)

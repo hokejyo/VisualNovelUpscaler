@@ -51,7 +51,7 @@ class RealCUGNSettings(QFrame):
 
         self.sync_gap_mode_lb = QLabel('同步间隙等级：')
         self.sync_gap_mode_spinbox = QSpinBox()
-        self.sync_gap_mode_spinbox.setRange(0, 2)
+        self.sync_gap_mode_spinbox.setRange(0, 3)
         layout.addRow(self.sync_gap_mode_lb, self.sync_gap_mode_spinbox)
 
         self.modle_name_lb = QLabel('超分模型选择：')
@@ -142,6 +142,11 @@ class Anime4KSettings(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(5)
 
-        self.acnet_lb = QLabel('ACNet')
+        self.acnet_lb = QLabel('ACNet模式：')
         self.acnet_checkbox = QCheckBox()
         layout.addRow(self.acnet_lb, self.acnet_checkbox)
+
+        self.alpha_lb = QLabel('处理透明通道：')
+        self.alpha_checkbox = QCheckBox()
+        layout.addRow(self.alpha_lb, self.alpha_checkbox)
+

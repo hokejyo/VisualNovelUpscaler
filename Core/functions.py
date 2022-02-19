@@ -20,6 +20,9 @@ from math import ceil, log
 from functools import lru_cache
 from multiprocessing import Pool, cpu_count, Process, freeze_support
 
+import hashlib
+from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+
 
 def get_gpu_list() -> list:
     """
@@ -60,17 +63,17 @@ def p2p(input_file, input_folder, output_folder) -> Path:
     output_folder = Path(output_folder).resolve()
     target_file = output_folder/input_file.relative_to(input_folder)
     if not target_file.parent.exists():
-        target_file.parent.mkdir(parents=True)
+        target_file.parent.mkdir(parents=True, exist_ok=True)
     return target_file
 
 
 def fcopy(src, dst) -> Path:
     """
     @brief      复制文件到文件夹
-    
+
     @param      src   源文件
     @param      dst   目标文件夹
-    
+
     @return     目标文件路径
     """
     src = Path(src).resolve()
@@ -87,10 +90,10 @@ def fcopy(src, dst) -> Path:
 def fmove(src, dst) -> Path:
     """
     @brief      移动文件到文件夹
-    
+
     @param      src   源文件
     @param      dst   目标文件夹
-    
+
     @return     目标文件路径
     """
     src = Path(src).resolve()
@@ -148,9 +151,13 @@ def file_list(folder, extension=None, walk_mode=True, ignored_folders=[], parent
 
 
 def real_digit(str1) -> bool:
-    '''
-    判断字符串是否为数字
-    '''
+    """
+    @brief      判断字符串是否为数字
+
+    @param      str1  字符串
+
+    @return     布尔值
+    """
     try:
         tmp = float(str1)
         return True
@@ -185,9 +192,35 @@ def pattern_num2x(re_result, scale_ratio, test_mode=False, line=None) -> str:
 
 
 def seconds_format(time_length) -> str:
-    '''
-    将秒格式化输出
-    '''
+    """
+    @brief      将秒格式化输出为时分秒
+
+    @param      time_length  时长
+
+    @return     输出字符串
+    """
     m, s = divmod(time_length, 60)
     h, m = divmod(m, 60)
     return "%dh%02dm%02ds" % (h, m, s)
+
+
+def batch_group_list(inlist, batch_size=10) -> list:
+    """
+    @brief      将列表以指定大小划分为多个列表
+
+    @param      inlist      输入列表
+    @param      batch_size  每个列表元素数量
+
+    @return     划分列表的列表
+    """
+    group_list = []
+    start_index = 0
+    while True:
+        end_index = start_index+batch_size
+        group = inlist[start_index:end_index]
+        if group == []:
+            break
+        else:
+            group_list.append(group)
+            start_index = end_index
+    return group_list
