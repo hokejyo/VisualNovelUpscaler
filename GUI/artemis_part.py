@@ -120,10 +120,6 @@ class ArtemisPart(FTabWidget):
         self.patch_mode_lb = QLabel('高清补丁输出：')
         self.keep_mode_btn = QCheckBox('保持目录结构')
         layout1.addRow(self.patch_mode_lb, self.keep_mode_btn)
-        # layout3 = QHBoxLayout()
-        # self.ad_mode_btn = QRadioButton('增量模式')
-        # layout3.addWidget(self.rp_mode_btn)
-        # layout3.addWidget(self.ad_mode_btn)
         self.keep_mode_btn.setChecked(True)
         self.keep_mode_btn.setDisabled(True)
 

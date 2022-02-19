@@ -152,6 +152,7 @@ class ImageUtils(object):
         single_file_mode = False if input_path.is_dir() else True
         output_folder = Path(output_folder).resolve()
         sr_engine = self.video_sr_engine if video_mode else self.image_sr_engine
+        upscale_batch_size = self.video_batch_size if video_mode else self.image_batch_size
         output_image_ls = []
         for extension in filters:
             if single_file_mode:
@@ -162,7 +163,7 @@ class ImageUtils(object):
             if org_image_ls:
                 tmp_folder1 = output_folder.parent/('sr_tmp1_'+self.create_str())
                 tmp_folder2 = output_folder.parent/('sr_tmp2_'+self.create_str())
-                group_list = batch_group_list(org_image_ls, batch_size=self.upscale_batch_size)
+                group_list = batch_group_list(org_image_ls, batch_size=upscale_batch_size)
                 for group in group_list:
                     tmp_folder1.mkdir(parents=True)
                     tmp_folder2.mkdir(parents=True)

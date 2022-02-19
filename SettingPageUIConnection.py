@@ -33,14 +33,16 @@ class SettingPageUIConnection(object):
         self.ui.settingpage.gpu_combobox.setCurrentIndex(int(self.gpu_id))
         # 文本编码列表
         self.ui.settingpage.text_encoding_line_edit.setText(','.join(self.encoding_list))
-        # 图片引擎
+        # 图片超分引擎
         self.ui.settingpage.image_sr_engine_combobox.setCurrentText(self.image_sr_engine)
+        # 图片单次批量
+        self.ui.settingpage.image_batch_size_spinbox.setValue(self.image_batch_size)
         # 视频超分引擎
         self.ui.settingpage.video_sr_engine_combobox.setCurrentText(self.video_sr_engine)
+        # 视频单次批量
+        self.ui.settingpage.video_batch_size_spinbox.setValue(self.video_batch_size)
         # 输出视频质量
         self.ui.settingpage.video_quality_spinbox.setValue(int(self.video_quality))
-        # 超分单次批量
-        self.ui.settingpage.upscale_batch_size_spinbox.setValue(self.upscale_batch_size)
         # TTA模式
         tta_bool = False if self.tta == '0' else True
         self.ui.settingpage.tta_checkbox.setChecked(tta_bool)
@@ -79,11 +81,12 @@ class SettingPageUIConnection(object):
             self.vnc_config.set('General', 'encoding_list', self.ui.settingpage.text_encoding_line_edit.text().strip())
             # 图片设置
             self.vnc_config.set('Image', 'image_sr_engine', self.ui.settingpage.image_sr_engine_combobox.currentText())
+            self.vnc_config.set('Image', 'image_batch_size', str(self.ui.settingpage.image_batch_size_spinbox.value()))
             # 视频设置
             self.vnc_config.set('Video', 'video_sr_engine', self.ui.settingpage.video_sr_engine_combobox.currentText())
+            self.vnc_config.set('Video', 'video_batch_size', str(self.ui.settingpage.video_batch_size_spinbox.value()))
             self.vnc_config.set('Video', 'video_quality', str(self.ui.settingpage.video_quality_spinbox.value()))
             # 超分引擎设置
-            self.vnc_config.set('SREngine', 'upscale_batch_size', str(self.ui.settingpage.upscale_batch_size_spinbox.value()))
             tta = '1' if self.ui.settingpage.tta_checkbox.isChecked() else '0'
             self.vnc_config.set('SREngine', 'tta', tta)
             # waifu2x_ncnn

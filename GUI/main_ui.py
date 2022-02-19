@@ -44,7 +44,7 @@ class MainUI(QMainWindow):
         # 改变尺寸
         self.resize(1080, 720)
         # 设置最小尺寸
-        self.setMinimumSize(950, 650)
+        self.setMinimumSize(950, 680)
         self.setup_layouts()
         self.setup_pages()
         self.setup_connections()

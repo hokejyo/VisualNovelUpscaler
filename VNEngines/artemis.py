@@ -6,7 +6,7 @@ from Core import *
 class Artemis(Core):
     """Artemis Engine"""
 
-    def __init__(self, ui_runner):
+    def __init__(self, ui_runner=None):
         Core.__init__(self)
         self.load_config()
         self.ui_runner = ui_runner
@@ -350,6 +350,60 @@ class Artemis(Core):
     ==================================================
     """
 
+    class Pfs(KaitaiStruct):
+        """
+        @brief      Artemis引擎pfs封包文件，modified from https://github.com/Forlos/vn_re
+        """
+
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.magic = self._io.ensure_fixed_contents(b"\x70\x66\x38")
+            self.header = self._root.Header(self._io, self, self._root)
+            self.entries = [None] * (self.header.file_entries_count)
+            for i in range(self.header.file_entries_count):
+                self.entries[i] = self._root.FileEntry(self._io, self, self._root)
+
+        class Header(KaitaiStruct):
+            def __init__(self, _io, _parent=None, _root=None):
+                self._io = _io
+                self._parent = _parent
+                self._root = _root if _root else self
+                self._read()
+
+            def _read(self):
+                self.archive_data_size = self._io.read_u4le()
+                self.file_entries_count = self._io.read_u4le()
+
+        class FileEntry(KaitaiStruct):
+            def __init__(self, _io, _parent=None, _root=None):
+                self._io = _io
+                self._parent = _parent
+                self._root = _root if _root else self
+                self._read()
+
+            def _read(self):
+                self.file_name_size = self._io.read_u4le()
+                self.file_name = self._io.read_bytes(self.file_name_size)
+                self.unk = self._io.read_u4le()
+                self.file_offset = self._io.read_u4le()
+                self.file_size = self._io.read_u4le()
+
+        @property
+        def raw_archive_data(self):
+            if hasattr(self, '_m_raw_archive_data'):
+                return self._m_raw_archive_data if hasattr(self, '_m_raw_archive_data') else None
+
+            _pos = self._io.pos()
+            self._io.seek(7)
+            self._m_raw_archive_data = self._io.read_bytes(self.header.archive_data_size)
+            self._io.seek(_pos)
+            return self._m_raw_archive_data if hasattr(self, '_m_raw_archive_data') else None
+
     def extract_pfs(self, pfs_file, output_folder, encoding='utf-8') -> list:
         """
         @brief      pfs解包
@@ -362,7 +416,7 @@ class Artemis(Core):
         """
         pfs_file = Path(pfs_file).resolve()
         output_folder = Path(output_folder).resolve()
-        pfs = Pfs.from_file(pfs_file)
+        pfs = Artemis.Pfs.from_file(pfs_file)
         s1 = hashlib.sha1()
         s1.update(pfs.raw_archive_data)
         digest = s1.digest()
@@ -380,70 +434,17 @@ class Artemis(Core):
         target_file = output_folder/entry_name_contents_offset[0]
         if not target_file.parent.exists():
             target_file.parent.mkdir(parents=True, exist_ok=True)
-        contents = self.decrypt_contents(entry_name_contents_offset[1], digest)
+        contents = entry_name_contents_offset[1]
+        len_contents = len(contents)
+        len_digest = len(digest)
+        contents = self.decrypt_contents(contents, digest, len_contents, len_digest)
         with open(target_file, 'wb') as f:
             f.write(contents)
             print(f'{target_file} saved!')
         return target_file
 
-    def decrypt_contents(self, contents, digest):
-        len1_ = len(contents)
-        len2_ = len(digest)
-        for i in range(len1_):
-            contents[i] ^= digest[i % len2_]
+    @jit(fastmath=True)
+    def decrypt_contents(self, contents, digest, len_contents, len_digest):
+        for i in range(len_contents):
+            contents[i] ^= digest[i % len_digest]
         return contents
-
-
-class Pfs(KaitaiStruct):
-    """
-    @brief      Artemis引擎pfs封包文件，modified from https://github.com/Forlos/vn_re
-    """
-
-    def __init__(self, _io, _parent=None, _root=None):
-        self._io = _io
-        self._parent = _parent
-        self._root = _root if _root else self
-        self._read()
-
-    def _read(self):
-        self.magic = self._io.ensure_fixed_contents(b"\x70\x66\x38")
-        self.header = self._root.Header(self._io, self, self._root)
-        self.entries = [None] * (self.header.file_entries_count)
-        for i in range(self.header.file_entries_count):
-            self.entries[i] = self._root.FileEntry(self._io, self, self._root)
-
-    class Header(KaitaiStruct):
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.archive_data_size = self._io.read_u4le()
-            self.file_entries_count = self._io.read_u4le()
-
-    class FileEntry(KaitaiStruct):
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.file_name_size = self._io.read_u4le()
-            self.file_name = self._io.read_bytes(self.file_name_size)
-            self.unk = self._io.read_u4le()
-            self.file_offset = self._io.read_u4le()
-            self.file_size = self._io.read_u4le()
-
-    @property
-    def raw_archive_data(self):
-        if hasattr(self, '_m_raw_archive_data'):
-            return self._m_raw_archive_data if hasattr(self, '_m_raw_archive_data') else None
-
-        _pos = self._io.pos()
-        self._io.seek(7)
-        self._m_raw_archive_data = self._io.read_bytes(self.header.archive_data_size)
-        self._io.seek(_pos)
-        return self._m_raw_archive_data if hasattr(self, '_m_raw_archive_data') else None

@@ -8,16 +8,18 @@ from GUI import *
 class GamePageRunner(QThread):
     """用于处理高清重制等耗时任务"""
 
+    # 开始信号
     start_sig = Signal()
-    # (进度名称，进度0-100)
-    working_sig = Signal(str, int)
+    # 信息文本框
+    info_sig = Signal(str)
+    # 进度(0-100)
+    progress_sig = Signal(int)
     # 结束弹窗信息
     finish_sig = Signal(str)
 
     def __init__(self, vnc):
         QThread.__init__(self)
         self.vnc = vnc
-        print('开始')
 
     def run(self):
         self.start_sig.emit()
@@ -29,7 +31,7 @@ class GamePageRunner(QThread):
             self.artemis_run()
 
     def kirikiri_run(self):
-        kirikiri = Kirikiri()
+        kirikiri = Kirikiri(self)
         # 给ui起个别名
         ugk = self.vnc.ui.gamepage.kirikiri
         if ugk.currentWidget() is ugk.hd_parts_frame:
@@ -42,6 +44,7 @@ class GamePageRunner(QThread):
             kirikiri.run_dict['image'] = ugk.image_part.isChecked()
             kirikiri.run_dict['animation'] = ugk.animation_part.isChecked()
             kirikiri.run_dict['video'] = ugk.video_part.isChecked()
+            kirikiri.keep_path_struct_mode = ugk.keep_mode_btn.isChecked()
             kirikiri.upscale()
             self.finish_sig.emit('高清重制完成!')
         elif ugk.currentWidget() is ugk.work_up_frame:
@@ -74,7 +77,7 @@ class GamePageRunner(QThread):
                     self.finish_sig.emit('amv转换完成!')
 
     def artemis_run(self):
-        artemis = Artemis()
+        artemis = Artemis(self)
         # 给ui起个别名
         uga = self.vnc.ui.gamepage.artemis
         if uga.currentWidget() is uga.hd_parts_frame:

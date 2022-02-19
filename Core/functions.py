@@ -9,18 +9,18 @@ import json
 import time
 import uuid
 import shutil
+import hashlib
 import logging
 import traceback
 import subprocess
 import configparser
 from wmi import WMI
+from numba import jit
 from PIL import Image
 from pathlib import Path
 from math import ceil, log
 from functools import lru_cache
 from multiprocessing import Pool, cpu_count, Process, freeze_support
-
-import hashlib
 from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
 
 
@@ -224,3 +224,24 @@ def batch_group_list(inlist, batch_size=10) -> list:
             group_list.append(group)
             start_index = end_index
     return group_list
+
+
+def pool_run(workers, target, runs, *args) -> list:
+    """
+    @brief      使用进程池多进程加速计算
+
+    @param      workers  进程数
+    @param      target   目标执行函数
+    @param      runs     执行可变参数迭代器
+    @param      args     其它固定参数，按执行函数参数顺序输入
+
+    @return     将执行函数的返回值以列表返回
+    """
+    pool = Pool(workers)
+    processer_ls = []
+    for i in runs:
+        processer = pool.apply_async(target, args=(i, *args))
+        processer_ls.append(processer)
+    pool.close()
+    pool.join()
+    return [processer.get() for processer in processer_ls]

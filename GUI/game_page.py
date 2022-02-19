@@ -42,6 +42,9 @@ class GamePage(QFrame):
         center_spacer3 = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addItem(center_spacer3)
 
+        self.setup_info_area()
+        layout.addWidget(self.info_area_frame)
+
         self.setup_run_part()
         layout.addWidget(self.run_part_frame)
 
@@ -124,6 +127,14 @@ class GamePage(QFrame):
                 btn.set_active(False)
             except:
                 pass
+
+    def setup_info_area(self):
+        self.info_area_frame = QFrame()
+        layout = QVBoxLayout(self.info_area_frame)
+        layout.setContentsMargins(10, 0, 10, 0)
+        self.info_text_edit = QTextEdit()
+        self.info_text_edit.setStyleSheet('background-color:#333')
+        layout.addWidget(self.info_text_edit)
 
     def setup_run_part(self):
         self.run_part_frame = QFrame()

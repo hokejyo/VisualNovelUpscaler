@@ -24,13 +24,14 @@ class Config(object):
             # 图片设置
             self.vnc_config.add_section('Image')
             self.vnc_config.set('Image', 'image_sr_engine', 'waifu2x_ncnn')
+            self.vnc_config.set('Image', 'image_batch_size', '20')
             # 视频设置
             self.vnc_config.add_section('Video')
             self.vnc_config.set('Video', 'video_sr_engine', 'anime4k')
+            self.vnc_config.set('Video', 'video_batch_size', '50')
             self.vnc_config.set('Video', 'video_quality', '2')
             # 超分引擎设置
             self.vnc_config.add_section('SREngine')
-            self.vnc_config.set('SREngine', 'upscale_batch_size', '20')
             self.vnc_config.set('SREngine', 'tta', '0')
             # waifu2x-ncnn-vulkan相关配置
             self.vnc_config.add_section('waifu2x_ncnn')
@@ -93,11 +94,12 @@ class Config(object):
         self.encoding_list = [encoding.strip() for encoding in self.vnc_config.get('General', 'encoding_list').split(',')]
         # 图片设置
         self.image_sr_engine = self.vnc_config.get('Image', 'image_sr_engine')
+        self.image_batch_size = self.vnc_config.getint('Image', 'image_batch_size')
         # 视频设置
         self.video_quality = self.vnc_config.get('Video', 'video_quality')
+        self.video_batch_size = self.vnc_config.getint('Video', 'video_batch_size')
         self.video_sr_engine = self.vnc_config.get('Video', 'video_sr_engine')
         # 超分引擎设置
-        self.upscale_batch_size = self.vnc_config.getint('SREngine', 'upscale_batch_size')
         self.tta = self.vnc_config.get('SREngine', 'tta')
         # waifu2x-ncnn-vulkan相关配置
         # https://github.com/nihui/waifu2x-ncnn-vulkan

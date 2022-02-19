@@ -46,16 +46,29 @@ class VisualNovelClearer(Core, SettingPageUIConnection):
             if not self.output_folder.exists():
                 self.output_folder.mkdir(parents=True)
             self.game_page_runner = GamePageRunner(self)
-            # 开始时锁定，防止重复操作
+            # 信号绑定
             self.game_page_runner.start_sig.connect(self.start_game_page_runner_and_lock)
+            self.game_page_runner.info_sig.connect(self.append_info_text_edit)
+            self.game_page_runner.progress_sig.connect(self.update_progress_bar)
             self.game_page_runner.finish_sig.connect(self.finish_game_page_runner_and_open)
             self.game_page_runner.start()
 
     def start_game_page_runner_and_lock(self):
-        start_info_msg = QMessageBox()
-        reply = start_info_msg.information(self.ui, '开始处理中', '请耐心等待，切勿重复操作！', QMessageBox.Yes)
+        # 开始时锁定，防止重复操作
+        self.ui.gamepage.run_btn.setDisabled(True)
+        self.ui.gamepage.run_btn.setText('正在处理')
+        print('开始')
+
+    def append_info_text_edit(self, info_str):
+        self.ui.gamepage.info_text_edit.append(info_str)
+
+    def update_progress_bar(self, int_value):
+        self.ui.gamepage.status_progress_bar.setValue(int_value)
 
     def finish_game_page_runner_and_open(self, info_str=''):
+        self.ui.gamepage.run_btn.setEnabled(True)
+        self.ui.gamepage.run_btn.setText('开始处理')
+        print('结束')
         finish_info_msg = QMessageBox()
         reply = finish_info_msg.information(self.ui, '处理完成', f'{info_str}\n是否打开输出文件夹?', QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         os.system(f'start {self.output_folder}') if reply == QMessageBox.Yes else None
@@ -71,12 +84,12 @@ if __name__ == '__main__':
     vnc_log_file = bundle_dir/'log.txt'
     logging.basicConfig(filename=vnc_log_file, level=logging.DEBUG, filemode='a+', format='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
     # 启动
-    try:
-        app = QApplication(sys.argv)
-        visual_novel_clearer = VisualNovelClearer()
-        visual_novel_clearer.ui.show()
-        sys.exit(app.exec())
-    except Exception as e:
-        logging.error(e)
-        logging.error(traceback.format_exc())
-        sys.exit()
+    # try:
+    app = QApplication(sys.argv)
+    visual_novel_clearer = VisualNovelClearer()
+    visual_novel_clearer.ui.show()
+    sys.exit(app.exec())
+    # except Exception as e:
+    #     logging.error(e)
+    #     logging.error(traceback.format_exc())
+    #     sys.exit()

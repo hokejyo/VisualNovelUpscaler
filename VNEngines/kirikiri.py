@@ -12,6 +12,7 @@ class Kirikiri(Core):
         self.ui_runner = ui_runner
         # self.scale_ratio = self.get_default_scale_ratio()
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
+        self.keep_path_struct_mode = True
 
     def set_game_data(self, game_data):
         self.game_data = Path(game_data).resolve()
@@ -30,20 +31,20 @@ class Kirikiri(Core):
 
         if self.run_dict['script']:
             self.script2x()
-            print('脚本文件处理完成')
+            self.emit_info('脚本文件处理完成')
         if self.run_dict['image']:
             self.image2x()
-            print('图片文件放大完成')
+            self.emit_info('图片文件放大完成')
         if self.run_dict['animation']:
             self.animation2x()
-            print('动画文件处理完成')
+            self.emit_info('动画文件处理完成')
         if self.run_dict['video']:
             self.video2x()
-            print('视频文件处理完成')
+            self.emit_info('视频文件处理完成')
 
         shutil.rmtree(self.tmp_folder)
         timing_count = time.time() - self.start_time
-        print(seconds_format(timing_count))
+        self.emit_info(seconds_format(timing_count))
 
     def get_encoding_resolution(self):
         '''
@@ -62,6 +63,12 @@ class Kirikiri(Core):
                         if line.startswith(';scHeight'):
                             scheight = int(re.match(pattern, line).group(2))
                     return encoding, scwidth, scheight
+
+    def emit_info(self, info_str):
+        if self.ui_runner:
+            self.ui_runner.info_sig.emit(info_str)
+        else:
+            print(info_str)
 
     """
     ==================================================
@@ -430,15 +437,15 @@ class Kirikiri(Core):
     """
 
     def image2x(self):
-        print('开始放大图片，处理时间较长，请耐心等待......')
+        self.emit_info('开始放大图片，处理时间较长，请耐心等待......')
         self.general_image2x()
-        print('常规图片处理完成')
+        self.emit_info('常规图片处理完成')
         self.pimg2x()
-        print('pimg图片处理完成')
+        self.emit_info('pimg图片处理完成')
         self.tlg2x()
-        print('tlg图片处理完成')
+        self.emit_info('tlg图片处理完成')
         self.eri2x()
-        print('eri图片处理完成')
+        self.emit_info('eri图片处理完成')
 
     def general_image2x(self):
         '''
@@ -449,7 +456,7 @@ class Kirikiri(Core):
             image_file_list = patch9_first(file_list(self.game_data, image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
             if image_file_list:
                 [fcopy(image_file, self.a2t(image_file).parent) for image_file in image_file_list]
-                print(f'开始放大{image_extension}图片......')
+                self.emit_info(f'开始放大{image_extension}图片......')
                 # show_image2x_p = Process(target=self.show_image2x_status, args=(image_extension,))
                 # show_image2x_p.start()
                 self.image_upscale(self.tmp_folder, self.patch_folder, image_extension)
@@ -460,19 +467,19 @@ class Kirikiri(Core):
         org_pimg_file_ls = patch9_first(file_list(self.game_data, 'pimg'))
         if org_pimg_file_ls:
             pimg_file_ls = [fcopy(pimg_file, self.a2t(pimg_file).parent) for pimg_file in org_pimg_file_ls]
-            print('正在拆分pimg文件')
+            self.emit_info('正在拆分pimg文件')
             self.pool_run(self.pimg_de, pimg_file_ls)
-            print('pimg文件拆分完成')
-            print('pimg图片放大中......')
+            self.emit_info('pimg文件拆分完成')
+            self.emit_info('pimg图片放大中......')
             self.image_upscale(self.tmp_folder, self.tmp_folder, 'png')
             # 获得json文件列表并删除原pimg
             pimg_json_file_ls = []
             for pimg_file in pimg_file_ls:
                 pimg_json_file_ls.append(pimg_file.with_suffix('.json'))
                 pimg_file.unlink()
-            print('pimg图片放大完成，正在修正坐标')
+            self.emit_info('pimg图片放大完成，正在修正坐标')
             self.pool_run(self.pimg_json2x_, pimg_json_file_ls)
-            print('正在组装中......')
+            self.emit_info('正在组装中......')
             pimg_json_files_and_output_folders = [(pimg_json_file, pimg_json_file.parent) for pimg_json_file in pimg_json_file_ls]
             scaled_pimg_file_ls = self.pool_run(self.pimg_en, pimg_json_files_and_output_folders)
             [fmove(scaled_pimg_file, self.t2p(scaled_pimg_file).parent) for scaled_pimg_file in scaled_pimg_file_ls]
@@ -529,20 +536,20 @@ class Kirikiri(Core):
         if ori_tlg_file_ls:
             [fcopy(tlg_file, self.a2t(tlg_file).parent) for tlg_file in ori_tlg_file_ls]
             tlg_file_ls = file_list(self.tmp_folder)
-            print('tlg图片转换中......')
+            self.emit_info('tlg图片转换中......')
             png_file_ls = self.pool_run(self.tlg2png, tlg_file_ls)
             [tlg_file.unlink() for tlg_file in tlg_file_ls]
-            print('tlg转换完成，正在放大中......')
+            self.emit_info('tlg转换完成，正在放大中......')
             # show_tlg2x_p = Process(target=self.show_image2x_status, args=('png',))
             # show_tlg2x_p.start()
             self.image_upscale(self.tmp_folder, self.tmp_folder, 'png')
             # show_tlg2x_p.join()
-            print('tlg格式图片放大完成，正在进行格式转换......')
+            self.emit_info('tlg格式图片放大完成，正在进行格式转换......')
             scaled_tlg_file_ls = self.pool_run(self.png2tlg6, png_file_ls)
             [fmove(tlg_file, self.t2p(tlg_file).parent) for tlg_file in scaled_tlg_file_ls]
             self.tmp_clear()
         else:
-            print('未发现需要处理的tlg图片')
+            self.emit_info('未发现需要处理的tlg图片')
 
     def tlg2png_batch(self, input_folder, output_folder) -> list:
         """
@@ -578,7 +585,7 @@ class Kirikiri(Core):
         output_folder = Path(output_folder)
         png_file_ls = file_list(input_folder, 'png')
         if tlg5_mode:
-            print('请将弹出文件夹及其子文件中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
+            self.emit_info('请将弹出文件夹及其子文件中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
             os.system(f'start {input_folder}')
             os.system(self.krkrtpc_exe)
             tmp_tlg_file_ls = [png_file.with_suffix('.tlg') for png_file in png_file_ls]
@@ -630,7 +637,7 @@ class Kirikiri(Core):
     def eri2x(self):
         eri_file_ls = file_list(self.game_data, 'eri')
         if eri_file_ls:
-            print('暂不支持eri图片格式')
+            self.emit_info('暂不支持eri图片格式')
 
     """
     ==================================================
@@ -639,7 +646,7 @@ class Kirikiri(Core):
     """
 
     def animation2x(self):
-        print('开始处理游戏动画......')
+        self.emit_info('开始处理游戏动画......')
         self.amv2x()
         self.psb2x()
         self.swf2x()
@@ -647,13 +654,13 @@ class Kirikiri(Core):
     def psb2x(self):
         psb_file_ls = file_list(self.game_data, 'psb')
         if psb_file_ls:
-            print('暂不支持psb文件处理，后续会加进去')
+            self.emit_info('暂不支持psb文件处理，后续会加进去')
             pass
 
     def swf2x(self):
         swf_file_ls = file_list(self.game_data, 'swf')
         if swf_file_ls:
-            print('swf这东西没见过有游戏用过，有需求再加进去')
+            self.emit_info('swf这东西没见过有游戏用过，有需求再加进去')
 
     def amv2x(self):
         ori_amv_file_ls = patch9_first(file_list(self.game_data, 'amv'))
@@ -661,14 +668,14 @@ class Kirikiri(Core):
             amv_file_ls = [fcopy(amv_file, self.a2t(amv_file).parent) for amv_file in ori_amv_file_ls]
             png_sequence_folder_ls = self.amv2png(self.tmp_folder, self.tmp_folder)
             [amv_file.unlink() for amv_file in amv_file_ls]
-            print('AMV动画拆帧完成，正在放大中......')
+            self.emit_info('AMV动画拆帧完成，正在放大中......')
             # show_amv2x_p = Process(target=self.show_image2x_status, args=('png',))
             # show_amv2x_p.start()
             self.image_upscale(self.tmp_folder, self.tmp_folder, 'png')
             # show_amv2x_p.join()
             scaled_amv_file_ls = self.pool_run(self.amv_en, png_sequence_folder_ls)
             [fmove(scaled_amv_file, self.t2p(scaled_amv_file).parent) for scaled_amv_file in scaled_amv_file_ls]
-            print('AMV动画组装完成')
+            self.emit_info('AMV动画组装完成')
             self.tmp_clear()
 
     def amv2png(self, input_folder, output_folder) -> list:
@@ -761,7 +768,7 @@ class Kirikiri(Core):
     """
 
     def video2x(self):
-        print('开始处理游戏视频......')
+        self.emit_info('开始处理游戏视频......')
         video_extension_ls = ['mpg', 'mpeg', 'wmv', 'avi', 'mkv']
         for video_extension in video_extension_ls:
             org_video_ls = patch9_first(file_list(self.game_data, video_extension))
