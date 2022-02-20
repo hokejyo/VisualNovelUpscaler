@@ -146,7 +146,11 @@ class Anime4KSettings(QFrame):
         self.acnet_checkbox = QCheckBox()
         layout.addRow(self.acnet_lb, self.acnet_checkbox)
 
-        self.alpha_lb = QLabel('处理透明通道：')
-        self.alpha_checkbox = QCheckBox()
-        layout.addRow(self.alpha_lb, self.alpha_checkbox)
+        self.hdn_mode_lb = QLabel('HDN模式：')
+        self.hdn_mode_checkbox = QCheckBox()
+        layout.addRow(self.hdn_mode_lb, self.hdn_mode_checkbox)
 
+        self.hdn_level_lb = QLabel('降噪去噪等级：')
+        self.hdn_level_spinbox = QSpinBox()
+        self.hdn_level_spinbox.setRange(1, 3)
+        layout.addRow(self.hdn_level_lb, self.hdn_level_spinbox)

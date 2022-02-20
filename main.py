@@ -22,6 +22,7 @@ class VisualNovelClearer(Core, SettingPageUIConnection):
         self.ui_game_page_connections()
 
     def ui_game_page_connections(self):
+        # self.ui.gamepage.select_input_folder_line_edit.textChanged.connect(self.check_input_game_engine)
         self.ui.gamepage.run_btn.clicked.connect(self.game_page_run)
 
     def game_page_run(self):
@@ -34,7 +35,7 @@ class VisualNovelClearer(Core, SettingPageUIConnection):
         elif not self.input_folder.is_dir():
             warn_message = '输入路径需要是文件夹'
         elif self.input_folder == Path('./').resolve() or self.output_folder == Path('./').resolve():
-            warn_message = '输入路径或输出路径不能与工作目录相同'
+            warn_message = '输入路径和输出路径不能与工作目录相同'
         elif self.input_folder == self.output_folder:
             warn_message = '输入路径和输出路径不能相同'
         elif (self.image_sr_engine == 'real_cugan' or self.video_sr_engine == 'real_cugan') and self.ui.gamepage.kirikiri.custiom_ratio_spinbox.value() > 4:
@@ -56,6 +57,8 @@ class VisualNovelClearer(Core, SettingPageUIConnection):
     def start_game_page_runner_and_lock(self):
         # 开始时锁定，防止重复操作
         self.ui.gamepage.run_btn.setDisabled(True)
+        # 清空历史信息
+        self.ui.gamepage.info_text_edit.clear()
         self.ui.gamepage.run_btn.setText('正在处理')
         print('开始')
 
@@ -72,6 +75,17 @@ class VisualNovelClearer(Core, SettingPageUIConnection):
         finish_info_msg = QMessageBox()
         reply = finish_info_msg.information(self.ui, '处理完成', f'{info_str}\n是否打开输出文件夹?', QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         os.system(f'start {self.output_folder}') if reply == QMessageBox.Yes else None
+
+    # def check_input_game_engine(self):
+    #     pass
+
+    # def lock_upscale_btn(self):
+    #     ugp = self.ui.gamepage
+    #     if ugp.game_engine_area.currentWidget is ugp.kirikiri:
+    #         if ugp.kirikiri.currentWidget is ugp.kirikiri.hd_parts_frame:
+    #             ugp.run_btn.setDisabled(True)
+    #     else:
+    #         ugp.run_btn.setEnabled(True)
 
 
 if __name__ == '__main__':

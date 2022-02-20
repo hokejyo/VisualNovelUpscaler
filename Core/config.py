@@ -64,6 +64,8 @@ class Config(object):
             # anime4kcpp相关配置
             self.vnc_config.add_section('anime4k')
             self.vnc_config.set('anime4k', 'acnet', '1')
+            self.vnc_config.set('anime4k', 'hdn_mode', '1')
+            self.vnc_config.set('anime4k', 'hdn_level', '1')
             self.vnc_config.write(vcf)
         self.load_config()
 
@@ -144,4 +146,5 @@ class Config(object):
         # https://github.com/TianZerL/Anime4KCPP
         self.anime4k_exe = self.toolkit_path/'Anime4KCPP_CLI'/'Anime4KCPP_CLI.exe'
         self.anime4k_acnet = self.vnc_config.get('anime4k', 'acnet')
-        
+        self.anime4k_hdn_mode = self.vnc_config.get('anime4k', 'hdn_mode')
+        self.anime4k_hdn_level = self.vnc_config.get('anime4k', 'hdn_level')

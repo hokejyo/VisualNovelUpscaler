@@ -129,6 +129,18 @@ class ArtemisPart(FTabWidget):
         self.work_up_layout.setContentsMargins(15, 25, 15, 0)
         self.work_up_layout.setSpacing(15)
 
+        self.setup_pfs_unpack()
+
+    def setup_pfs_unpack(self):
+        self.pfs_unpack_btn = QRadioButton('一键解包：')
+        layout = QHBoxLayout()
+        self.work_up_layout.addRow(self.pfs_unpack_btn, layout)
+        self.pfs_encoding_label = QLabel('编码格式：')
+        self.pfs_encoding_line_edit = FLineEdit('utf-8')
+        layout.addWidget(self.pfs_encoding_label)
+        layout.addWidget(self.pfs_encoding_line_edit)
+
+
     def setup_connections(self):
         self.s1080p_btn.toggled.connect(self.s1080p_btn_ratio)
         self.s2k_btn.toggled.connect(self.s2k_btn_ratio)

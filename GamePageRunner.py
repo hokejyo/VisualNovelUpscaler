@@ -31,7 +31,8 @@ class GamePageRunner(QThread):
             self.artemis_run()
 
     def kirikiri_run(self):
-        kirikiri = Kirikiri(self)
+        kirikiri = Kirikiri()
+        kirikiri.connect_ui_runner(self)
         # 给ui起个别名
         ugk = self.vnc.ui.gamepage.kirikiri
         if ugk.currentWidget() is ugk.hd_parts_frame:
@@ -77,7 +78,8 @@ class GamePageRunner(QThread):
                     self.finish_sig.emit('amv转换完成!')
 
     def artemis_run(self):
-        artemis = Artemis(self)
+        artemis = Artemis()
+        artemis.connect_ui_runner(self)
         # 给ui起个别名
         uga = self.vnc.ui.gamepage.artemis
         if uga.currentWidget() is uga.hd_parts_frame:

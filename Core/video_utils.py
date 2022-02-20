@@ -147,12 +147,13 @@ class VideoUtils(object):
         png2video_p = subprocess.run(options, capture_output=True)
         return output_video
 
-    def video_upscale(self, input_video, output_video, output_vcodec=None):
+    def video_upscale(self, input_video, output_video, scale_ratio=2.0, output_vcodec=None):
         """
         @brief      视频放大
 
         @param      input_video    输出视频路径
         @param      output_video   输出视频路径
+        @param      scale_ratio    视频放大倍数
         @param      output_vcodec  输出视频编码
 
         @return     输出视频路径
@@ -166,7 +167,7 @@ class VideoUtils(object):
         tmp_output_png_folder = output_video.parent/(output_video.stem+'vnc_tmp_png_sequence')
         tmp_output_png_folder.mkdir(parents=True, exist_ok=True)
         png_sequence = self.video2png(input_video, tmp_output_png_folder)
-        self.image_upscale(tmp_output_png_folder, tmp_output_png_folder, video_mode=True)
+        self.image_upscale(tmp_output_png_folder, tmp_output_png_folder, scale_ratio, video_mode=True)
         # 输入输出相同时将输入文件夹重命名
         if input_video == output_video:
             input_video = input_video.replace(input_video.with_name(f'{input_video.stem}_old_{input_video.suffix}'))

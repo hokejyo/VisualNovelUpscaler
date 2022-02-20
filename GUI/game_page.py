@@ -133,6 +133,7 @@ class GamePage(QFrame):
         layout = QVBoxLayout(self.info_area_frame)
         layout.setContentsMargins(10, 0, 10, 0)
         self.info_text_edit = QTextEdit()
+        self.info_text_edit.setReadOnly(True)
         self.info_text_edit.setStyleSheet('background-color:#333')
         layout.addWidget(self.info_text_edit)
 

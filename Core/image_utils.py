@@ -63,7 +63,8 @@ class ImageUtils(object):
         with open(png_file, 'wb') as f:
             png.write_chunks(f, new_chunks)
 
-    def alpha_image(self, image_path) -> bool:
+    @staticmethod
+    def alpha_image(image_path) -> bool:
         """
         @brief      检查图片是否含有alpha通道
 
@@ -73,7 +74,8 @@ class ImageUtils(object):
         """
         return True if Image.open(image_path).mode in ['RGBA', 'LA'] else False
 
-    def get_image_format(self, image_path) -> str:
+    @staticmethod
+    def get_image_format(image_path) -> str:
         """
         @brief      获取图片真实格式
 
@@ -83,7 +85,8 @@ class ImageUtils(object):
         """
         return Image.open(image_path).format.lower()
 
-    def zoom_image_(self, image_file, zoom_factor) -> Path:
+    @staticmethod
+    def zoom_image_(image_file, zoom_factor) -> Path:
         """
         @brief      图片缩放，覆盖原图片
 
@@ -98,7 +101,8 @@ class ImageUtils(object):
         image_resize.save(image_file)
         return image_file
 
-    def convert_image_(self, input_path, output_extention) -> Path:
+    @staticmethod
+    def convert_image_(input_path, output_extention) -> Path:
         """
         @brief      图片格式转换，删除原图片
 
@@ -117,7 +121,8 @@ class ImageUtils(object):
             input_path.unlink()
         return output_path
 
-    def get_actual_scale_ratio(self, legal_scale_ratio) -> int:
+    @staticmethod
+    def get_actual_scale_ratio(legal_scale_ratio, target_scale_ratio) -> int:
         """
         @brief      获取不同超分辨率引擎下的实际放大倍率
 
@@ -125,27 +130,31 @@ class ImageUtils(object):
 
         @return     实际放大倍率
         """
-        actual_scale_ratio = legal_scale_ratio**ceil(log(self.scale_ratio, legal_scale_ratio))
+        actual_scale_ratio = legal_scale_ratio**ceil(log(target_scale_ratio, legal_scale_ratio))
         return actual_scale_ratio
 
     def image_upscale(self,
                       input_path,
                       output_folder,
+                      scale_ratio=2.0,
                       output_extention='png',
                       filters=['png', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp'],
                       walk_mode=True,
-                      video_mode=False
+                      video_mode=False,
+                      count_class=None,
                       ) -> list:
         """
         @brief      放大图片
-
+        
         @param      input_path        输入图片路径，可以是文件或文件夹
         @param      output_folder     输出文件夹
+        @param      scale_ratio       放大倍数
         @param      output_extention  输出图片格式
         @param      filters           格式过滤器
         @param      walk_mode         是否处理子文件夹中的图片，默认是
         @param      video_mode        使用视频超分引擎
-
+        @param      count_class       统计执行数量的对象(需含有count_process属性)
+        
         @return     所有输出图片的路径对象列表
         """
         input_path = Path(input_path).resolve()
@@ -179,18 +188,20 @@ class ImageUtils(object):
                         tmp_image_file = tmp_folder1/(tmp_name+image_file.suffix)
                         shutil.copy(image_file, tmp_image_file)
                     # 放大tmp1到tmp2
-                    options, zoom_factor = self.get_options_and_zoom_factor(tmp_folder1, tmp_folder2, sr_engine)
+                    options, zoom_factor = self.get_options_and_zoom_factor(tmp_folder1, tmp_folder2, scale_ratio, sr_engine)
                     image_upscale_p = subprocess.run(options, capture_output=True)
                     tmp_image_ls = file_list(tmp_folder2)
                     # 缩放
                     if zoom_factor != 1:
-                        tmp_image_ls = self.pool_run(self.zoom_image_, tmp_image_ls, zoom_factor)
+                        tmp_image_ls = self.pool_run(ImageUtils.zoom_image_, tmp_image_ls, zoom_factor)
                     # 转格式
-                    tmp_image_ls = self.pool_run(self.convert_image_, tmp_image_ls, output_extention)
+                    tmp_image_ls = self.pool_run(ImageUtils.convert_image_, tmp_image_ls, output_extention)
                     for tmp_image in tmp_image_ls:
                         target_image_file = tmp_target_dict[tmp_image.stem]
                         tmp_image.replace(target_image_file)
                         print(f'{target_image_file} saved!')
+                        if count_class:
+                            count_class.count_process += 1
                         output_image_ls.append(target_image_file)
                     shutil.rmtree(tmp_folder1)
                     shutil.rmtree(tmp_folder2)
@@ -198,20 +209,21 @@ class ImageUtils(object):
                 break
         return output_image_ls
 
-    def get_options_and_zoom_factor(self, in_folder, out_folder, sr_engine):
+    def get_options_and_zoom_factor(self, in_folder, out_folder, scale_ratio, sr_engine):
         """
         @brief      获取image_upscale函数所需的命令和实际缩放系数
 
-        @param      in_folder   输出文件夹
-        @param      out_folder  输出文件夹
-        @param      sr_engine   超分引擎
+        @param      in_folder    输出文件夹
+        @param      out_folder   输出文件夹
+        @param      scale_ratio  放大倍数
+        @param      sr_engine    超分引擎
 
         @return     命令和实际缩放系数
         """
         match sr_engine:
             case 'waifu2x_ncnn':
                 # 将指定放大倍数转换成waifu2x-ncnn-valkan支持的放大倍数
-                actiual_scale_ratio = self.get_actual_scale_ratio(2)
+                actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
                 options = [self.waifu2x_ncnn_exe,
                            '-i', in_folder,
                            '-o', out_folder,
@@ -228,9 +240,9 @@ class ImageUtils(object):
                     options.remove('-x')
             case 'real_cugan':
                 # 将指定放大倍数转换成Real-CUGAN支持的放大倍数
-                if self.scale_ratio <= 4:
-                    actiual_scale_ratio = ceil(self.scale_ratio)
-                    # 等bug修复后删除下面两行
+                if scale_ratio <= 4:
+                    actiual_scale_ratio = ceil(scale_ratio)
+                    # 屏蔽3倍放大，4倍更快更稳定
                     if actual_scale_ratio == 3:
                         actual_scale_ratio = 4
                 else:
@@ -253,9 +265,9 @@ class ImageUtils(object):
             case 'real_esrgan':
                 # 将指定放大倍数转换成Real-ESRGAN支持的放大倍数
                 if self.real_esrgan_model_name == 'RealESRGANv2-animevideo-xsx2':
-                    actiual_scale_ratio = self.get_actual_scale_ratio(2)
+                    actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
                 else:
-                    actiual_scale_ratio = self.get_actual_scale_ratio(4)
+                    actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(4, scale_ratio)
                 options = [self.real_esrgan_exe,
                            '-i', in_folder,
                            '-o', out_folder,
@@ -272,7 +284,7 @@ class ImageUtils(object):
                     options.remove('-x')
             case 'srmd_ncnn':
                 # 将指定放大倍数转换成srmd-ncnn-vulkan支持的放大倍数
-                actiual_scale_ratio = self.get_actual_scale_ratio(2)
+                actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
                 options = [self.srmd_ncnn_exe,
                            '-i', in_folder,
                            '-o', out_folder,
@@ -289,7 +301,7 @@ class ImageUtils(object):
                     options.remove('-x')
             case 'realsr_ncnn':
                 # 将指定放大倍数转换成realsr-ncnn-vulkan支持的放大倍数
-                actiual_scale_ratio = self.get_actual_scale_ratio(4)
+                actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(4, scale_ratio)
                 options = [self.realsr_ncnn_exe,
                            '-i', in_folder,
                            '-o', out_folder,
@@ -305,7 +317,7 @@ class ImageUtils(object):
                     options.remove('-x')
             case 'anime4k':
                 # anime4kcpp非整数倍放大会有alpha通道错位的bug
-                actiual_scale_ratio = self.get_actual_scale_ratio(2)
+                actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
                 options = [self.anime4k_exe,
                            '-i', in_folder,
                            '-z', str(actiual_scale_ratio),
@@ -313,13 +325,16 @@ class ImageUtils(object):
                            '-b',
                            '-q',
                            '-d', self.gpu_id,
-                           '-w',
                            '-A',
                            '-o', out_folder
                            ]
-                if self.anime4k_acnet == '0':
-                    options.remove('-w')
+                if self.anime4k_acnet == '1':
+                    options.insert(-2, '-w')
+                    if self.anime4k_hdn_mode == '1':
+                        options.insert(-2, '-H')
+                        options.insert(-2, '-L')
+                        options.insert(-2, self.anime4k_hdn_level)
             case _:
                 raise Exception('请选择正确的超分引擎！')
-        zoom_factor = self.scale_ratio/actiual_scale_ratio
+        zoom_factor = scale_ratio/actiual_scale_ratio
         return options, zoom_factor

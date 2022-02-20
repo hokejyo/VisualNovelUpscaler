@@ -19,7 +19,7 @@ from numba import jit
 from PIL import Image
 from pathlib import Path
 from math import ceil, log
-from functools import lru_cache
+from threading import Thread
 from multiprocessing import Pool, cpu_count, Process, freeze_support
 from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
 

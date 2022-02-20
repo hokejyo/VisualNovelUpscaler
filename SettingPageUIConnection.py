@@ -72,6 +72,9 @@ class SettingPageUIConnection(object):
         # anime4kcpp
         acnet_bool = False if self.anime4k_acnet == '0' else True
         self.ui.settingpage.anime4k_settings.acnet_checkbox.setChecked(acnet_bool)
+        hdn_mode_bool = False if self.anime4k_hdn_mode == '0' else True
+        self.ui.settingpage.anime4k_settings.hdn_mode_checkbox.setChecked(hdn_mode_bool)
+        self.ui.settingpage.anime4k_settings.hdn_level_spinbox.setValue(int(self.anime4k_hdn_level))
 
     def ui_config_save(self):
         with open(self.vnc_config_file, 'w', newline='', encoding='utf-8') as vcf:
@@ -115,6 +118,9 @@ class SettingPageUIConnection(object):
             # anime4kcpp
             acnet = '1' if self.ui.settingpage.anime4k_settings.acnet_checkbox.isChecked() else '0'
             self.vnc_config.set('anime4k', 'acnet', acnet)
+            hdn_mode = '1' if self.ui.settingpage.anime4k_settings.hdn_mode_checkbox.isChecked() else '0'
+            self.vnc_config.set('anime4k', 'hdn_mode', hdn_mode)
+            self.vnc_config.set('anime4k', 'hdn_level', str(self.ui.settingpage.anime4k_settings.hdn_level_spinbox.value()))
             self.vnc_config.write(vcf)
         self.ui_config_load()
 

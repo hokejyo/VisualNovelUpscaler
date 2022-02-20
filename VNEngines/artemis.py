@@ -6,10 +6,10 @@ from Core import *
 class Artemis(Core):
     """Artemis Engine"""
 
-    def __init__(self, ui_runner=None):
+    def __init__(self):
         Core.__init__(self)
         self.load_config()
-        self.ui_runner = ui_runner
+        self.has_connected_ui = False
         # self.patch_folder = self.game_data.parent/'root'
         # self.scale_ratio = self.get_default_scale_ratio()
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
@@ -19,6 +19,17 @@ class Artemis(Core):
         self.tmp_folder = self.game_data.parent/'vnc_tmp'
         self.tmp_clear()
         self.encoding, self.scwidth, self.scheight = self.get_encoding_resolution()
+
+    def connect_ui_runner(self, ui_runner):
+        global _ui_runner_
+        _ui_runner_ = ui_runner
+        self.has_connected_ui = True
+
+    def emit_info(self, info_str):
+        if self.has_connected_ui:
+            _ui_runner_.info_sig.emit(info_str)
+        else:
+            print(info_str)
 
     def upscale(self):
 
@@ -31,21 +42,21 @@ class Artemis(Core):
 
         if self.run_dict['script']:
             self.script2x()
-            print('脚本文件处理完成')
+            self.emit_info('脚本文件处理完成')
         if self.run_dict['image']:
             self.image2x()
-            print('图片文件放大完成')
+            self.emit_info('图片文件放大完成')
         if self.run_dict['animation']:
             self.animation2x()
-            print('动画文件处理完成')
+            self.emit_info('动画文件处理完成')
         if self.run_dict['video']:
             self.video2x()
-            print('视频文件处理完成')
+            self.emit_info('视频文件处理完成')
 
         timing_count = time.time() - timing_start
         # tmp = input(f'\n高清重制完成，共耗时{seconds_format(timing_count)}\n请将root文件夹中的文件放到游戏根目录下\n按回车键退出：')
         shutil.rmtree(self.tmp_folder)
-        print(seconds_format(timing_count))
+        self.emit_info(seconds_format(timing_count))
         # sys.exit()
 
     def get_encoding_resolution(self):
@@ -76,7 +87,7 @@ class Artemis(Core):
     """
 
     def script2x(self):
-        print('正在处理脚本文件......')
+        self.emit_info('正在处理脚本文件......')
         self.sysini2x()
         self.tbl2x()
         self.ipt2x()
@@ -111,12 +122,16 @@ class Artemis(Core):
                                 line = ';'+line
                         f.write(line)
 
+    # def tbl2x(self):
+    #     for tbl_file in file_list(self.game_data, 'tbl'):
+    #         if tbl_file.name.startswith('list_windows_'):
+    #             self.windows_xx_tbl2x(tbl_file)
+    #         if tbl_file.name == 'list_windows.tbl':
+    #             self.windwos_tbl2x(tbl_file)
+
     def tbl2x(self):
-        for tbl_file in file_list(self.game_data, 'tbl'):
-            if tbl_file.name.startswith('list_windows_'):
-                self.windows_xx_tbl2x(tbl_file)
-            if tbl_file.name == 'list_windows.tbl':
-                self.windwos_tbl2x(tbl_file)
+        tbl_file_ls = file_list(self.game_data, 'tbl')
+        self.pool_run(self.windwos_tbl2x, tbl_file_ls)
 
     def windows_xx_tbl2x(self, tbl_file):
         '''
@@ -217,45 +232,53 @@ class Artemis(Core):
                     f.write(line)
 
     def ast2x(self):
+        ast_file_ls = file_list(self.game_data, 'ast')
+        self.pool_run(self.ast_file_2x, ast_file_ls)
+
+    def ast_file_2x(self, ast_file):
         '''
         人物位置修正，剧本文件
         '''
-        for ast_file in file_list(self.game_data, 'ast'):
-            result = []
-            lines, current_encoding = self.get_lines_encoding(ast_file)
-            for line in lines:
-                keyn_ls = ['mx', 'my', 'ax', 'ay', 'bx', 'by', 'x', 'y', 'x2', 'y2']
-                for keyn in keyn_ls:
-                    pattern = re.compile(rf'(.*\W+{keyn}\W+?)(-?\d+)(.*)')
-                    re_result = re.match(pattern, line)
-                    if re_result:
-                        line = self.line_pattern_num2x(re_result)
-                result.append(line)
-            with open(self.a2p(ast_file), 'w', newline='', encoding=current_encoding) as f:
-                for line in result:
-                    f.write(line)
+        # for ast_file in file_list(self.game_data, 'ast'):
+        result = []
+        lines, current_encoding = self.get_lines_encoding(ast_file)
+        for line in lines:
+            keyn_ls = ['mx', 'my', 'ax', 'ay', 'bx', 'by', 'x', 'y', 'x2', 'y2']
+            for keyn in keyn_ls:
+                pattern = re.compile(rf'(.*\W+{keyn}\W+?)(-?\d+)(.*)')
+                re_result = re.match(pattern, line)
+                if re_result:
+                    line = self.line_pattern_num2x(re_result)
+            result.append(line)
+        with open(self.a2p(ast_file), 'w', newline='', encoding=current_encoding) as f:
+            for line in result:
+                f.write(line)
 
     def lua2x(self):
+        lua_file_ls = file_list(self.game_data, 'lua')
+        self.pool_run(self.lua_file_2x, lua_file_ls)
+
+    def lua_file_2x(self, lua_file):
         '''
         部分游戏音量值位置修正
         '''
-        for lua_file in file_list(self.game_data, 'lua'):
-            changed_sign = 0
-            lines, current_encoding = self.get_lines_encoding(lua_file)
-            result = []
-            keyn_ls = ['width', 'height', 'left', 'top', 'x', 'y']
-            for line in lines:
-                for keyn in keyn_ls:
-                    pattern = re.compile(rf'(.*\W+{keyn}\W+)(\d+)(.*)')
-                    re_result = re.match(pattern, line)
-                    if re_result:
-                        changed_sign = 1
-                        line = self.line_pattern_num2x(re_result)
-                result.append(line)
-            if changed_sign == 1:
-                with open(self.a2p(lua_file), 'w', newline='', encoding=current_encoding) as f:
-                    for line in result:
-                        f.write(line)
+        # for lua_file in file_list(self.game_data, 'lua'):
+        changed_sign = 0
+        lines, current_encoding = self.get_lines_encoding(lua_file)
+        result = []
+        keyn_ls = ['width', 'height', 'left', 'top', 'x', 'y']
+        for line in lines:
+            for keyn in keyn_ls:
+                pattern = re.compile(rf'(.*\W+{keyn}\W+)(\d+)(.*)')
+                re_result = re.match(pattern, line)
+                if re_result:
+                    changed_sign = 1
+                    line = self.line_pattern_num2x(re_result)
+            result.append(line)
+        if changed_sign == 1:
+            with open(self.a2p(lua_file), 'w', newline='', encoding=current_encoding) as f:
+                for line in result:
+                    f.write(line)
 
     """
     ==================================================
@@ -267,15 +290,15 @@ class Artemis(Core):
         self.png2x()
 
     def png2x(self):
-        print('正在复制图片至临时文件夹......')
+        self.emit_info('正在复制图片至临时文件夹......')
         for png_file in file_list(self.game_data, 'png'):
             fcopy(png_file, self.a2t(png_file).parent)
-        print('图片复制完成，正在放大中......')
+        self.emit_info('图片复制完成，正在放大中......')
         # show_image2x_p = Process(target=self.show_image2x_status, args=('png',))
         # show_image2x_p.start()
-        self.image_upscale(self.tmp_folder, self.tmp_folder, 'png')
+        self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png')
         # show_image2x_p.join()
-        print('正在将立绘坐标信息写入到png图片')
+        self.emit_info('正在将立绘坐标信息写入到png图片')
         png_text_dict = self.get_all_png_text()
         for png_file, png_text in png_text_dict.items():
             self.write_png_text(png_file, png_text)
@@ -306,7 +329,7 @@ class Artemis(Core):
     """
 
     def animation2x(self):
-        print('开始处理游戏动画')
+        self.emit_info('开始处理游戏动画')
         self.ogv2x()
 
     def ogv2x(self):
@@ -314,7 +337,7 @@ class Artemis(Core):
         if ogv_file_ls:
             for ogv_file in ogv_file_ls:
                 output_video = self.a2t(ogv_file)
-                output_video = self.video_upscale(ogv_file, output_video)
+                output_video = self.video_upscale(ogv_file, output_video, self.scale_ratio)
                 fmove(output_video, self.t2p(output_video).parent)
             self.tmp_clear()
 
@@ -325,12 +348,12 @@ class Artemis(Core):
     """
 
     def video2x(self):
-        print('开始处理游戏视频')
+        self.emit_info('开始处理游戏视频')
         video_extension_ls = ['wmv', 'dat', 'mp4', 'avi', 'mpg', 'mkv']
         for video_extension in video_extension_ls:
             video_file_ls = [video_file for video_file in file_list(self.game_data, video_extension) if self.video_info(video_file)]
             if video_file_ls:
-                print(f'{video_extension}视频放大中......')
+                self.emit_info(f'{video_extension}视频放大中......')
                 for video_file in video_file_ls:
                     tmp_video = fcopy(video_file, self.a2t(video_file).parent)
                     if video_extension == 'dat':
@@ -338,7 +361,7 @@ class Artemis(Core):
                     output_vcodec = None
                     if self.video_info(video_file)['vcodec'] == 'wmv3':
                         output_vcodec = 'wmv2'
-                    output_video = self.video_upscale(tmp_video, tmp_video, output_vcodec=output_vcodec)
+                    output_video = self.video_upscale(tmp_video, tmp_video, self.scale_ratio, output_vcodec=output_vcodec)
                     if video_extension == 'dat':
                         output_video = output_video.replace(output_video.with_suffix('.dat'))
                     fmove(output_video, self.t2p(output_video).parent)
@@ -427,24 +450,24 @@ class Artemis(Core):
                 a = entry.file_name.decode(encoding)
                 b = bytearray(archive.read(entry.file_size))
                 entry_name_contents_offset_list.append((a, b))
-        target_file_ls = self.pool_run(self.decrypt_and_save_file, entry_name_contents_offset_list, output_folder, digest)
+        target_file_ls = self.pool_run(self.decrypt_pfs_and_save_file, entry_name_contents_offset_list, output_folder, digest)
         return target_file_ls
 
-    def decrypt_and_save_file(self, entry_name_contents_offset, output_folder, digest) -> Path:
+    def decrypt_pfs_and_save_file(self, entry_name_contents_offset, output_folder, digest) -> Path:
         target_file = output_folder/entry_name_contents_offset[0]
         if not target_file.parent.exists():
             target_file.parent.mkdir(parents=True, exist_ok=True)
         contents = entry_name_contents_offset[1]
         len_contents = len(contents)
         len_digest = len(digest)
-        contents = self.decrypt_contents(contents, digest, len_contents, len_digest)
+        contents = self.decrypt_pfs_contents(contents, digest, len_contents, len_digest)
         with open(target_file, 'wb') as f:
             f.write(contents)
-            print(f'{target_file} saved!')
+            self.emit_info(f'{target_file} saved!')
         return target_file
 
     @jit(fastmath=True)
-    def decrypt_contents(self, contents, digest, len_contents, len_digest):
+    def decrypt_pfs_contents(self, contents, digest, len_contents, len_digest):
         for i in range(len_contents):
             contents[i] ^= digest[i % len_digest]
         return contents
