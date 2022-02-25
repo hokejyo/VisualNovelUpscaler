@@ -12,7 +12,7 @@ class ArtemisPart(FTabWidget):
         self.set_ratio_state()
         self.set_resolution_state()
         self.select_all_part()
-        self.set_game_resolution(1280, 720)
+        self.set_game_resolution_encoding(1280, 720, 'UTF-8')
 
     def initUI(self):
 
@@ -22,8 +22,8 @@ class ArtemisPart(FTabWidget):
         self.setup_work_up()
         self.addTab(self.work_up_frame, '重制后处理')
 
-        # self.setup_zip()
-        # self.addTab(self.zip_frame, '存储优化')
+        self.setup_zip()
+        self.addTab(self.zip_frame, '存储优化')
 
         self.setup_connections()
 
@@ -47,14 +47,24 @@ class ArtemisPart(FTabWidget):
         layout1 = QFormLayout(self.choose_resolution_Frame)
         self.choose_resolution_lb = QLabel('分辨率设定：')
         layout2 = QVBoxLayout()
-        layout2.setContentsMargins(0, 6, 0, 0)
+        layout2.setContentsMargins(0, 5, 0, 0)
         layout1.addRow(self.choose_resolution_lb, layout2)
 
         formlayout1 = QFormLayout()
         self.before_resolution_lb = QLabel('原生分辨率：')
-        before_resolution_hlayout = QHBoxLayout()
+        resolution_hlayout = QHBoxLayout()
+        resolution_hlayout.setContentsMargins(0, 0, 0, 0)
+        resolution_hlayout.setSpacing(15)
         self.before_resolution = QLabel()
-        formlayout1.addRow(self.before_resolution_lb, self.before_resolution)
+        self.main_encoding = QLabel()
+        resolution_hlayout.addWidget(self.before_resolution)
+        resolution_hlayout.addWidget(self.main_encoding)
+        self.check_resolution_btn = FPushButton(text='检测分辨率', height=20, minimum_width=80, text_padding=0, text_align='center', border_radius=10)
+        self.check_resolution_btn.show_shadow()
+        resolution_hlayout.addWidget(self.check_resolution_btn)
+        _spacer = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        resolution_hlayout.addItem(_spacer)
+        formlayout1.addRow(self.before_resolution_lb, resolution_hlayout)
 
         self.s1080p_btn = QRadioButton('1080P')
         self.s2k_btn = QRadioButton('2K')
@@ -133,10 +143,11 @@ class ArtemisPart(FTabWidget):
 
     def setup_pfs_unpack(self):
         self.pfs_unpack_btn = QRadioButton('一键解包：')
+        self.pfs_unpack_btn.setChecked(True)
         layout = QHBoxLayout()
         self.work_up_layout.addRow(self.pfs_unpack_btn, layout)
         self.pfs_encoding_label = QLabel('编码格式：')
-        self.pfs_encoding_line_edit = FLineEdit('utf-8')
+        self.pfs_encoding_line_edit = FLineEdit('UTF-8')
         layout.addWidget(self.pfs_encoding_label)
         layout.addWidget(self.pfs_encoding_line_edit)
 
@@ -212,17 +223,20 @@ class ArtemisPart(FTabWidget):
             self.s1080p_btn.setEnabled(True)
             self.s2k_btn.setEnabled(True)
             self.s4k_btn.setEnabled(True)
-            self.s1080p_btn.setChecked(True)
+            # self.s1080p_btn.setChecked(True)
         else:
-            # 非16:9默认2倍放大
+            # 非16:9
             self.s1080p_btn.setDisabled(True)
             self.s2k_btn.setDisabled(True)
             self.s4k_btn.setDisabled(True)
-            self.custiom_ratio_btn.setChecked(True)
-            self.custiom_ratio_spinbox.setValue(2)
+        # 默认2倍放大
+        self.custiom_ratio_btn.setChecked(True)
+        self.custiom_ratio_spinbox.setValue(1)
+        self.custiom_ratio_spinbox.setValue(2)
 
-    def set_game_resolution(self, width, height):
+    def set_game_resolution_encoding(self, width, height, encoding):
         self.before_resolution.setText(f'{width}x{height}')
+        self.main_encoding.setText(encoding)
         self.judge_scaled_resolution_btn()
 
     def s1080p_btn_ratio(self):

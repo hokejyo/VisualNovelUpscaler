@@ -48,13 +48,13 @@ class LeftMenu(QFrame):
         self.left_menu_top_layout.setSpacing(0)
         # 按钮
         self.menu_button = FPushButton(text="折叠菜单", text_padding=60, icon_path=self.icon_folder/'columns.svg')
-        self.home_button = FPushButton(text="图像增强", text_padding=60, icon_path=self.icon_folder/'slack.svg')
+        self.image_button = FPushButton(text="图像增强", text_padding=60, icon_path=self.icon_folder/'slack.svg')
         self.game_button = FPushButton(text="视觉小说", text_padding=60, icon_path=self.icon_folder/'book-open.svg')
-        self.page3_button = FPushButton(text="文件整理", text_padding=60, icon_path=self.icon_folder/'trello.svg')
+        # self.page3_button = FPushButton(text="批量处理", text_padding=60, icon_path=self.icon_folder/'trello.svg')
         self.left_menu_top_layout.addWidget(self.menu_button)
-        self.left_menu_top_layout.addWidget(self.home_button)
+        self.left_menu_top_layout.addWidget(self.image_button)
         self.left_menu_top_layout.addWidget(self.game_button)
-        self.left_menu_top_layout.addWidget(self.page3_button)
+        # self.left_menu_top_layout.addWidget(self.page3_button)
 
     def setup_left_menu_bottom(self):
         # 菜单底部布局

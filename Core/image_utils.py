@@ -48,7 +48,8 @@ class ImageUtils(object):
         text_ls[1] = new_text2bytes
         return tuple(text_ls)
 
-    def write_png_text(self, png_file, png_text):
+    @staticmethod
+    def write_png_text_(png_file, png_text) -> Path:
         """
         @brief      将文本信息写入到png图片
 
@@ -62,6 +63,7 @@ class ImageUtils(object):
         new_chunks.insert(1, png_text)
         with open(png_file, 'wb') as f:
             png.write_chunks(f, new_chunks)
+        return png_file
 
     @staticmethod
     def alpha_image(image_path) -> bool:
@@ -93,7 +95,6 @@ class ImageUtils(object):
         @param      image_file   图片文件路径
         @param      zoom_factor  缩放系数
         """
-        image_file = Path(image_file)
         image = Image.open(image_file)
         image_resize = image.resize((int(image.width*zoom_factor),
                                      int(image.height*zoom_factor)),
@@ -111,7 +112,6 @@ class ImageUtils(object):
 
         @return     输出图片路径对象
         """
-        input_path = Path(input_path)
         output_path = input_path.with_suffix('.'+output_extention)
         if output_path != input_path:
             try:
@@ -153,7 +153,7 @@ class ImageUtils(object):
         @param      filters           格式过滤器
         @param      walk_mode         是否处理子文件夹中的图片，默认是
         @param      video_mode        使用视频超分引擎
-        @param      count_class       统计执行数量的对象(需含有count_process属性)
+        @param      count_class       统计执行数量的对象(需含有_count_process:int属性)
         
         @return     所有输出图片的路径对象列表
         """
@@ -201,7 +201,7 @@ class ImageUtils(object):
                         tmp_image.replace(target_image_file)
                         print(f'{target_image_file} saved!')
                         if count_class:
-                            count_class.count_process += 1
+                            count_class._count_process += 1
                         output_image_ls.append(target_image_file)
                     shutil.rmtree(tmp_folder1)
                     shutil.rmtree(tmp_folder2)

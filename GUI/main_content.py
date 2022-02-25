@@ -44,7 +44,6 @@ class MainContent(QFrame):
         self.top_label_left.setStyleSheet("font: 700 10pt 'Segoe UI'")
         # 空间
         self.top_spacer = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        # 字体修改
         # 窗口功能按键
         self.minimize_btn = FPushButton(height=self.top_bar.height(),
                                         minimum_width=self.top_bar.height(),

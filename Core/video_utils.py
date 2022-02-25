@@ -8,13 +8,13 @@ class VideoUtils(object):
     @brief      专用于处理视频文件
     """
 
-    def video_info(self, input_video) -> dict:
+    def video_info(self, input_video) -> dict or bool:
         """
         @brief      调用ffprobe获取视频信息
 
         @param      input_video  输入视频
 
-        @return     返回视频信息字典，非常规编码视频返回空字典
+        @return     返回视频信息字典，未识别视频返回False
         """
         input_video = Path(input_video)
         options = [self.ffprobe,
@@ -26,8 +26,8 @@ class VideoUtils(object):
         get_video_info_p = subprocess.run(options, capture_output=True)
         unsort_video_info = json.loads(get_video_info_p.stdout.decode('utf-8'))
         # 非常规编码视频返回空字典
-        if not unsort_video_info:
-            return unsort_video_info
+        if not unsort_video_info or len(unsort_video_info['streams']) == 0:
+            return False
         else:
             if len(unsort_video_info['streams']) == 1:
                 video = 0

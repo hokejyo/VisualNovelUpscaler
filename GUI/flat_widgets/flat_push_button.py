@@ -115,3 +115,12 @@ class FPushButton(QPushButton):
             (rect.height() - icon.height()) / 2,
             icon)
         painter.end()
+
+    def show_shadow(self):
+        # 显示阴影
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(self.border_radius)
+        shadow.setXOffset(0)
+        shadow.setYOffset(0)
+        shadow.setColor(QColor(0, 0, 0, 200))
+        self.setGraphicsEffect(shadow)

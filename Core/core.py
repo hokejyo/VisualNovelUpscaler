@@ -13,9 +13,6 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
     def __init__(self):
         Config.__init__(self)
         self.uuid_list = []
-        # 默认必要参数
-        # self.encoding, self.scwidth, self.scheight = 'shift-jis', 1280, 720
-        # self.scale_ratio = 2
 
     def show_image2x_status(self, image_extension):
         '''
@@ -112,6 +109,6 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
         while True:
             uuid_str = str(uuid.uuid4())[:len_num]
             if uuid_str not in self.uuid_list:
+                self.uuid_list.append(uuid_str)
                 break
-        self.uuid_list.append(uuid_str)
         return uuid_str

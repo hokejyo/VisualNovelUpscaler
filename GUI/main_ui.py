@@ -4,7 +4,9 @@ from .qt_core import *
 from .flat_widgets import *
 from .left_menu import LeftMenu
 from .main_content import MainContent
+from .image_page import ImagePage
 from .game_page import GamePage
+from .info_page import InfoPage
 from .setting_page import SettingPage
 
 
@@ -53,9 +55,9 @@ class MainUI(QMainWindow):
         # 设置圆角
         self.setStyleSheet("QFrame {border-radius: 15px;}")
         # 设置透明度
-        self.setWindowOpacity(0.93)
+        self.setWindowOpacity(1)
         # 显示页面2
-        self.show_game_page()
+        self.show_image_page()
 
     def setup_layouts(self):
         self.central_frame = QFrame()
@@ -85,7 +87,7 @@ class MainUI(QMainWindow):
         self.move(screen_center-self.frameGeometry().center())
 
     def setup_connections(self):
-        self.leftmenu.home_button.clicked.connect(self.show_home_page)
+        self.leftmenu.image_button.clicked.connect(self.show_image_page)
         self.leftmenu.game_button.clicked.connect(self.show_game_page)
         self.leftmenu.info_btn.clicked.connect(self.show_info_page)
         self.leftmenu.setting_btn.clicked.connect(self.show_setting_page)
@@ -97,25 +99,25 @@ class MainUI(QMainWindow):
 
     def setup_pages(self):
         # 内容页
-        self.homepage = QFrame()
-        self.maincontent.pages.addWidget(self.homepage)
+        self.imagepage = ImagePage()
+        self.maincontent.pages.addWidget(self.imagepage)
 
         self.gamepage = GamePage()
         self.maincontent.pages.addWidget(self.gamepage)
 
-        self.infopage = QFrame()
+        self.infopage = InfoPage()
         self.maincontent.pages.addWidget(self.infopage)
 
         self.settingpage = SettingPage()
         self.maincontent.pages.addWidget(self.settingpage)
 
-    def show_home_page(self):
-        self.maincontent.pages.setCurrentWidget(self.homepage)
-        if self.leftmenu.home_button.is_active:
+    def show_image_page(self):
+        self.maincontent.pages.setCurrentWidget(self.imagepage)
+        if self.leftmenu.image_button.is_active:
             self.leftmenu.fold_menu()
         else:
             self.leftmenu.reset_selection()
-            self.leftmenu.home_button.set_active(True)
+            self.leftmenu.image_button.set_active(True)
 
     def show_game_page(self):
         self.maincontent.pages.setCurrentWidget(self.gamepage)

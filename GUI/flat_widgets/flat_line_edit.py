@@ -64,6 +64,6 @@ class FLineEdit(QLineEdit):
     def dropEvent(self, event):
         # 拖拽选择文件
         file_path = Path(event.mimeData().text().replace('file:///', '').strip())
-        if file_path.is_dir():
-            self.setText(str(file_path))
-            event.accept()
+        # if file_path.is_dir():
+        self.setText(str(file_path))
+        event.accept()

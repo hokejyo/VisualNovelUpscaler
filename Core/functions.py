@@ -79,6 +79,8 @@ def fcopy(src, dst) -> Path:
     src = Path(src).resolve()
     dst = Path(dst).resolve()
     target_file = dst/(src.name)
+    if target_file == src:
+        return target_file
     if target_file.exists():
         target_file.unlink()
     if not dst.exists():
@@ -99,6 +101,8 @@ def fmove(src, dst) -> Path:
     src = Path(src).resolve()
     dst = Path(dst).resolve()
     target_file = dst/(src.name)
+    if target_file == src:
+        return target_file
     if target_file.exists():
         target_file.unlink()
     if not dst.exists():
@@ -148,6 +152,39 @@ def file_list(folder, extension=None, walk_mode=True, ignored_folders=[], parent
     if parent_folder:
         file_path_ls = [file_path for file_path in file_path_ls if parent_folder in get_parent_names(file_path)]
     return file_path_ls
+
+
+def flat_folder(input_folder, output_folder) -> list:
+    """
+    @brief      将文件夹中子文件夹中的图片复制到指定文件夹根目录
+
+    @param      input_folder   输入目录
+    @param      output_folder  输出目录
+
+    @return     所有目标文件列表
+    """
+    input_folder = Path(input_folder).resolve()
+    output_folder = Path(output_folder).resolve()
+    flat_file_ls = [fcopy(file, output_folder) for file in file_list(input_folder)]
+    return flat_file_ls
+
+
+def flat_folder_(input_folder, del_folder=True) -> list:
+    """
+    @brief      将文件夹中子文件夹中的图片移动到根目录
+
+    @param      input_folder  输入目录
+    @param      del_folder    是否删除空文件夹
+
+    @return     所有文件列表
+    """
+    input_folder = Path(input_folder).resolve()
+    flat_file_ls = [fmove(file, input_folder) for file in file_list(input_folder)]
+    if del_folder:
+        for i in input_folder.iterdir():
+            if i.is_dir():
+                shutil.rmtree(i)
+    return flat_file_ls
 
 
 def real_digit(str1) -> bool:

@@ -20,7 +20,7 @@ class Config(object):
             self.vnc_config.add_section('General')
             self.vnc_config.set('General', 'cpu_cores', str(cpu_count()))
             self.vnc_config.set('General', 'gpu_id', '0')
-            self.vnc_config.set('General', 'encoding_list', 'shift-jis,utf-8,gbk,utf-16,cp932')
+            self.vnc_config.set('General', 'encoding_list', 'Shift_JIS,UTF-8,GBK,UTF-16,CP932')
             # 图片设置
             self.vnc_config.add_section('Image')
             self.vnc_config.set('Image', 'image_sr_engine', 'waifu2x_ncnn')
@@ -28,7 +28,7 @@ class Config(object):
             # 视频设置
             self.vnc_config.add_section('Video')
             self.vnc_config.set('Video', 'video_sr_engine', 'anime4k')
-            self.vnc_config.set('Video', 'video_batch_size', '50')
+            self.vnc_config.set('Video', 'video_batch_size', '40')
             self.vnc_config.set('Video', 'video_quality', '2')
             # 超分引擎设置
             self.vnc_config.add_section('SREngine')

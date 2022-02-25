@@ -12,15 +12,20 @@ class Kirikiri(Core):
         # 连接ui并统计进度
         self.has_connected_ui = False
         self.count_class = None
-        # self.scale_ratio = self.get_default_scale_ratio()
+        self._count_process = 0
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
         self.keep_path_struct_mode = True
 
-    def set_game_data(self, game_data):
+    def set_game_data(self, game_data, patch_folder):
         self.game_data = Path(game_data).resolve()
+        self.patch_folder = Path(patch_folder).resolve()
         self.tmp_folder = self.game_data.parent/'vnc_tmp'
         self.tmp_clear()
-        self.encoding, self.scwidth, self.scheight = self.get_encoding_resolution()
+
+    def set_resolution_encoding(self, scwidth, scheight, encoding):
+        self.scwidth = scwidth
+        self.scheight = scheight
+        self.encoding = encoding
 
     def connect_ui_runner(self, ui_runner):
         global _ui_runner_
@@ -34,81 +39,90 @@ class Kirikiri(Core):
         else:
             print(info_str)
 
-    def upscale(self):
-        # 生成处理列表
-        upscale_file_count = 0
+    def generate_upscale_file_count(self):
+        self.emit_info('正在生成处理列表......')
+        self._upscale_file_count = 0
         if self.run_dict['script']:
             tjs_file_ls = patch9_first(file_list(self.game_data, 'tjs'))
-            upscale_file_count += len(tjs_file_ls)
+            self._upscale_file_count += len(tjs_file_ls)
 
             ks_file_ls = patch9_first(file_list(self.game_data, 'ks'))
-            upscale_file_count += len(ks_file_ls)
-
+            self._upscale_file_count += len(ks_file_ls)
             uicsv_file_ls = patch9_first(file_list(self.game_data, 'csv', parent_folder='uipsd'))
-            upscale_file_count += len(uicsv_file_ls)
-
+            self._upscale_file_count += len(uicsv_file_ls)
             asd_file_ls = patch9_first(file_list(self.game_data, 'asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
-            upscale_file_count += len(asd_file_ls)
-
+            self._upscale_file_count += len(asd_file_ls)
             stand_file_ls = patch9_first(file_list(self.game_data, 'stand'))
-            upscale_file_count += len(stand_file_ls)
-
+            self._upscale_file_count += len(stand_file_ls)
             ori_scn_file_ls = patch9_first(file_list(self.game_data, 'scn'))
-            upscale_file_count += len(ori_scn_file_ls)
+            self._upscale_file_count += len(ori_scn_file_ls)
 
         if self.run_dict['image']:
             image_extension_ls = ['bmp', 'jpg', 'jpeg', 'png', 'webp']
             for image_extension in image_extension_ls:
                 image_file_list = patch9_first(file_list(self.game_data, image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
-                upscale_file_count += len(image_file_list)
+                self._upscale_file_count += len(image_file_list)
 
             org_pimg_file_ls = patch9_first(file_list(self.game_data, 'pimg'))
-            upscale_file_count += len(org_pimg_file_ls)
+            self._upscale_file_count += len(org_pimg_file_ls)
 
             ori_tlg_file_ls = patch9_first(file_list(self.game_data, 'tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
-            upscale_file_count += len(ori_tlg_file_ls)
+            self._upscale_file_count += len(ori_tlg_file_ls)
 
         if self.run_dict['animation']:
             ori_amv_file_ls = patch9_first(file_list(self.game_data, 'amv'))
-            upscale_file_count += len(ori_amv_file_ls)
+            self._upscale_file_count += len(ori_amv_file_ls)
 
         if self.run_dict['video']:
             video_extension_ls = ['mpg', 'mpeg', 'wmv', 'avi', 'mkv']
             for video_extension in video_extension_ls:
                 org_video_ls = patch9_first(file_list(self.game_data, video_extension))
-                upscale_file_count += len(org_video_ls)
+                self._upscale_file_count += len(org_video_ls)
 
+    def upscale(self):
+        # 计时
+        start_time = time.time()
+        # 创建补丁文件夹和临时文件夹
+        if not self.patch_folder.exists():
+            self.patch_folder.mkdir(parents=True)
+        self.tmp_clear()
         # 进度统计
-        self.count_process = 0
+        self.generate_upscale_file_count()
+        self._count_process = 0
+        # 更新进度
+        update_process_thread = Thread(target=self.update_vn_upscale_process)
+        update_process_thread.start()
         # 开始放大
-        upscale_thread = Thread(target=self.start_upscale)
-        upscale_thread.start()
-        if self.has_connected_ui:
-            self.update_process(upscale_file_count)
-        upscale_thread.join()
+        self._upscale()
+        update_process_thread.join()
+        # 删除临时文件夹
+        if self.tmp_folder.exists():
+            shutil.rmtree(self.tmp_folder)
+        # 将文件平铺
+        if not self.keep_path_struct_mode:
+            flat_folder_(self.patch_folder, del_folder=True)
+        timing_count = time.time() - start_time
+        self.emit_info(f'共耗时：{seconds_format(timing_count)}')
 
-    def update_process(self, upscale_file_count):
-        if upscale_file_count == 0:
+    def update_vn_upscale_process(self):
+        """
+        @brief      更新进度，需在子线程内启动
+        """
+        if self._upscale_file_count == 0:
             now_percent = 1
             print(f'未发现需要处理的文件')
         else:
             now_percent = 0
         while now_percent < 100:
-            now_percent = int(self.count_process/upscale_file_count*100)
+            now_percent = int(self._count_process/self._upscale_file_count*100)
+            # 发送信号到ui
             if self.has_connected_ui:
                 _ui_runner_.progress_sig.emit(now_percent)
+            else:
+                print(f'进度：->{now_percent}%<-')
             time.sleep(2)
 
-    def start_upscale(self):
-
-        # 计时
-        self.start_time = time.time()
-        if not self.patch_folder.exists():
-            self.patch_folder.mkdir(parents=True)
-        if self.tmp_folder.exists():
-            shutil.rmtree(self.tmp_folder)
-        self.tmp_folder.mkdir(parents=True)
-
+    def _upscale(self):
         if self.run_dict['script']:
             self.script2x()
             self.emit_info('脚本文件处理完成')
@@ -122,15 +136,12 @@ class Kirikiri(Core):
             self.video2x()
             self.emit_info('视频文件处理完成')
 
-        shutil.rmtree(self.tmp_folder)
-        timing_count = time.time() - self.start_time
-        self.emit_info(seconds_format(timing_count))
-
-    def get_encoding_resolution(self):
+    def get_resolution_encoding(self, input_folder):
         '''
         获取文本编码和分辨率
         '''
-        tjs_file_ls = patch9_first(file_list(self.game_data, 'tjs'))
+        input_folder = Path(input_folder).resolve()
+        tjs_file_ls = patch9_first(file_list(input_folder, 'tjs'))
         for tjs_file in tjs_file_ls:
             if tjs_file.name == 'Config.tjs':
                 encoding = self.get_encoding(tjs_file)
@@ -142,7 +153,25 @@ class Kirikiri(Core):
                             scwidth = int(re.match(pattern, line).group(2))
                         if line.startswith(';scHeight'):
                             scheight = int(re.match(pattern, line).group(2))
-                    return encoding, scwidth, scheight
+                break
+        return scwidth, scheight, encoding
+
+    def flat_kirikiri_patch_folder(self, input_folder, output_folder):
+        input_folder = Path(input_folder).resolve()
+        output_folder = Path(output_folder).resolve()
+        self.emit_info('正在计算文件优先级......')
+        patch_file_ls = patch9_first(file_list(input_folder))
+        if patch_file_ls:
+            patch_ls_len = len(patch_file_ls)
+            for count, file in enumerate(patch_file_ls, start=1):
+                target_file_path = fcopy(file, output_folder)
+                self.emit_info(f'{target_file_path} saved!')
+                if self.has_connected_ui:
+                    progress_percentage = int(count/patch_ls_len*100)
+                    _ui_runner_.progress_sig.emit(progress_percentage)
+        else:
+            if self.has_connected_ui:
+                _ui_runner_.progress_sig.emit(100)
 
     """
     ==================================================
@@ -151,6 +180,7 @@ class Kirikiri(Core):
     """
 
     def script2x(self):
+        self.emit_info('开始处理游戏脚本......')
         self.tjs2x()
         self.ks2x()
         self.uicsv2x()
@@ -176,7 +206,7 @@ class Kirikiri(Core):
                     pass
                 except:
                     pass
-            self.count_process += 1
+            self._count_process += 1
 
     def ks2x(self):
         ks_file_ls = patch9_first(file_list(self.game_data, 'ks'))
@@ -190,7 +220,7 @@ class Kirikiri(Core):
                     pass
                 except:
                     pass
-            self.count_process += 1
+            self._count_process += 1
 
     def Configtjs2x(self, tjs_file):
         '''
@@ -373,7 +403,7 @@ class Kirikiri(Core):
         for input_csv in uicsv_file_ls:
             output_csv = self.a2p(input_csv)
             self.csv2x(input_csv, output_csv, self.scale_ratio)
-            self.count_process += 1
+            self._count_process += 1
 
     def asd2x(self):
         '''
@@ -401,27 +431,27 @@ class Kirikiri(Core):
             with open(self.a2p(asd_file), 'w', newline='', encoding=current_encoding) as f:
                 for line in result:
                     f.write(line)
-            self.count_process += 1
+            self._count_process += 1
 
     def scn2x(self):
         ori_scn_file_ls = patch9_first(file_list(self.game_data, 'scn'))
         if ori_scn_file_ls:
             scn_file_ls = [fcopy(scn_file, self.a2t(scn_file).parent) for scn_file in ori_scn_file_ls]
-            # 多进程拆scn
+            self.emit_info('开始拆分scn')
             self.pool_run(self.scn_de, scn_file_ls)
             # 获得json文件列表并删除原scn
             scn_json_file_ls = []
             for scn_file in scn_file_ls:
                 scn_json_file_ls.append(scn_file.with_suffix('.json'))
                 scn_file.unlink()
-            # 处理坐标
+            self.emit_info('开始处理scn坐标')
             self.pool_run(self.scn_json2x_, scn_json_file_ls)
-            # 合并scn
+            self.emit_info('开始合并scn')
             scn_json_files_and_output_folders = [(scn_json_file, scn_json_file.parent) for scn_json_file in scn_json_file_ls]
             scaled_scn_file_ls = self.pool_run(self.scn_en, scn_json_files_and_output_folders)
             [fmove(scn_file, self.t2p(scn_file).parent) for scn_file in scaled_scn_file_ls]
             self.tmp_clear()
-            self.count_process += len(scaled_scn_file_ls)
+            self._count_process += len(scaled_scn_file_ls)
 
     def scn_de(self, scn_file):
         scn_de_p = subprocess.run([self.psb_de_exe, scn_file], capture_output=True)
@@ -449,8 +479,7 @@ class Kirikiri(Core):
                         line = self.line_pattern_num2x(re_result)
                 result.append(line)
         with open(scn_json_file, 'w', newline='', encoding='utf-8') as f:
-            for line in result:
-                f.write(line)
+            f.writelines(result)
 
     def stand2x(self):
         '''
@@ -479,7 +508,7 @@ class Kirikiri(Core):
             with open(self.a2p(stand_file), 'w', newline='', encoding=current_encoding) as f:
                 for line in result:
                     f.write(line)
-            self.count_process += 1
+            self._count_process += 1
 
     def stand_correction(self, input_folder, output_folder, face_zoom, xpos_move):
         '''
@@ -518,7 +547,7 @@ class Kirikiri(Core):
     """
 
     def image2x(self):
-        self.emit_info('开始放大图片，处理时间较长，请耐心等待......')
+        self.emit_info('开始处理游戏图片......')
         self.general_image2x()
         self.emit_info('常规图片处理完成')
         self.pimg2x()
@@ -550,7 +579,6 @@ class Kirikiri(Core):
             pimg_file_ls = [fcopy(pimg_file, self.a2t(pimg_file).parent) for pimg_file in org_pimg_file_ls]
             self.emit_info('正在拆分pimg文件')
             self.pool_run(self.pimg_de, pimg_file_ls)
-            self.emit_info('pimg文件拆分完成')
             self.emit_info('pimg图片放大中......')
             self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png')
             # 获得json文件列表并删除原pimg
@@ -560,12 +588,12 @@ class Kirikiri(Core):
                 pimg_file.unlink()
             self.emit_info('pimg图片放大完成，正在修正坐标')
             self.pool_run(self.pimg_json2x_, pimg_json_file_ls)
-            self.emit_info('正在组装中......')
+            self.emit_info('pimg组装中......')
             pimg_json_files_and_output_folders = [(pimg_json_file, pimg_json_file.parent) for pimg_json_file in pimg_json_file_ls]
             scaled_pimg_file_ls = self.pool_run(self.pimg_en, pimg_json_files_and_output_folders)
             [fmove(scaled_pimg_file, self.t2p(scaled_pimg_file).parent) for scaled_pimg_file in scaled_pimg_file_ls]
             self.tmp_clear()
-            self.count_process += len(scaled_pimg_file_ls)
+            self._count_process += len(scaled_pimg_file_ls)
 
     def pimg_de(self, pimg_file):
         '''
@@ -630,7 +658,7 @@ class Kirikiri(Core):
             scaled_tlg_file_ls = self.pool_run(self.png2tlg6, png_file_ls)
             [fmove(tlg_file, self.t2p(tlg_file).parent) for tlg_file in scaled_tlg_file_ls]
             self.tmp_clear()
-            self.count_process += len(scaled_tlg_file_ls)
+            self._count_process += len(scaled_tlg_file_ls)
         else:
             self.emit_info('未发现需要处理的tlg图片')
 
@@ -670,7 +698,7 @@ class Kirikiri(Core):
         if tlg5_mode:
             self.emit_info('请将弹出文件夹及其子文件中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
             os.system(f'start {input_folder}')
-            os.system(self.krkrtpc_exe)
+            os.system(str(self.krkrtpc_exe))
             tmp_tlg_file_ls = [png_file.with_suffix('.tlg') for png_file in png_file_ls]
         else:
             tmp_tlg_file_ls = self.pool_run(self.png2tlg6, png_file_ls)
@@ -749,18 +777,16 @@ class Kirikiri(Core):
         ori_amv_file_ls = patch9_first(file_list(self.game_data, 'amv'))
         if ori_amv_file_ls:
             amv_file_ls = [fcopy(amv_file, self.a2t(amv_file).parent) for amv_file in ori_amv_file_ls]
+            self.emit_info('AMV动画拆帧中......')
             png_sequence_folder_ls = self.amv2png(self.tmp_folder, self.tmp_folder)
             [amv_file.unlink() for amv_file in amv_file_ls]
             self.emit_info('AMV动画拆帧完成，正在放大中......')
-            # show_amv2x_p = Process(target=self.show_image2x_status, args=('png',))
-            # show_amv2x_p.start()
             self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png', video_mode=True)
-            # show_amv2x_p.join()
+            self.emit_info('AMV动画组装中......')
             scaled_amv_file_ls = self.pool_run(self.amv_en, png_sequence_folder_ls)
             [fmove(scaled_amv_file, self.t2p(scaled_amv_file).parent) for scaled_amv_file in scaled_amv_file_ls]
-            self.emit_info('AMV动画组装完成')
             self.tmp_clear()
-            self.count_process += len(scaled_amv_file_ls)
+            self._count_process += len(scaled_amv_file_ls)
 
     def amv2png(self, input_folder, output_folder) -> list:
         """
@@ -845,6 +871,21 @@ class Kirikiri(Core):
         tmp_amv.replace(target_amv)
         return target_amv
 
+    def png2amv(self, png_sequence_folder, output_folder):
+        """
+        @brief      将png序列合成为amv动画
+
+        @param      png_sequence_folder  The png sequence folder
+        @param      output_folder        The output folder
+
+        @return     输出amv文件路径
+        """
+        png_sequence_folder = Path(png_sequence_folder).resolve()
+        output_folder = Path(output_folder).resolve()
+        amv_file = self.amv_en(png_sequence_folder)
+        target_amv_path = fmove(amv_file, output_folder)
+        return target_amv_path
+
     """
     ==================================================
     Kirikiri引擎视频文件：mpg, mpeg, wmv, avi, mkv
@@ -858,19 +899,21 @@ class Kirikiri(Core):
             org_video_ls = patch9_first(file_list(self.game_data, video_extension))
             if org_video_ls:
                 for video_file in org_video_ls:
+                    self.emit_info(f'{video_file} 处理中......')
                     output_video = self.a2t(video_file)
                     output_vcodec = None
                     if self.video_info(video_file)['vcodec'] == 'wmv3':
                         output_vcodec = 'wmv2'
                     output_video = self.video_upscale(video_file, output_video, self.scale_ratio, output_vcodec=output_vcodec)
-                    fmove(output_video, self.t2p(output_video).parent)
-                    self.count_process += 1
-                self.tmp_clear()
+                    self.tmp_clear()
+                    target_video = fmove(output_video, self.t2p(output_video).parent)
+                    self._count_process += 1
+                    self.emit_info(f'{target_video} saved!')
 
 
 def patch9_first(file_ls) -> list:
     """
-    @brief      对于重名文件，含有patch后缀数字大的文件夹子目录中的文件优先
+    @brief      对于重名文件，含有patch后缀数字大的文件夹及其子目录中的文件优先
 
     @param      file_ls  文件列表
 
