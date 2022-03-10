@@ -6,7 +6,7 @@ class FCircularProgress(QFrame):
     def __init__(
         self,
         value=0,
-        progress_width=10,
+        progress_width=15,
         is_rounded=True,
         max_value=100,
         progress_color="#ff79c6",

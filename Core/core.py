@@ -13,33 +13,55 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
     def __init__(self):
         Config.__init__(self)
         self.uuid_list = []
+        # 连接ui并统计进度
+        self.has_connected_ui = False
+        self._count_process = 0
 
-    def show_image2x_status(self, image_extension):
-        '''
-        显示图片处理进度条，根据时间戳判断图片是否被处理
-        '''
-        target_count = len(file_list(self.tmp_folder, image_extension))
-        if target_count == 0:
+    def set_game_data(self, game_data, patch_folder):
+        self.game_data = Path(game_data)
+        self.patch_folder = Path(patch_folder)
+        # self.tmp_folder = self.game_data.parent/'vnc_tmp'
+        # self.tmp_clear()
+
+    def set_resolution_encoding(self, scwidth, scheight, encoding):
+        self.scwidth = scwidth
+        self.scheight = scheight
+        self.encoding = encoding
+
+    def connect_ui_runner(self, ui_runner):
+        global _ui_runner_
+        _ui_runner_ = ui_runner
+        self.has_connected_ui = True
+
+    def emit_info(self, info_str):
+        if self.has_connected_ui:
+            _ui_runner_.info_sig.emit(info_str)
+        else:
+            print(info_str)
+
+    def emit_progress(self, progress_value):
+        if self.has_connected_ui:
+            _ui_runner_.progress_sig.emit(progress_value)
+        else:
+            print(f'进度：{info_str}%')
+
+    def update_vn_upscale_process(self):
+        """
+        @brief      更新进度，需在子线程内启动
+        """
+        if self._upscale_file_count == 0:
             now_percent = 1
-            print(f'未发现需要放大的{image_extension}图片')
+            self.emit_info(f'未发现需要处理的文件')
         else:
             now_percent = 0
-        start_time = time.time()
-        # 百分比小于100%时循环
-        while now_percent < 1:
-            now_time = time.time()
-            # 时间戳判断图片是否被处理
-            now_count = len([image_file for image_file in file_list(self.tmp_folder, image_extension) if image_file.stat().st_mtime > start_time])
-            now_percent = now_count/target_count
-            if now_percent == 0:
-                print('处理进度：[%s]' % (format('>'*int(35*now_percent), '<35')), format(now_percent, ' >7.2%'), f'预计剩余时间：统计中...', end=' \r')
-                time.sleep(2)
-                continue
-            left_time = int((now_time-start_time)/now_percent - (now_time-start_time))
-            print('处理进度：[%s]' % (format('>'*int(35*now_percent), '<35')), format(now_percent, ' >7.2%'), f'预计剩余时间：{seconds_format(left_time)}', end=' \r')
+        while now_percent < 100:
+            now_percent = int(self._count_process/self._upscale_file_count*100)
+            # 发送信号到ui
+            if self.has_connected_ui:
+                self.emit_progress(now_percent)
+            else:
+                print(f'进度：->{now_percent}%<-')
             time.sleep(2)
-            if now_percent == 1:
-                print()
 
     def pool_run(self, target, runs, *args) -> list:
         """
@@ -68,7 +90,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
         @return     目标文件路径对象
         """
-        return p2p(file_path, self.game_data, self.patch_folder)
+        return file_path.reio_path(self.game_data, self.patch_folder, mk_dir=True)
 
     def a2t(self, file_path) -> Path:
         """
@@ -78,7 +100,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
         @return     目标文件路径对象
         """
-        return p2p(file_path, self.game_data, self.tmp_folder)
+        return file_path.reio_path(self.game_data, self.tmp_folder, mk_dir=True)
 
     def t2p(self, file_path) -> Path:
         """
@@ -88,15 +110,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
         @return     目标文件路径对象
         """
-        return p2p(file_path, self.tmp_folder, self.patch_folder)
-
-    def tmp_clear(self):
-        """
-        @brief      初始化临时文件夹
-        """
-        if self.tmp_folder.exists():
-            shutil.rmtree(self.tmp_folder)
-        self.tmp_folder.mkdir(parents=True)
+        return file_path.reio_path(self.tmp_folder, self.patch_folder, mk_dir=True)
 
     def create_str(self, len_num=8) -> str:
         """

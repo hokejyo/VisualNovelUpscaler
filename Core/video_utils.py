@@ -81,11 +81,11 @@ class VideoUtils(object):
 
         @return     输出文件夹, 图片序列名称
         """
-        input_video = Path(input_video).resolve()
-        output_folder = Path(output_folder).resolve()
+        input_video = Path(input_video)
+        output_folder = Path(output_folder)
         if not output_folder.exists():
             output_folder.mkdir(parents=True)
-        png_sequence = output_folder/(input_video.stem+'_%05d.png')
+        png_sequence = output_folder/(input_video.stem+'_%08d.png')
         options = [self.ffmpeg, '-y',
                    '-i', input_video,
                    '-qscale:v', '1',
@@ -125,15 +125,19 @@ class VideoUtils(object):
 
         @return     输出视频路径
         """
-        png_sequence = Path(png_sequence).resolve()
-        origin_video = Path(origin_video).resolve()
-        output_video = Path(output_video).resolve()
+        png_sequence = Path(png_sequence)
+        origin_video = Path(origin_video)
+        output_video = Path(output_video)
         origin_video_info = self.video_info(origin_video)
         if not output_vcodec:
             output_vcodec = origin_video_info['vcodec']
+            if output_vcodec == 'wmv3':
+                output_vcodec == 'wmv2'
+        elif output_vcodec == 'wmv3':
+            raise ValueError('输出视频编码不能为wmv3')
         options = [self.ffmpeg, '-y',
                    '-r', origin_video_info['frame_rate'],
-                   '-i', str(png_sequence),
+                   '-i', png_sequence.to_str,
                    '-i', origin_video,
                    '-map', '0:v:0',
                    '-map', '1:a:0?',
@@ -147,7 +151,7 @@ class VideoUtils(object):
         png2video_p = subprocess.run(options, capture_output=True)
         return output_video
 
-    def video_upscale(self, input_video, output_video, scale_ratio=2.0, output_vcodec=None):
+    def video_upscale(self, input_video, output_video, scale_ratio=2.0, output_vcodec=None, silent_mode=False):
         """
         @brief      视频放大
 
@@ -164,13 +168,20 @@ class VideoUtils(object):
             output_video.parent.mkdir(parents=True)
         if not output_vcodec:
             output_vcodec = self.video_info(input_video)['vcodec']
-        tmp_output_png_folder = output_video.parent/(output_video.stem+'vnc_tmp_png_sequence')
-        tmp_output_png_folder.mkdir(parents=True, exist_ok=True)
-        png_sequence = self.video2png(input_video, tmp_output_png_folder)
-        self.image_upscale(tmp_output_png_folder, tmp_output_png_folder, scale_ratio, video_mode=True)
-        # 输入输出相同时将输入文件夹重命名
-        if input_video == output_video:
-            input_video = input_video.replace(input_video.with_name(f'{input_video.stem}_old_{input_video.suffix}'))
-        self.png2video(png_sequence, input_video, output_video, output_vcodec)
-        shutil.rmtree(tmp_output_png_folder)
+            # ffmpeg不支持wmv3编码
+            if output_vcodec == 'wmv3':
+                output_vcodec == 'wmv2'
+        elif output_vcodec == 'wmv3':
+            raise ValueError('输出视频编码不能为wmv3')
+        with tempfile.TemporaryDirectory() as video_tmp_folder1:
+            video_tmp_folder1 = Path(video_tmp_folder1)
+            if not silent_mode:
+                self.emit_info(f'{input_video}拆帧中......')
+            png_sequence = self.video2png(input_video, video_tmp_folder1)
+            self.image_upscale(video_tmp_folder1, video_tmp_folder1, scale_ratio, video_mode=True)
+            tmp_video = video_tmp_folder1/output_video.name
+            if not silent_mode:
+                self.emit_info(f'{output_video}编码中......')
+            tmp_video = self.png2video(png_sequence, input_video, tmp_video, output_vcodec)
+            tmp_video.move_as(output_video)
         return output_video

@@ -7,7 +7,7 @@ from .flat_widgets import *
 class KirikiriPart(FTabWidget):
     def __init__(self):
         FTabWidget.__init__(self, height=40, position='top')
-        self.icon_folder = Path('./').resolve()/'Icons'
+        self.icon_folder = Path(sys.argv[0]).parent/'Icons'
         self.initUI()
         self.set_ratio_state()
         self.set_resolution_state()
@@ -150,7 +150,7 @@ class KirikiriPart(FTabWidget):
         self.work_up_group.addButton(self.flat_patch_btn)
 
     def setup_flat_patch_folder(self):
-        self.flat_patch_btn = QRadioButton('补丁文件平铺以适配KrkrExtract Universal Patch')
+        self.flat_patch_btn = QRadioButton('补丁文件平铺')
         self.work_up_layout.addRow(self.flat_patch_btn)
 
     def setup_amv_cvt(self):

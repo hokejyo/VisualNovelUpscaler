@@ -22,17 +22,17 @@ class VisualNovelClearer(Core, SettingPageUIConnection, GamePageUIConnection):
         GamePageUIConnection.__init__(self)
 
     def check_in_out_folder(self, input_folder, output_folder='', check_output=True, only_folder=True) -> bool:
-        input_folder = Path(input_folder).resolve()
-        output_folder = Path(output_folder).resolve()
+        input_folder = Path(input_folder)
+        output_folder = Path(output_folder)
         warn_message = None
         if not input_folder.exists():
             warn_message = '输入路径不存在'
         if not input_folder.is_dir() and only_folder:
             warn_message = '输入路径需要是文件夹'
-        if input_folder == Path('./').resolve():
+        if input_folder == Path('./'):
             warn_message = '输入路径不能与工作目录相同'
         if check_output:
-            if output_folder == Path('./').resolve():
+            if output_folder == Path('./'):
                 warn_message = '输出路径不能与工作目录相同'
             if input_folder == output_folder:
                 warn_message = '输入路径和输出路径不能相同'
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # 防止打包运行后多进程内存泄漏
     freeze_support()
     # 防止打包后拖拽运行工作路径改变
-    bundle_dir = Path(sys.argv[0]).resolve().parent
+    bundle_dir = Path(sys.argv[0]).parent
     os.chdir(bundle_dir)
     # 错误日志
     vnc_log_file = bundle_dir/'log.txt'

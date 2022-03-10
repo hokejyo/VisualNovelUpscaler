@@ -7,7 +7,7 @@ from .flat_widgets import *
 class MainContent(QFrame):
     def __init__(self):
         QFrame.__init__(self)
-        self.icon_folder = Path('./').resolve()/'Icons'
+        self.icon_folder = Path(sys.argv[0]).parent/'Icons'
         self.theme = {'MainContent_background': '#282a36', 'MainContent_font': '#6272a4', 'MainContent_bar': '#21232d', }
         self.setStyleSheet(f"background-color: {self.theme['MainContent_background']};color: {self.theme['MainContent_font']}")
         self.setup_layouts()
@@ -83,6 +83,7 @@ class MainContent(QFrame):
         self.setup_resize_botton()
         # 添加组件
         self.bottom_bar_layout.addWidget(self.bottom_label_left)
+        # self.bottom_bar_layout.addWidget(FProgressBar())
         self.bottom_bar_layout.addItem(self.bottom_spacer)
         self.bottom_bar_layout.addWidget(self.frame_grip)
 

@@ -9,65 +9,39 @@ class Artemis(Core):
     def __init__(self):
         Core.__init__(self)
         self.load_config()
-        self.has_connected_ui = False
-        self.count_class = None
-        self._count_process = 0
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
-
-    def set_game_data(self, game_data, patch_folder):
-        self.game_data = Path(game_data).resolve()
-        self.patch_folder = Path(patch_folder).resolve()
-        self.tmp_folder = self.game_data.parent/'vnc_tmp'
-        self.tmp_clear()
-
-    def set_resolution_encoding(self, scwidth, scheight, encoding):
-        self.scwidth = scwidth
-        self.scheight = scheight
-        self.encoding = encoding
-
-    def connect_ui_runner(self, ui_runner):
-        global _ui_runner_
-        _ui_runner_ = ui_runner
-        self.has_connected_ui = True
-        self.count_class = self
-
-    def emit_info(self, info_str):
-        if self.has_connected_ui:
-            _ui_runner_.info_sig.emit(info_str)
-        else:
-            print(info_str)
 
     def generate_upscale_file_count(self):
         self.emit_info('正在生成处理列表......')
         self._upscale_file_count = 0
         if self.run_dict['script']:
-            sys_ini_file_ls = [ini_file for ini_file in file_list(self.game_data, 'ini') if ini_file.name == 'system.ini']
+            sys_ini_file_ls = [ini_file for ini_file in self.game_data.file_list('ini') if ini_file.name == 'system.ini']
             self._upscale_file_count += len(sys_ini_file_ls)
 
-            tbl_file_ls = file_list(self.game_data, 'tbl')
+            tbl_file_ls = self.game_data.file_list('tbl')
             self._upscale_file_count += len(tbl_file_ls)
 
-            ipt_file_ls = file_list(self.game_data, 'ipt')
+            ipt_file_ls = self.game_data.file_list('ipt')
             self._upscale_file_count += len(ipt_file_ls)
 
-            ast_file_ls = file_list(self.game_data, 'ast')
+            ast_file_ls = self.game_data.file_list('ast')
             self._upscale_file_count += len(ast_file_ls)
 
-            lua_file_ls = file_list(self.game_data, 'lua')
+            lua_file_ls = self.game_data.file_list('lua')
             self._upscale_file_count += len(lua_file_ls)
 
         if self.run_dict['image']:
-            png_file_ls = file_list(self.game_data, 'png')
+            png_file_ls = self.game_data.file_list('png')
             self._upscale_file_count += len(png_file_ls)
 
         if self.run_dict['animation']:
-            ogv_file_ls = file_list(self.game_data, 'ogv')
+            ogv_file_ls = self.game_data.file_list('ogv')
             self._upscale_file_count += len(ogv_file_ls)
 
         if self.run_dict['video']:
             video_extension_ls = ['wmv', 'dat', 'mp4', 'avi', 'mpg', 'mkv']
             for video_extension in video_extension_ls:
-                video_file_ls = [video_file for video_file in file_list(self.game_data, video_extension) if self.video_info(video_file)]
+                video_file_ls = [video_file for video_file in self.game_data.file_list(video_extension) if self.video_info(video_file)]
                 self._upscale_file_count += len(video_file_ls)
 
     def upscale(self):
@@ -75,7 +49,7 @@ class Artemis(Core):
         start_time = time.time()
         if not self.patch_folder.exists():
             self.patch_folder.mkdir(parents=True)
-        self.tmp_clear()
+        self.tmp_folder.sweep()
         # 进度统计
         self.generate_upscale_file_count()
         self._count_process = 0
@@ -91,23 +65,6 @@ class Artemis(Core):
         timing_count = time.time() - start_time
         self.emit_info(f'共耗时：{seconds_format(timing_count)}')
 
-    def update_vn_upscale_process(self):
-        """
-        @brief      更新进度，需在子线程内启动
-        """
-        if self._upscale_file_count == 0:
-            now_percent = 1
-            print(f'未发现需要处理的文件')
-        else:
-            now_percent = 0
-        while now_percent < 100:
-            now_percent = int(self._count_process/self._upscale_file_count*100)
-            # 发送信号到ui
-            if self.has_connected_ui:
-                _ui_runner_.progress_sig.emit(now_percent)
-            else:
-                print(f'进度：->{now_percent}%<-')
-            time.sleep(2)
 
     def _upscale(self):
         if self.run_dict['script']:
@@ -127,8 +84,8 @@ class Artemis(Core):
         '''
         获取文本编码和分辨率
         '''
-        input_folder = Path(input_folder).resolve()
-        for ini_file in file_list(input_folder, 'ini'):
+        input_folder = Path(input_folder)
+        for ini_file in input_folder.file_list('ini'):
             if ini_file.name == 'system.ini':
                 encoding = self.get_encoding(ini_file)
                 with open(ini_file, newline='', encoding=encoding) as f:
@@ -164,7 +121,7 @@ class Artemis(Core):
         '''
         游戏分辨率，存档位置修改
         '''
-        sys_ini_file_ls = [ini_file for ini_file in file_list(self.game_data, 'ini') if ini_file.name == 'system.ini']
+        sys_ini_file_ls = [ini_file for ini_file in self.game_data.file_list('ini') if ini_file.name == 'system.ini']
         for ini_file in sys_ini_file_ls:
             pattern1 = re.compile(r'(WIDTH|HEIGHT)(\W+)(\d+)(.*)')
             result = []
@@ -190,14 +147,14 @@ class Artemis(Core):
             self._count_process += 1
 
     # def tbl2x(self):
-    #     for tbl_file in file_list(self.game_data, 'tbl'):
+    #     for tbl_file in self.game_data.file_list('tbl'):
     #         if tbl_file.name.startswith('list_windows_'):
     #             self.windows_xx_tbl2x(tbl_file)
     #         if tbl_file.name == 'list_windows.tbl':
     #             self.windwos_tbl2x(tbl_file)
 
     def tbl2x(self):
-        tbl_file_ls = file_list(self.game_data, 'tbl')
+        tbl_file_ls = self.game_data.file_list('tbl')
         self.pool_run(self.windwos_tbl2x, tbl_file_ls)
         self._count_process += len(tbl_file_ls)
 
@@ -274,7 +231,7 @@ class Artemis(Core):
         '''
         粒子效果显示修正，部分游戏对话框修正
         '''
-        ipt_file_ls = file_list(self.game_data, 'ipt')
+        ipt_file_ls = self.game_data.file_list('ipt')
         for ipt_file in ipt_file_ls:
             result = []
             lines, current_encoding = self.get_lines_encoding(ipt_file)
@@ -302,7 +259,7 @@ class Artemis(Core):
             self._count_process += 1
 
     def ast2x(self):
-        ast_file_ls = file_list(self.game_data, 'ast')
+        ast_file_ls = self.game_data.file_list('ast')
         self.pool_run(self.ast_file_2x, ast_file_ls)
         self._count_process += len(ast_file_ls)
 
@@ -310,7 +267,7 @@ class Artemis(Core):
         '''
         人物位置修正，剧本文件
         '''
-        # for ast_file in file_list(self.game_data, 'ast'):
+        # for ast_file in self.game_data.file_list('ast'):
         result = []
         lines, current_encoding = self.get_lines_encoding(ast_file)
         for line in lines:
@@ -326,7 +283,7 @@ class Artemis(Core):
                 f.write(line)
 
     def lua2x(self):
-        lua_file_ls = file_list(self.game_data, 'lua')
+        lua_file_ls = self.game_data.file_list('lua')
         self.pool_run(self.lua_file_2x, lua_file_ls)
         self._count_process += len(lua_file_ls)
 
@@ -334,7 +291,7 @@ class Artemis(Core):
         '''
         部分游戏音量值位置修正
         '''
-        # for lua_file in file_list(self.game_data, 'lua'):
+        # for lua_file in self.game_data.file_list('lua'):
         changed_sign = 0
         lines, current_encoding = self.get_lines_encoding(lua_file)
         result = []
@@ -363,24 +320,24 @@ class Artemis(Core):
         self.png2x()
 
     def png2x(self):
-        png_file_ls = file_list(self.game_data, 'png')
+        png_file_ls = self.game_data.file_list('png')
         for png_file in png_file_ls:
-            fcopy(png_file, self.a2t(png_file).parent)
-        self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png', count_class=self.count_class)
+            png_file.copy_to(self.a2t(png_file).parent)
+        self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png', count_mode='all')
         self.emit_info('正在将立绘坐标信息写入到png图片')
         png_text_dict = self.get_all_png_text()
         for png_file, png_text in png_text_dict.items():
             self.write_png_text_(png_file, png_text)
-        for png_file in file_list(self.tmp_folder, 'png'):
-            fmove(png_file, self.t2p(png_file).parent)
-        self.tmp_clear()
+        for png_file in self.tmp_folder.file_list('png'):
+            png_file.move_to(self.t2p(png_file).parent)
+        self.tmp_folder.sweep()
 
     def get_all_png_text(self) -> dict:
         '''
         将含有文本信息的png图片中的坐标放大并保存
         '''
         png_text_dict = {}
-        text_png_path_ls = file_list(self.game_data, 'png')
+        text_png_path_ls = self.game_data.file_list('png')
         for png_file in text_png_path_ls:
             # 放大后的png图片在临时文件夹中的路径
             scaled_png_path = self.a2t(png_file)
@@ -402,13 +359,13 @@ class Artemis(Core):
         self.ogv2x()
 
     def ogv2x(self):
-        ogv_file_ls = file_list(self.game_data, 'ogv')
+        ogv_file_ls = self.game_data.file_list('ogv')
         if ogv_file_ls:
             for ogv_file in ogv_file_ls:
                 output_video = self.a2t(ogv_file)
                 output_video = self.video_upscale(ogv_file, output_video, self.scale_ratio)
-                target_ogv = fmove(output_video, self.t2p(output_video).parent)
-                self.tmp_clear()
+                target_ogv = output_video.move_to(self.t2p(output_video).parent)
+                self.tmp_folder.sweep()
                 self._count_process += 1
                 self.emit_info(f'{target_ogv} saved!')
 
@@ -422,22 +379,19 @@ class Artemis(Core):
         self.emit_info('开始处理游戏视频......')
         video_extension_ls = ['wmv', 'dat', 'mp4', 'avi', 'mpg', 'mkv']
         for video_extension in video_extension_ls:
-            video_file_ls = [video_file for video_file in file_list(self.game_data, video_extension) if self.video_info(video_file)]
+            video_file_ls = [video_file for video_file in self.game_data.file_list(video_extension) if self.video_info(video_file)]
             if video_file_ls:
                 self.emit_info(f'{video_extension}视频放大中......')
                 for video_file in video_file_ls:
-                    self.emit_info(f'{video_file} 处理中......')
-                    tmp_video = fcopy(video_file, self.a2t(video_file).parent)
+                    self.emit_info(f'正在处理：{video_file}')
+                    tmp_video = video_file.copy_to(self.a2t(video_file).parent)
                     if video_extension == 'dat':
-                        tmp_video = tmp_video.replace(tmp_video.with_suffix('.wmv'))
-                    output_vcodec = None
-                    if self.video_info(video_file)['vcodec'] == 'wmv3':
-                        output_vcodec = 'wmv2'
-                    output_video = self.video_upscale(tmp_video, tmp_video, self.scale_ratio, output_vcodec=output_vcodec)
+                        tmp_video = tmp_video.move_as(tmp_video.with_suffix('.wmv'))
+                    output_video = self.video_upscale(tmp_video, tmp_video, self.scale_ratio)
                     if video_extension == 'dat':
-                        output_video = output_video.replace(output_video.with_suffix('.dat'))
-                    target_video = fmove(output_video, self.t2p(output_video).parent)
-                    self.tmp_clear()
+                        output_video = output_video.move_as(output_video.with_suffix('.dat'))
+                    target_video = output_video.move_to(self.t2p(output_video).parent)
+                    self.tmp_folder.sweep()
                     self._count_process += 1
                     self.emit_info(f'{target_video} saved!')
 
@@ -513,10 +467,10 @@ class Artemis(Core):
         """
         # 计时
         start_time = time.time()
-        input_folder = Path(input_folder).resolve()
-        output_folder = Path(output_folder).resolve()
+        input_folder = Path(input_folder)
+        output_folder = Path(output_folder)
         output_file_ls = []
-        pfs_file_ls = [str(pfs_file) for pfs_file in file_list(input_folder) if '.pfs' in pfs_file.name]
+        pfs_file_ls = [str(pfs_file) for pfs_file in input_folder.file_list() if '.pfs' in pfs_file.name]
         pfs_file_ls.sort()
         count = 0
         all_count = len(pfs_file_ls)
@@ -546,7 +500,7 @@ class Artemis(Core):
 
         @return     输出文件列表
         """
-        pfs_file = Path(pfs_file).resolve()
+        pfs_file = Path(pfs_file)
         pfs = Artemis.Pfs.from_file(pfs_file)
         s1 = hashlib.sha1()
         s1.update(pfs.raw_archive_data)

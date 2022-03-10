@@ -141,7 +141,8 @@ class ImageUtils(object):
                       filters=['png', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp'],
                       walk_mode=True,
                       video_mode=False,
-                      count_class=None,
+                      silent_mode=False,
+                      count_mode='tmp',
                       ) -> list:
         """
         @brief      放大图片
@@ -153,58 +154,63 @@ class ImageUtils(object):
         @param      filters           格式过滤器
         @param      walk_mode         是否处理子文件夹中的图片，默认是
         @param      video_mode        使用视频超分引擎
-        @param      count_class       统计执行数量的对象(需含有_count_process:int属性)
+        @param      silent_mode       输出详细内容
+        @param      count_mode        'tmp'统计临时处理数量，'all'统计总处理数量
         
         @return     所有输出图片的路径对象列表
         """
-        input_path = Path(input_path).resolve()
+        input_path = Path(input_path)
         single_file_mode = False if input_path.is_dir() else True
-        output_folder = Path(output_folder).resolve()
+        output_folder = Path(output_folder)
         sr_engine = self.video_sr_engine if video_mode else self.image_sr_engine
         upscale_batch_size = self.video_batch_size if video_mode else self.image_batch_size
+        if count_mode == 'tmp':
+            self._tmp_count_process = 0
         output_image_ls = []
         for extension in filters:
             if single_file_mode:
                 org_image_ls = []
                 org_image_ls.append(input_path)
             else:
-                org_image_ls = file_list(input_path, extension, walk_mode=walk_mode)
+                org_image_ls = input_path.file_list(extension, walk_mode=walk_mode)
             if org_image_ls:
-                tmp_folder1 = output_folder.parent/('sr_tmp1_'+self.create_str())
-                tmp_folder2 = output_folder.parent/('sr_tmp2_'+self.create_str())
                 group_list = batch_group_list(org_image_ls, batch_size=upscale_batch_size)
                 for group in group_list:
-                    tmp_folder1.mkdir(parents=True)
-                    tmp_folder2.mkdir(parents=True)
-                    # 避免不同文件夹重名文件错误覆盖
-                    tmp_target_dict = {}
-                    for image_file in group:
-                        tmp_name = self.create_str()
-                        if single_file_mode:
-                            target_image_file = p2p(image_file, input_path.parent, output_folder)
-                        else:
-                            target_image_file = p2p(image_file, input_path, output_folder)
-                        tmp_target_dict[tmp_name] = target_image_file
-                        tmp_image_file = tmp_folder1/(tmp_name+image_file.suffix)
-                        shutil.copy(image_file, tmp_image_file)
-                    # 放大tmp1到tmp2
-                    options, zoom_factor = self.get_options_and_zoom_factor(tmp_folder1, tmp_folder2, scale_ratio, sr_engine)
-                    image_upscale_p = subprocess.run(options, capture_output=True)
-                    tmp_image_ls = file_list(tmp_folder2)
-                    # 缩放
-                    if zoom_factor != 1:
-                        tmp_image_ls = self.pool_run(ImageUtils.zoom_image_, tmp_image_ls, zoom_factor)
-                    # 转格式
-                    tmp_image_ls = self.pool_run(ImageUtils.convert_image_, tmp_image_ls, output_extention)
-                    for tmp_image in tmp_image_ls:
-                        target_image_file = tmp_target_dict[tmp_image.stem]
-                        tmp_image.replace(target_image_file)
-                        print(f'{target_image_file} saved!')
-                        if count_class:
-                            count_class._count_process += 1
-                        output_image_ls.append(target_image_file)
-                    shutil.rmtree(tmp_folder1)
-                    shutil.rmtree(tmp_folder2)
+                    with tempfile.TemporaryDirectory() as img_tmp_folder1:
+                        img_tmp_folder1 = Path(img_tmp_folder1)
+                        with tempfile.TemporaryDirectory() as img_tmp_folder2:
+                            img_tmp_folder2 = Path(img_tmp_folder2)
+
+                            # 避免不同文件夹重名文件错误覆盖
+                            tmp_target_dict = {}
+                            for image_file in group:
+                                tmp_name = self.create_str()
+                                if single_file_mode:
+                                    target_image_file = image_file.reio_path(input_path.parent, output_folder, mk_dir=True)
+                                else:
+                                    target_image_file = image_file.reio_path(input_path, output_folder, mk_dir=True)
+                                tmp_target_dict[tmp_name] = target_image_file
+                                tmp_image_file = img_tmp_folder1/(tmp_name+image_file.suffix)
+                                shutil.copy(image_file, tmp_image_file)
+                            # 放大tmp1到tmp2
+                            options, zoom_factor = self.get_options_and_zoom_factor(img_tmp_folder1, img_tmp_folder2, scale_ratio, sr_engine)
+                            image_upscale_p = subprocess.run(options, capture_output=True)
+                            tmp_image_ls = img_tmp_folder2.file_list()
+                            # 缩放
+                            if zoom_factor != 1:
+                                tmp_image_ls = self.pool_run(ImageUtils.zoom_image_, tmp_image_ls, zoom_factor)
+                            # 转格式
+                            tmp_image_ls = self.pool_run(ImageUtils.convert_image_, tmp_image_ls, output_extention)
+                            for tmp_image in tmp_image_ls:
+                                target_image_file = tmp_target_dict[tmp_image.stem]
+                                tmp_image.move_as(target_image_file)
+                                if not silent_mode:
+                                    self.emit_info(f'{target_image_file} saved!')
+                                if count_mode == 'tmp':
+                                    self._tmp_count_process += 1
+                                elif count_mode == 'all':
+                                    self._count_process += 1
+                                output_image_ls.append(target_image_file)
             if single_file_mode:
                 break
         return output_image_ls
@@ -223,12 +229,12 @@ class ImageUtils(object):
         match sr_engine:
             case 'waifu2x_ncnn':
                 # 将指定放大倍数转换成waifu2x-ncnn-valkan支持的放大倍数
-                actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
+                actual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
                 options = [self.waifu2x_ncnn_exe,
                            '-i', in_folder,
                            '-o', out_folder,
                            '-n', self.waifu2x_ncnn_noise_level,
-                           '-s', str(actiual_scale_ratio),
+                           '-s', str(actual_scale_ratio),
                            '-t', self.waifu2x_ncnn_tile_size,
                            '-m', self.waifu2x_ncnn_model_path,
                            '-g', self.gpu_id,
@@ -241,7 +247,7 @@ class ImageUtils(object):
             case 'real_cugan':
                 # 将指定放大倍数转换成Real-CUGAN支持的放大倍数
                 if scale_ratio <= 4:
-                    actiual_scale_ratio = ceil(scale_ratio)
+                    actual_scale_ratio = ceil(scale_ratio)
                     # 屏蔽3倍放大，4倍更快更稳定
                     if actual_scale_ratio == 3:
                         actual_scale_ratio = 4
@@ -251,7 +257,7 @@ class ImageUtils(object):
                            '-i', in_folder,
                            '-o', out_folder,
                            '-n', self.real_cugan_noise_level,
-                           '-s', str(actiual_scale_ratio),
+                           '-s', str(actual_scale_ratio),
                            '-t', self.real_cugan_tile_size,
                            '-c', self.real_cugan_sync_gap_mode,
                            '-m', self.real_cugan_model_path,
@@ -265,13 +271,13 @@ class ImageUtils(object):
             case 'real_esrgan':
                 # 将指定放大倍数转换成Real-ESRGAN支持的放大倍数
                 if self.real_esrgan_model_name == 'RealESRGANv2-animevideo-xsx2':
-                    actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
+                    actual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
                 else:
-                    actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(4, scale_ratio)
+                    actual_scale_ratio = ImageUtils.get_actual_scale_ratio(4, scale_ratio)
                 options = [self.real_esrgan_exe,
                            '-i', in_folder,
                            '-o', out_folder,
-                           '-s', str(actiual_scale_ratio),
+                           '-s', str(actual_scale_ratio),
                            '-t', self.real_esrgan_tile_size,
                            '-m', self.real_esrgan_model_path,
                            '-n', self.real_esrgan_model_name,
@@ -284,12 +290,12 @@ class ImageUtils(object):
                     options.remove('-x')
             case 'srmd_ncnn':
                 # 将指定放大倍数转换成srmd-ncnn-vulkan支持的放大倍数
-                actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
+                actual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
                 options = [self.srmd_ncnn_exe,
                            '-i', in_folder,
                            '-o', out_folder,
                            '-n', self.srmd_ncnn_noise_level,
-                           '-s', str(actiual_scale_ratio),
+                           '-s', str(actual_scale_ratio),
                            '-t', self.srmd_ncnn_tile_size,
                            '-m', self.srmd_ncnn_model_path,
                            '-g', self.gpu_id,
@@ -301,11 +307,11 @@ class ImageUtils(object):
                     options.remove('-x')
             case 'realsr_ncnn':
                 # 将指定放大倍数转换成realsr-ncnn-vulkan支持的放大倍数
-                actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(4, scale_ratio)
+                actual_scale_ratio = ImageUtils.get_actual_scale_ratio(4, scale_ratio)
                 options = [self.realsr_ncnn_exe,
                            '-i', in_folder,
                            '-o', out_folder,
-                           '-s', str(actiual_scale_ratio),
+                           '-s', str(actual_scale_ratio),
                            '-t', self.realsr_ncnn_tile_size,
                            '-m', self.realsr_ncnn_model_path,
                            '-g', self.gpu_id,
@@ -317,10 +323,10 @@ class ImageUtils(object):
                     options.remove('-x')
             case 'anime4k':
                 # anime4kcpp非整数倍放大会有alpha通道错位的bug
-                actiual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
+                actual_scale_ratio = ImageUtils.get_actual_scale_ratio(2, scale_ratio)
                 options = [self.anime4k_exe,
                            '-i', in_folder,
-                           '-z', str(actiual_scale_ratio),
+                           '-z', str(actual_scale_ratio),
                            '-t', str(self.cpu_cores),
                            '-b',
                            '-q',
@@ -336,5 +342,5 @@ class ImageUtils(object):
                         options.insert(-2, self.anime4k_hdn_level)
             case _:
                 raise Exception('请选择正确的超分引擎！')
-        zoom_factor = scale_ratio/actiual_scale_ratio
+        zoom_factor = scale_ratio/actual_scale_ratio
         return options, zoom_factor

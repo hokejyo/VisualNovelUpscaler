@@ -7,7 +7,7 @@ class Config(object):
     """配置设置"""
 
     def __init__(self):
-        self.bundle_dir = Path(sys.argv[0]).resolve().parent
+        self.bundle_dir = Path(sys.argv[0]).parent
         self.vnc_config = configparser.ConfigParser()
         self.vnc_config_file = self.bundle_dir/'config.ini'
         self.vnc_log_file = self.bundle_dir/'log.txt'
@@ -43,7 +43,7 @@ class Config(object):
             self.vnc_config.add_section('real_cugan')
             self.vnc_config.set('real_cugan', 'noise_level', '3')
             self.vnc_config.set('real_cugan', 'tile_size', '0')
-            self.vnc_config.set('real_cugan', 'sync_gap_mode', '3')
+            self.vnc_config.set('real_cugan', 'sync_gap_mode', '2')
             self.vnc_config.set('real_cugan', 'model_name', 'models-se')
             self.vnc_config.set('real_cugan', 'load_proc_save', '1:2:2')
             # Real-ESRGAN相关配置

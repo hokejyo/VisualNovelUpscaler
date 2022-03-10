@@ -7,7 +7,7 @@ from .flat_widgets import *
 class ArtemisPart(FTabWidget):
     def __init__(self):
         FTabWidget.__init__(self, height=40, position='top')
-        self.icon_folder = Path('./').resolve()/'Icons'
+        self.icon_folder = Path(sys.argv[0]).parent/'Icons'
         self.initUI()
         self.set_ratio_state()
         self.set_resolution_state()

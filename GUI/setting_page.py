@@ -3,7 +3,7 @@
 from .qt_core import *
 from .flat_widgets import *
 from .sr_engine_settings import *
-from Core import get_gpu_list
+# from Core import *
 
 
 class SettingPage(QFrame):

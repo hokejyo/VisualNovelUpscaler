@@ -9,7 +9,7 @@ from .artemis_part import ArtemisPart
 class GamePage(QFrame):
     def __init__(self):
         QFrame.__init__(self)
-        self.icon_folder = Path('./').resolve()/'Icons'
+        self.icon_folder = Path(sys.argv[0]).parent/'Icons'
         self.initUI()
         self.switch_kirikiri()
 
@@ -83,7 +83,7 @@ class GamePage(QFrame):
         path_text = QFileDialog.getExistingDirectory()
         if path_text:
             # 转换为操作系统支持的路径格式
-            format_path_text = str(Path(path_text).resolve())
+            format_path_text = Path(path_text).to_str
             self.select_input_folder_line_edit.setText(format_path_text)
 
     def setup_output_folder(self):
@@ -100,7 +100,7 @@ class GamePage(QFrame):
         hlayout.addWidget(self.select_output_folder_btn)
 
     def auto_fill_output_folder(self):
-        output_folder_path = Path(self.select_input_folder_line_edit.text().strip()).resolve().parent/'VNC_Output'
+        output_folder_path = Path(self.select_input_folder_line_edit.text().strip()).parent/'VNC_Output'
         # while output_folder_path.exists():
         #     output_folder_path = output_folder_path.with_name(output_folder_path.name+'_Output')
         self.select_output_folder_line_edit.setText(str(output_folder_path))
@@ -109,7 +109,7 @@ class GamePage(QFrame):
         path_text = QFileDialog.getExistingDirectory()
         if path_text:
             # 转换为操作系统支持的路径格式
-            format_path_text = str(Path(path_text).resolve())
+            format_path_text = Path(path_text).to_str
             self.select_output_folder_line_edit.setText(format_path_text)
 
     def setup_game_engine_area(self):
