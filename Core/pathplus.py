@@ -164,8 +164,24 @@ class Path(pathlib.Path):
             if walk_mode == False:
                 break
         if parent_folder:
-            file_path_ls = [file_path for file_path in file_path_ls if parent_folder in self.parent_names]
+            file_path_ls = [file_path for file_path in file_path_ls if parent_folder in file_path.parent_names]
         return file_path_ls
+
+    def folder_list(self):
+        """
+        @brief      获取文件夹内的子文件夹的路径
+
+        @return     子文件夹路径列表
+        """
+        if not self.is_dir():
+            raise Exception('self必须是文件夹')
+        dir_path_ls = []
+        for root, dirs, files in os.walk(self, topdown=True):
+            root = self.__class__(root)
+            for _dir in dirs:
+                dir_path = root/_dir
+                dir_path_ls.append(dir_path)
+        return dir_path_ls
 
     def flat_folder_(self, del_folder=True) -> list:
         """
@@ -233,4 +249,6 @@ class Path(pathlib.Path):
             raise Exception('self必须是文件夹')
         shutil.rmtree(self)
         self.mkdir()
+
+    
         

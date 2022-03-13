@@ -142,7 +142,6 @@ class GamePage(QFrame):
         layout = QHBoxLayout(self.run_part_frame)
         layout.setContentsMargins(10, 0, 10, 20)
         self.status_progress_bar = FProgressBar(height=30, border_radius=12.5)
-        self.status_progress_bar.setValue(0)
         layout.addWidget(self.status_progress_bar)
         self.start_frame = QFrame()
         self.start_frame.setMaximumWidth(112)

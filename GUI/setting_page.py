@@ -3,7 +3,6 @@
 from .qt_core import *
 from .flat_widgets import *
 from .sr_engine_settings import *
-# from Core import *
 
 
 class SettingPage(QFrame):
@@ -97,11 +96,6 @@ class SettingPage(QFrame):
         self.sr_engine_combobox = QComboBox()
         self.sr_engine_combobox.addItems(self.sr_engine_list)
         layout.addRow(self.sr_engine_lb, self.sr_engine_combobox)
-
-        # self.upscale_batch_size_lb = QLabel('单次批量大小：')
-        # self.upscale_batch_size_spinbox = QSpinBox()
-        # self.upscale_batch_size_spinbox.setRange(0, 100)
-        # layout.addRow(self.upscale_batch_size_lb, self.upscale_batch_size_spinbox)
 
         self.tta_lb = QLabel('TTA模式：')
         self.tta_checkbox = QCheckBox()

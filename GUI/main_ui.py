@@ -94,8 +94,8 @@ class MainUI(QMainWindow):
         self.maincontent.minimize_btn.clicked.connect(self.showMinimized)
         self.maincontent.maximize_btn.clicked.connect(self.maximize_restore)
         # 退出询问
-        # self.maincontent.close_btn.clicked.connect(self.quit_question)
-        self.maincontent.close_btn.clicked.connect(self.close)
+        self.maincontent.close_btn.clicked.connect(self.quit_question)
+        # self.maincontent.close_btn.clicked.connect(self.close)
 
     def setup_pages(self):
         # 内容页

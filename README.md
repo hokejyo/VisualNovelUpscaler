@@ -6,8 +6,12 @@
 3.将文件夹拖拽到VisualNovelClearer.exe运行  
 ## Credits  
 [waifu2x-ncnn-vulkan](https://github.com/nihui/waifu2x-ncnn-vulkan)  
+[Real-CUGAN](https://github.com/nihui/realcugan-ncnn-vulkan)  
 [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)  
+[SRMD ncnn Vulkan](https://github.com/nihui/srmd-ncnn-vulkan)  
+[RealSR ncnn Vulkan](https://github.com/nihui/realsr-ncnn-vulkan)  
 [Anime4KCPP](https://github.com/TianZerL/Anime4KCPP)  
+[PySide6](https://wiki.qt.io/Qt_for_Python)  
 [FFmpeg](https://github.com/FFmpeg/FFmpeg)  
 [FreeMote](https://github.com/UlyssesWu/FreeMote)  
 [tlg2png](https://github.com/vn-toolkit/tlg2png)  
@@ -15,4 +19,4 @@
 [png2tlg](https://github.com/zhiyb/png2tlg)  
 [AlphaMovieDecoder](https://github.com/xmoeproject/AlphaMovieDecoder)  
 [AlphaMovieEncoder](https://github.com/zhiyb/AlphaMovieEncoder)  
-[QuickBMS](http://aluigi.altervista.org/quickbms.htm)  
+[pypng](https://github.com/drj11/pypng)  

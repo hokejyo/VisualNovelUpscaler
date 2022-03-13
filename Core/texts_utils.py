@@ -34,7 +34,6 @@ class TextsUtils(object):
             with open(text_file, newline='', encoding=self.encoding) as f:
                 lines = f.readlines()
                 current_encoding = self.encoding
-        # except UnicodeDecodeError:
         except:
             current_encoding = self.get_encoding(text_file)
             with open(text_file, newline='', encoding=current_encoding) as f:
@@ -50,20 +49,18 @@ class TextsUtils(object):
             with open(input_csv, newline='', encoding=self.encoding) as f:
                 current_encoding = self.encoding
                 content = list(csv.reader(f))
-        # except UnicodeDecodeError:
         except:
             current_encoding = self.get_encoding(input_csv)
             with open(input_csv, newline='', encoding=current_encoding) as f:
                 content = list(csv.reader(f))
-        finally:
-            for content_ls in content:
-                for i in range(len(content_ls)):
-                    if real_digit(content_ls[i]):
-                        content_ls[i] = str(int(float(content_ls[i]) * scale_ratio))
-                result.append(content_ls)
-            with open(output_csv, 'w', newline='', encoding=current_encoding) as f:
-                content2x = csv.writer(f)
-                content2x.writerows(result)
+        for content_ls in content:
+            for i in range(len(content_ls)):
+                if real_digit(content_ls[i]):
+                    content_ls[i] = str(int(float(content_ls[i]) * scale_ratio))
+            result.append(content_ls)
+        with open(output_csv, 'w', newline='', encoding=current_encoding) as f:
+            content2x = csv.writer(f)
+            content2x.writerows(result)
 
     def line_pattern_num2x(self, re_result, test_mode=False, line=None) -> str:
         """

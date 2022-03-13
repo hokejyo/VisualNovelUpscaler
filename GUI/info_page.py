@@ -2,32 +2,29 @@
 
 from .qt_core import *
 from .flat_widgets import *
-from functools import partial
 
 
-class InfoPage(QFrame):
+class InfoPage(QTreeWidget):
 
     def __init__(self):
 
-        QFrame.__init__(self)
-        self.setup_page_btns(10)
+        QTreeWidget.__init__(self)
+        self.setup_layouts()
 
-    def setup_page_btns(self, page_nums):
-        self.layout = QHBoxLayout(self)
-        self.get_page_btns_dict(page_nums)
-        self.setup_page_btns_connections()
+    def setup_layouts(self):
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(20, 20, 20, 20)
+        self.setup_licenses()
 
-    def get_page_btns_dict(self, page_nums):
-        self.page_dict = {}
-        for i in range(page_nums):
-            page_num = i+1
-            self.page_dict[QPushButton(f'第{page_num}页')] = page_num
+    def setup_licenses(self):
+        layout = QVBoxLayout()
+        self.layout.addLayout(layout)
 
-    def setup_page_btns_connections(self):
-        for btn, page_num in self.page_dict.items():
-            self.layout.addWidget(btn)
-            # print(btn, page_num)
-            btn.clicked.connect(partial(self.switch_page, page_num))
-
-    def switch_page(self, page_num):
-        print(page_num)
+        license_lb = QLabel('License')
+        layout.addWidget(license_lb)
+        license_msg = QTextEdit()
+        license_msg.setReadOnly(True)
+        with open(Path(sys.argv[0]).parent/'LICENSE', 'r', newline='', encoding='utf-8') as f:
+            license_text = f.read()
+        license_msg.setText(license_text)
+        layout.addWidget(license_msg)

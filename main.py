@@ -21,31 +21,6 @@ class VisualNovelClearer(Core, SettingPageUIConnection, GamePageUIConnection):
         SettingPageUIConnection.__init__(self)
         GamePageUIConnection.__init__(self)
 
-    def check_in_out_folder(self, input_folder, output_folder='', check_output=True, only_folder=True) -> bool:
-        input_folder = Path(input_folder)
-        output_folder = Path(output_folder)
-        warn_message = None
-        if not input_folder.exists():
-            warn_message = '输入路径不存在'
-        if not input_folder.is_dir() and only_folder:
-            warn_message = '输入路径需要是文件夹'
-        if input_folder == Path('./'):
-            warn_message = '输入路径不能与工作目录相同'
-        if check_output:
-            if output_folder == Path('./'):
-                warn_message = '输出路径不能与工作目录相同'
-            if input_folder == output_folder:
-                warn_message = '输入路径和输出路径不能相同'
-        if warn_message is not None:
-            warn_msg = QMessageBox()
-            reply = warn_msg.warning(self.ui, '提示', warn_message+'!', QMessageBox.Yes)
-            return False
-        else:
-            if check_output:
-                if not output_folder.exists():
-                    output_folder.mkdir(parents=True)
-            return True
-
 
 if __name__ == '__main__':
     # 防止打包运行后多进程内存泄漏
@@ -57,13 +32,13 @@ if __name__ == '__main__':
     vnc_log_file = bundle_dir/'log.txt'
     logging.basicConfig(filename=vnc_log_file, level=logging.DEBUG, filemode='a+', format='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
     # 启动
-    # try:
-    if True:
+    try:
         app = QApplication(sys.argv)
         visual_novel_clearer = VisualNovelClearer()
         visual_novel_clearer.ui.show()
         sys.exit(app.exec())
-    # except Exception as e:
-    #     logging.error(e)
-    #     logging.error(traceback.format_exc())
-    #     sys.exit()
+    except Exception as e:
+        logging.error(e)
+        logging.error(traceback.format_exc())
+        sys.exit()
+

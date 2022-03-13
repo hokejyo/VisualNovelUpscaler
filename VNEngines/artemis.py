@@ -11,65 +11,15 @@ class Artemis(Core):
         self.load_config()
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
 
-    def generate_upscale_file_count(self):
-        self.emit_info('正在生成处理列表......')
-        self._upscale_file_count = 0
-        if self.run_dict['script']:
-            sys_ini_file_ls = [ini_file for ini_file in self.game_data.file_list('ini') if ini_file.name == 'system.ini']
-            self._upscale_file_count += len(sys_ini_file_ls)
-
-            tbl_file_ls = self.game_data.file_list('tbl')
-            self._upscale_file_count += len(tbl_file_ls)
-
-            ipt_file_ls = self.game_data.file_list('ipt')
-            self._upscale_file_count += len(ipt_file_ls)
-
-            ast_file_ls = self.game_data.file_list('ast')
-            self._upscale_file_count += len(ast_file_ls)
-
-            lua_file_ls = self.game_data.file_list('lua')
-            self._upscale_file_count += len(lua_file_ls)
-
-        if self.run_dict['image']:
-            png_file_ls = self.game_data.file_list('png')
-            self._upscale_file_count += len(png_file_ls)
-
-        if self.run_dict['animation']:
-            ogv_file_ls = self.game_data.file_list('ogv')
-            self._upscale_file_count += len(ogv_file_ls)
-
-        if self.run_dict['video']:
-            video_extension_ls = ['wmv', 'dat', 'mp4', 'avi', 'mpg', 'mkv']
-            for video_extension in video_extension_ls:
-                video_file_ls = [video_file for video_file in self.game_data.file_list(video_extension) if self.video_info(video_file)]
-                self._upscale_file_count += len(video_file_ls)
-
     def upscale(self):
         # 计时
         start_time = time.time()
         if not self.patch_folder.exists():
             self.patch_folder.mkdir(parents=True)
-        self.tmp_folder.sweep()
-        # 进度统计
-        self.generate_upscale_file_count()
-        self._count_process = 0
-        # 更新进度
-        update_process_thread = Thread(target=self.update_vn_upscale_process)
-        update_process_thread.start()
         # 开始放大
-        self._upscale()
-        update_process_thread.join()
-        # 删除临时文件夹
-        if self.tmp_folder.exists():
-            shutil.rmtree(self.tmp_folder)
-        timing_count = time.time() - start_time
-        self.emit_info(f'共耗时：{seconds_format(timing_count)}')
-
-
-    def _upscale(self):
         if self.run_dict['script']:
             self.script2x()
-            self.emit_info('脚本文件处理完成')
+            self.emit_info('文本文件处理完成')
         if self.run_dict['image']:
             self.image2x()
             self.emit_info('图片文件放大完成')
@@ -79,6 +29,8 @@ class Artemis(Core):
         if self.run_dict['video']:
             self.video2x()
             self.emit_info('视频文件处理完成')
+        timing_count = time.time() - start_time
+        self.emit_info(f'共耗时：{seconds_format(timing_count)}')
 
     def get_resolution_encoding(self, input_folder):
         '''
@@ -144,7 +96,6 @@ class Artemis(Core):
                         else:
                             line = ';'+line
                     f.write(line)
-            self._count_process += 1
 
     # def tbl2x(self):
     #     for tbl_file in self.game_data.file_list('tbl'):
@@ -156,7 +107,6 @@ class Artemis(Core):
     def tbl2x(self):
         tbl_file_ls = self.game_data.file_list('tbl')
         self.pool_run(self.windwos_tbl2x, tbl_file_ls)
-        self._count_process += len(tbl_file_ls)
 
     def windows_xx_tbl2x(self, tbl_file):
         '''
@@ -256,12 +206,10 @@ class Artemis(Core):
             with open(self.a2p(ipt_file), 'w', newline='', encoding=current_encoding) as f:
                 for line in result:
                     f.write(line)
-            self._count_process += 1
 
     def ast2x(self):
         ast_file_ls = self.game_data.file_list('ast')
         self.pool_run(self.ast_file_2x, ast_file_ls)
-        self._count_process += len(ast_file_ls)
 
     def ast_file_2x(self, ast_file):
         '''
@@ -285,7 +233,6 @@ class Artemis(Core):
     def lua2x(self):
         lua_file_ls = self.game_data.file_list('lua')
         self.pool_run(self.lua_file_2x, lua_file_ls)
-        self._count_process += len(lua_file_ls)
 
     def lua_file_2x(self, lua_file):
         '''
@@ -321,16 +268,20 @@ class Artemis(Core):
 
     def png2x(self):
         png_file_ls = self.game_data.file_list('png')
-        for png_file in png_file_ls:
-            png_file.copy_to(self.a2t(png_file).parent)
-        self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png', count_mode='all')
-        self.emit_info('正在将立绘坐标信息写入到png图片')
-        png_text_dict = self.get_all_png_text()
-        for png_file, png_text in png_text_dict.items():
-            self.write_png_text_(png_file, png_text)
-        for png_file in self.tmp_folder.file_list('png'):
-            png_file.move_to(self.t2p(png_file).parent)
-        self.tmp_folder.sweep()
+        if png_file_ls:
+            with tempfile.TemporaryDirectory() as tmp_folder:
+                self.tmp_folder = Path(tmp_folder)
+
+                for png_file in png_file_ls:
+                    png_file.copy_as(self.a2t(png_file))
+
+                self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png')
+
+                self.emit_info('正在将立绘坐标信息写入到png图片')
+                png_text_dict = self.get_all_png_text()
+                for png_file, png_text in png_text_dict.items():
+                    self.write_png_text_(png_file, png_text)
+                    png_file.move_as(self.t2p(png_file))
 
     def get_all_png_text(self) -> dict:
         '''
@@ -343,7 +294,7 @@ class Artemis(Core):
             scaled_png_path = self.a2t(png_file)
             # 获取原始图片中的png坐标信息
             png_text = self.read_png_text(png_file)
-            if png_text:
+            if png_text is not None:
                 scaled_png_text = self.png_text_2x(png_text, self.scale_ratio)
                 png_text_dict[scaled_png_path] = scaled_png_text
         return png_text_dict
@@ -362,12 +313,9 @@ class Artemis(Core):
         ogv_file_ls = self.game_data.file_list('ogv')
         if ogv_file_ls:
             for ogv_file in ogv_file_ls:
-                output_video = self.a2t(ogv_file)
-                output_video = self.video_upscale(ogv_file, output_video, self.scale_ratio)
-                target_ogv = output_video.move_to(self.t2p(output_video).parent)
-                self.tmp_folder.sweep()
-                self._count_process += 1
-                self.emit_info(f'{target_ogv} saved!')
+                target_ogv = self.a2p(ogv_file)
+                output_video = self.video_upscale(ogv_file, target_ogv, self.scale_ratio)
+                self.emit_info(f'{output_video} saved!')
 
     """
     ==================================================
@@ -383,17 +331,18 @@ class Artemis(Core):
             if video_file_ls:
                 self.emit_info(f'{video_extension}视频放大中......')
                 for video_file in video_file_ls:
-                    self.emit_info(f'正在处理：{video_file}')
-                    tmp_video = video_file.copy_to(self.a2t(video_file).parent)
-                    if video_extension == 'dat':
-                        tmp_video = tmp_video.move_as(tmp_video.with_suffix('.wmv'))
-                    output_video = self.video_upscale(tmp_video, tmp_video, self.scale_ratio)
-                    if video_extension == 'dat':
-                        output_video = output_video.move_as(output_video.with_suffix('.dat'))
-                    target_video = output_video.move_to(self.t2p(output_video).parent)
-                    self.tmp_folder.sweep()
-                    self._count_process += 1
-                    self.emit_info(f'{target_video} saved!')
+                    with tempfile.TemporaryDirectory() as tmp_folder:
+                        self.tmp_folder = Path(tmp_folder)
+                        self.emit_info(f'正在处理：{video_file}')
+
+                        tmp_video = video_file.copy_as(self.a2t(video_file))
+                        if video_extension == 'dat':
+                            tmp_video = tmp_video.move_as(tmp_video.with_suffix('.wmv'))
+                        output_video = self.video_upscale(tmp_video, tmp_video, self.scale_ratio)
+                        if video_extension == 'dat':
+                            output_video = output_video.move_as(output_video.with_suffix('.dat'))
+                        target_video = output_video.move_as(self.t2p(output_video))
+                        self.emit_info(f'{target_video} saved!')
 
     """
     ==================================================
@@ -472,22 +421,15 @@ class Artemis(Core):
         output_file_ls = []
         pfs_file_ls = [str(pfs_file) for pfs_file in input_folder.file_list() if '.pfs' in pfs_file.name]
         pfs_file_ls.sort()
-        count = 0
-        all_count = len(pfs_file_ls)
         for pfs_file in pfs_file_ls:
             self.emit_info(f'{pfs_file} extracting......')
             output_file_ls += self.extract_pfs(pfs_file, output_folder, encoding)
-            if self.has_connected_ui:
-                count += 1
-                now_percent = int(count/all_count*100)
-                _ui_runner_.progress_sig.emit(now_percent)
         # 去重
         # real_output_file_ls = list(set(output_file_ls))
         # real_output_file_ls.sort(key=output_file_ls.index)
         # 输出耗时
         timing_count = time.time() - start_time
-        self.emit_info(seconds_format(timing_count))
-        self.emit_info(f'拆包完成!\n请把游戏目录中类似script、movie等文件夹及*.ini文件也复制到：\n{output_folder}中')
+        self.emit_info(f'拆包完成，耗时{seconds_format(timing_count)}!\n请把游戏目录中类似script、movie等文件夹及*.ini文件也复制到：\n{output_folder}中')
         return output_file_ls
 
     def extract_pfs(self, pfs_file, output_folder, encoding='utf-8') -> list:

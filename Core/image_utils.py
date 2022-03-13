@@ -141,12 +141,11 @@ class ImageUtils(object):
                       filters=['png', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp'],
                       walk_mode=True,
                       video_mode=False,
-                      silent_mode=False,
-                      count_mode='tmp',
+                      silent_mode=False
                       ) -> list:
         """
         @brief      放大图片
-        
+
         @param      input_path        输入图片路径，可以是文件或文件夹
         @param      output_folder     输出文件夹
         @param      scale_ratio       放大倍数
@@ -154,66 +153,60 @@ class ImageUtils(object):
         @param      filters           格式过滤器
         @param      walk_mode         是否处理子文件夹中的图片，默认是
         @param      video_mode        使用视频超分引擎
-        @param      silent_mode       输出详细内容
-        @param      count_mode        'tmp'统计临时处理数量，'all'统计总处理数量
-        
+        @param      silent_mode       输出细节
+
         @return     所有输出图片的路径对象列表
         """
         input_path = Path(input_path)
-        single_file_mode = False if input_path.is_dir() else True
         output_folder = Path(output_folder)
+        single_file_mode = False if input_path.is_dir() else True
+        # 获取超分引擎和分组数量
         sr_engine = self.video_sr_engine if video_mode else self.image_sr_engine
         upscale_batch_size = self.video_batch_size if video_mode else self.image_batch_size
-        if count_mode == 'tmp':
-            self._tmp_count_process = 0
-        output_image_ls = []
-        for extension in filters:
-            if single_file_mode:
-                org_image_ls = []
+        # 获取原始图片文件列表
+        org_image_ls = []
+        if single_file_mode:
+            if input_path.suffix.lower()[1:] in filters:
                 org_image_ls.append(input_path)
-            else:
-                org_image_ls = input_path.file_list(extension, walk_mode=walk_mode)
-            if org_image_ls:
-                group_list = batch_group_list(org_image_ls, batch_size=upscale_batch_size)
-                for group in group_list:
-                    with tempfile.TemporaryDirectory() as img_tmp_folder1:
-                        img_tmp_folder1 = Path(img_tmp_folder1)
-                        with tempfile.TemporaryDirectory() as img_tmp_folder2:
-                            img_tmp_folder2 = Path(img_tmp_folder2)
-
-                            # 避免不同文件夹重名文件错误覆盖
-                            tmp_target_dict = {}
-                            for image_file in group:
-                                tmp_name = self.create_str()
-                                if single_file_mode:
-                                    target_image_file = image_file.reio_path(input_path.parent, output_folder, mk_dir=True)
-                                else:
-                                    target_image_file = image_file.reio_path(input_path, output_folder, mk_dir=True)
-                                tmp_target_dict[tmp_name] = target_image_file
-                                tmp_image_file = img_tmp_folder1/(tmp_name+image_file.suffix)
-                                shutil.copy(image_file, tmp_image_file)
-                            # 放大tmp1到tmp2
-                            options, zoom_factor = self.get_options_and_zoom_factor(img_tmp_folder1, img_tmp_folder2, scale_ratio, sr_engine)
-                            image_upscale_p = subprocess.run(options, capture_output=True)
-                            tmp_image_ls = img_tmp_folder2.file_list()
-                            # 缩放
-                            if zoom_factor != 1:
-                                tmp_image_ls = self.pool_run(ImageUtils.zoom_image_, tmp_image_ls, zoom_factor)
-                            # 转格式
-                            tmp_image_ls = self.pool_run(ImageUtils.convert_image_, tmp_image_ls, output_extention)
-                            for tmp_image in tmp_image_ls:
-                                target_image_file = tmp_target_dict[tmp_image.stem]
-                                tmp_image.move_as(target_image_file)
-                                if not silent_mode:
-                                    self.emit_info(f'{target_image_file} saved!')
-                                if count_mode == 'tmp':
-                                    self._tmp_count_process += 1
-                                elif count_mode == 'all':
-                                    self._count_process += 1
-                                output_image_ls.append(target_image_file)
-            if single_file_mode:
-                break
-        return output_image_ls
+        else:
+            for extension in filters:
+                org_image_ls += input_path.file_list(extension, walk_mode=walk_mode)
+        output_image_list = []
+        if org_image_ls:
+            group_list = batch_group_list(org_image_ls, batch_size=upscale_batch_size)
+            for group in group_list:
+                # 创建两个临时文件夹
+                with tempfile.TemporaryDirectory() as img_tmp_folder1:
+                    img_tmp_folder1 = Path(img_tmp_folder1)
+                    with tempfile.TemporaryDirectory() as img_tmp_folder2:
+                        img_tmp_folder2 = Path(img_tmp_folder2)
+                        # 避免不同文件夹重名文件错误覆盖
+                        tmp_target_dict = {}
+                        for image_file in group:
+                            tmp_stem = self.create_str()
+                            if single_file_mode:
+                                target_image_file = image_file.reio_path(input_path.parent, output_folder, mk_dir=True).with_suffix('.'+output_extention)
+                            else:
+                                target_image_file = image_file.reio_path(input_path, output_folder, mk_dir=True).with_suffix('.'+output_extention)
+                            tmp_target_dict[tmp_stem] = target_image_file
+                            tmp_image_file = img_tmp_folder1/(tmp_stem+image_file.suffix)
+                            image_file.copy_as(tmp_image_file)
+                        # 放大tmp1到tmp2
+                        options, zoom_factor = self.get_options_and_zoom_factor(img_tmp_folder1, img_tmp_folder2, scale_ratio, sr_engine)
+                        image_upscale_p = subprocess.run(options, capture_output=True)
+                        tmp_image_ls = img_tmp_folder2.file_list()
+                        # 缩放
+                        if zoom_factor != 1:
+                            tmp_image_ls = self.pool_run(self.zoom_image_, tmp_image_ls, zoom_factor)
+                        # 转格式
+                        tmp_image_ls = self.pool_run(self.convert_image_, tmp_image_ls, output_extention)
+                        for tmp_image in tmp_image_ls:
+                            target_image_file = tmp_target_dict[tmp_image.stem]
+                            tmp_image.move_as(target_image_file)
+                            output_image_list.append(target_image_file)
+                            if not silent_mode:
+                                self.emit_info(f'{target_image_file} saved!')
+        return output_image_list
 
     def get_options_and_zoom_factor(self, in_folder, out_folder, scale_ratio, sr_engine):
         """

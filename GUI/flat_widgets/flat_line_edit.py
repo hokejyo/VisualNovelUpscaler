@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
 
 from ..qt_core import *
 
 
 class FLineEdit(QLineEdit):
+    """扁平化输入框"""
+
     def __init__(self,
                  text="",
                  place_holder_text="",

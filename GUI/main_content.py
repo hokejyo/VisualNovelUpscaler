@@ -77,12 +77,12 @@ class MainContent(QFrame):
         self.bottom_bar.setStyleSheet(f"background-color: {self.theme['MainContent_bar']};")
         self.bottom_bar_layout = QHBoxLayout(self.bottom_bar)
         self.bottom_bar_layout.setContentsMargins(10, 0, 2.5, 0)
-        self.bottom_label_left = QLabel("准备就绪！")
+        # self.bottom_label_left = QLabel("准备就绪！")
         self.bottom_spacer = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         # 窗口尺寸控制
         self.setup_resize_botton()
         # 添加组件
-        self.bottom_bar_layout.addWidget(self.bottom_label_left)
+        # self.bottom_bar_layout.addWidget(self.bottom_label_left)
         # self.bottom_bar_layout.addWidget(FProgressBar())
         self.bottom_bar_layout.addItem(self.bottom_spacer)
         self.bottom_bar_layout.addWidget(self.frame_grip)

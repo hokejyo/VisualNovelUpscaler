@@ -4,9 +4,7 @@ from ..qt_core import *
 
 
 class FPushButton(QPushButton):
-    '''
-    扁平化按钮
-    '''
+    """扁平化按钮"""
 
     def __init__(self,
                  text='',

@@ -10,58 +10,22 @@ from .video_utils import VideoUtils
 class Core(Config, TextsUtils, ImageUtils, VideoUtils):
     """核心"""
 
+    uuid_list = []
+
     def __init__(self):
         Config.__init__(self)
-        self.uuid_list = []
-        # 连接ui并统计进度
-        self.has_connected_ui = False
-        self._count_process = 0
 
-    def set_game_data(self, game_data, patch_folder):
+    def set_vn_hd_io_folder(self, game_data, patch_folder):
         self.game_data = Path(game_data)
         self.patch_folder = Path(patch_folder)
-        # self.tmp_folder = self.game_data.parent/'vnc_tmp'
-        # self.tmp_clear()
 
     def set_resolution_encoding(self, scwidth, scheight, encoding):
         self.scwidth = scwidth
         self.scheight = scheight
         self.encoding = encoding
 
-    def connect_ui_runner(self, ui_runner):
-        global _ui_runner_
-        _ui_runner_ = ui_runner
-        self.has_connected_ui = True
-
     def emit_info(self, info_str):
-        if self.has_connected_ui:
-            _ui_runner_.info_sig.emit(info_str)
-        else:
-            print(info_str)
-
-    def emit_progress(self, progress_value):
-        if self.has_connected_ui:
-            _ui_runner_.progress_sig.emit(progress_value)
-        else:
-            print(f'进度：{info_str}%')
-
-    def update_vn_upscale_process(self):
-        """
-        @brief      更新进度，需在子线程内启动
-        """
-        if self._upscale_file_count == 0:
-            now_percent = 1
-            self.emit_info(f'未发现需要处理的文件')
-        else:
-            now_percent = 0
-        while now_percent < 100:
-            now_percent = int(self._count_process/self._upscale_file_count*100)
-            # 发送信号到ui
-            if self.has_connected_ui:
-                self.emit_progress(now_percent)
-            else:
-                print(f'进度：->{now_percent}%<-')
-            time.sleep(2)
+        print(info_str)
 
     def pool_run(self, target, runs, *args) -> list:
         """
