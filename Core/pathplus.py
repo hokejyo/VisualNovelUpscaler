@@ -249,6 +249,4 @@ class Path(pathlib.Path):
             raise Exception('self必须是文件夹')
         shutil.rmtree(self)
         self.mkdir()
-
-    
         

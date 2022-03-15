@@ -15,7 +15,7 @@ class MainUI(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.initUI()
-
+        
         def moveWindow(event):
             if self.is_maxed:
                 x_left = event.globalPosition().toPoint().x()-self.leftmenu.width()

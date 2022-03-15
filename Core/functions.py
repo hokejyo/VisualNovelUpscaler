@@ -6,6 +6,7 @@ import sys
 import csv
 import json
 import time
+import math
 import uuid
 import shutil
 import hashlib
@@ -14,7 +15,6 @@ import tempfile
 import traceback
 import subprocess
 import configparser
-from math import ceil, log
 from threading import Thread
 from multiprocessing import Pool, cpu_count, Process, freeze_support
 # 第三方库

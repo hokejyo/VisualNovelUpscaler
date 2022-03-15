@@ -50,6 +50,7 @@ class GamePageUIConnection(object):
             self.game_page_runner.info_sig.connect(self.append_info_text_edit)
             self.game_page_runner.progress_sig.connect(self.update_progress_bar)
             self.game_page_runner.finish_sig.connect(self.finish_game_page_runner_and_unlock)
+            self.game_page_runner.crash_sig.connect(self.crash_game_page_runner_and_unlock)
             self.game_page_runner.start()
 
     def start_game_page_runner_and_lock(self):
@@ -60,7 +61,7 @@ class GamePageUIConnection(object):
         self.ui.gamepage.status_progress_bar.setRange(0, 0)
 
         self.ui.gamepage.run_btn.setText('正在处理')
-        print('开始')
+        self.emit_info(format('开始处理', '=^76'))
 
     def append_info_text_edit(self, info_str):
         self.ui.gamepage.info_text_edit.append(info_str)
@@ -73,10 +74,20 @@ class GamePageUIConnection(object):
         self.ui.gamepage.status_progress_bar.setRange(0, 100)
         self.update_progress_bar(100)
         self.ui.gamepage.run_btn.setText('开始处理')
-        print('结束')
+        self.emit_info(format('结束处理', '=^76'))
         finish_info_msg = QMessageBox()
         reply = finish_info_msg.information(self.ui, '处理完成', f'{info_str}\n是否打开输出文件夹?', QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         os.system(f'start {self.output_folder}') if reply == QMessageBox.Yes else None
+
+    def crash_game_page_runner_and_unlock(self, info_str):
+        error_msg = QMessageBox()
+        reply = error_msg.critical(self.ui, '错误!', info_str, QMessageBox.Yes)
+        logging.error(info_str)
+        self.ui.gamepage.run_btn.setEnabled(True)
+        self.ui.gamepage.status_progress_bar.setRange(0, 100)
+        self.update_progress_bar(0)
+        self.ui.gamepage.run_btn.setText('开始处理')
+        self.emit_info(format('中断处理', '=^76'))
 
     def kirikiri_check_resolution(self):
         input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip())
@@ -112,6 +123,8 @@ class GamePageRunner(QThread):
     progress_sig = Signal(int)
     # 结束弹窗信息
     finish_sig = Signal(str)
+    # 崩溃错误信息
+    crash_sig = Signal(str)
 
     def __init__(self, vnc):
         QThread.__init__(self)
@@ -119,16 +132,19 @@ class GamePageRunner(QThread):
 
     def run(self):
         self.start_sig.emit()
-        # time.sleep(10)
-        # Kirikiri
-        if self.vnc.ui.gamepage.game_engine_area.currentWidget() is self.vnc.ui.gamepage.kirikiri:
-            self.kirikiri_run()
-        # Artemis
-        elif self.vnc.ui.gamepage.game_engine_area.currentWidget() is self.vnc.ui.gamepage.artemis:
-            self.artemis_run()
+        try:
+            1/0
+            # Kirikiri
+            if self.vnc.ui.gamepage.game_engine_area.currentWidget() is self.vnc.ui.gamepage.kirikiri:
+                self.kirikiri_run()
+            # Artemis
+            elif self.vnc.ui.gamepage.game_engine_area.currentWidget() is self.vnc.ui.gamepage.artemis:
+                self.artemis_run()
+        except Exception as e:
+            self.crash_sig.emit(traceback.format_exc())
 
     def kirikiri_run(self):
-        kirikiri = Kirikiri()
+        kirikiri = Kirikiri(self)
         # 给ui起个别名
         ugk = self.vnc.ui.gamepage.kirikiri
         if ugk.currentWidget() is ugk.hd_parts_frame:
@@ -185,7 +201,7 @@ class GamePageRunner(QThread):
                 self.finish_sig.emit('补丁文件平铺完成!')
 
     def artemis_run(self):
-        artemis = Artemis()
+        artemis = Artemis(self)
         # 给ui起个别名
         uga = self.vnc.ui.gamepage.artemis
         if uga.currentWidget() is uga.hd_parts_frame:

@@ -26,6 +26,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
     def emit_info(self, info_str):
         print(info_str)
+        logging.info(info_str)
 
     def pool_run(self, target, runs, *args) -> list:
         """

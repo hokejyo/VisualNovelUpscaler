@@ -130,7 +130,7 @@ class ImageUtils(object):
 
         @return     实际放大倍率
         """
-        actual_scale_ratio = legal_scale_ratio**ceil(log(target_scale_ratio, legal_scale_ratio))
+        actual_scale_ratio = legal_scale_ratio**math.ceil(math.log(target_scale_ratio, legal_scale_ratio))
         return actual_scale_ratio
 
     def image_upscale(self,
@@ -205,7 +205,7 @@ class ImageUtils(object):
                             tmp_image.move_as(target_image_file)
                             output_image_list.append(target_image_file)
                             if not silent_mode:
-                                self.emit_info(f'{target_image_file} saved!')
+                                self.emit_info(f'{target_image_file} upscaled!')
         return output_image_list
 
     def get_options_and_zoom_factor(self, in_folder, out_folder, scale_ratio, sr_engine):

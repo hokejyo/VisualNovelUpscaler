@@ -22,7 +22,26 @@ class ImagePage(QFrame):
 
         self.setup_in_out_folders()
 
-        self.setup_center_layout()
+        # self.setup_center_layout()
+        a = QListView()
+        self.layout.addWidget(a)
+
+        slm=QStringListModel()
+        self.qList=['Item 1','Item 2','Item 3','Item 4']
+
+        #设置模型列表视图，加载数据列表
+        slm.setStringList(self.qList)
+
+        #设置列表视图的模型
+        a.setModel(slm)
+
+        #单击触发自定义的槽函数
+        a.clicked.connect(self.clicked)
+        
+    def clicked(self,qModelIndex):
+        #提示信息弹窗，你选择的信息
+        QMessageBox.information(self,'ListWidget','你选择了：'+self.qList[qModelIndex.row()])
+
 
         # self.setup_input_list()
 

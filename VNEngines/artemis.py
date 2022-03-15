@@ -6,10 +6,17 @@ from Core import *
 class Artemis(Core):
     """Artemis Engine"""
 
-    def __init__(self):
+    def __init__(self, game_ui_runner=None):
         Core.__init__(self)
         self.load_config()
+        self.__class__.game_ui_runner = game_ui_runner
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
+
+    def emit_info(self, info_str):
+        print(info_str)
+        logging.info(info_str)
+        if self.game_ui_runner is not None:
+            self.game_ui_runner.info_sig.emit(info_str)
 
     def upscale(self):
         # 计时
