@@ -18,7 +18,7 @@ class Config(object):
         self.vnc_config = configparser.ConfigParser()
         with open(self.vnc_config_file, 'w', newline='', encoding='utf-8') as vcf:
             self.vnc_config.add_section('General')
-            self.vnc_config.set('General', 'cpu_cores', str(cpu_count()))
+            self.vnc_config.set('General', 'cpu_cores', str(int(cpu_count()/2)))
             self.vnc_config.set('General', 'gpu_id', '0')
             self.vnc_config.set('General', 'encoding_list', 'Shift_JIS,UTF-8,GBK,UTF-16,CP932')
             # 图片设置
@@ -29,7 +29,7 @@ class Config(object):
             self.vnc_config.add_section('Video')
             self.vnc_config.set('Video', 'video_sr_engine', 'anime4k')
             self.vnc_config.set('Video', 'video_batch_size', '40')
-            self.vnc_config.set('Video', 'video_quality', '2')
+            self.vnc_config.set('Video', 'video_quality', '8')
             # 超分引擎设置
             self.vnc_config.add_section('SREngine')
             self.vnc_config.set('SREngine', 'tta', '0')
@@ -43,7 +43,7 @@ class Config(object):
             self.vnc_config.add_section('real_cugan')
             self.vnc_config.set('real_cugan', 'noise_level', '3')
             self.vnc_config.set('real_cugan', 'tile_size', '0')
-            self.vnc_config.set('real_cugan', 'sync_gap_mode', '2')
+            self.vnc_config.set('real_cugan', 'sync_gap_mode', '3')
             self.vnc_config.set('real_cugan', 'model_name', 'models-se')
             self.vnc_config.set('real_cugan', 'load_proc_save', '1:2:2')
             # Real-ESRGAN相关配置

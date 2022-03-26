@@ -168,7 +168,7 @@ class SettingPage(QFrame):
         self.image_sr_engine_lb = QLabel('图片超分引擎：')
         self.image_sr_engine_combobox = QComboBox()
         image_sr_engine_list = [sr_engine for sr_engine in self.sr_engine_list]
-        image_sr_engine_list.remove('anime4k')
+        # image_sr_engine_list.remove('anime4k')
         self.image_sr_engine_combobox.addItems(image_sr_engine_list)
         layout.addRow(self.image_sr_engine_lb, self.image_sr_engine_combobox)
         self.image_batch_size_lb = QLabel('图片分组大小：')

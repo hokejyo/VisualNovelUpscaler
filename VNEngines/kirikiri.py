@@ -688,11 +688,11 @@ class Kirikiri(Core):
     def amv2png(self, input_dir, output_dir) -> list:
         input_dir = Path(input_dir)
         output_dir = Path(output_dir)
-        amv_dict = self.amv2png_pre(input_dir, output_dir)
+        amv_dict = self._amv2png_pre(input_dir, output_dir)
         target_amv_dirs = self.pool_run(self.amv_de, amv_dict.items())
         return target_amv_dirs
 
-    def amv2png_pre(self, input_dir, output_dir) -> dict:
+    def _amv2png_pre(self, input_dir, output_dir) -> dict:
         amv_file_ls = input_dir.file_list('amv')
         self.amv_de_folder.sweep()
         amv_dict = {}

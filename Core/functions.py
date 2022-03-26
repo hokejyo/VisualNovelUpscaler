@@ -22,7 +22,7 @@ import png
 from wmi import WMI
 from numba import jit
 from PIL import Image
-from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 # 自定义库
 from .pathplus import Path
 

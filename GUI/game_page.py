@@ -20,6 +20,7 @@ class GamePage(QFrame):
     def setup_layouts(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 0, 10, 0)
+        # layout.setSpacing(0)
 
         self.setup_top_bar()
         layout.addWidget(self.top_bar)
@@ -32,15 +33,15 @@ class GamePage(QFrame):
 
         self.setup_game_engine_area()
         layout.addWidget(self.game_engine_area)
-        # 中部空间
-        center_spacer = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        layout.addItem(center_spacer)
+        # # 中部空间
+        # center_spacer = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        # layout.addItem(center_spacer)
 
-        center_spacer2 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        layout.addItem(center_spacer2)
+        # center_spacer2 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        # layout.addItem(center_spacer2)
 
-        center_spacer3 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        layout.addItem(center_spacer3)
+        # center_spacer3 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        # layout.addItem(center_spacer3)
 
         self.setup_info_area()
         layout.addWidget(self.info_area_frame)
@@ -114,9 +115,14 @@ class GamePage(QFrame):
 
     def setup_game_engine_area(self):
         self.game_engine_area = QStackedWidget()
+        # self.game_engine_area.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+
         self.kirikiri = KirikiriPart()
         self.kirikiri.setObjectName('Kirikiri')
         self.game_engine_area.addWidget(self.kirikiri)
+
+        self.game_engine_area.setMaximumHeight(245)
+
         self.artemis = ArtemisPart()
         self.artemis.setObjectName('Artemis')
         self.game_engine_area.addWidget(self.artemis)
@@ -130,9 +136,11 @@ class GamePage(QFrame):
 
     def setup_info_area(self):
         self.info_area_frame = QFrame()
+        # self.info_area_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout = QVBoxLayout(self.info_area_frame)
         layout.setContentsMargins(10, 0, 10, 0)
         self.info_text_edit = QTextEdit()
+        # self.info_text_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.info_text_edit.setReadOnly(True)
         self.info_text_edit.setStyleSheet('background-color:#333')
         layout.addWidget(self.info_text_edit)

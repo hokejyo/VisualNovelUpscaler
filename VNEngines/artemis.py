@@ -98,7 +98,7 @@ class Artemis(Core):
                     if re_result:
                         if re_result.group(1):
                             if _save_change:
-                                line = 'SAVEPATH = .\\savedataHD\r\n'
+                                line = 'SAVEPATH = savedataHD\r\n'
                                 _save_change = False
                         else:
                             line = ';'+line
@@ -276,19 +276,12 @@ class Artemis(Core):
     def png2x(self):
         png_file_ls = self.game_data.file_list('png')
         if png_file_ls:
-            with tempfile.TemporaryDirectory() as tmp_folder:
-                self.tmp_folder = Path(tmp_folder)
-
-                for png_file in png_file_ls:
-                    png_file.copy_as(self.a2t(png_file))
-
-                self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png')
-
-                self.emit_info('正在将立绘坐标信息写入到png图片')
-                png_text_dict = self.get_all_png_text()
-                for png_file, png_text in png_text_dict.items():
-                    self.write_png_text_(png_file, png_text)
-                    png_file.move_as(self.t2p(png_file))
+            self.emit_info('正在放大png图片......')
+            self.image_upscale(self.game_data, self.patch_folder, self.scale_ratio, 'png')
+            self.emit_info('正在将立绘坐标信息写入到png图片')
+            png_text_dict = self.get_all_png_text()
+            for png_file, png_text in png_text_dict.items():
+                self.write_png_text_(png_file, png_text)
 
     def get_all_png_text(self) -> dict:
         '''
@@ -298,7 +291,7 @@ class Artemis(Core):
         text_png_path_ls = self.game_data.file_list('png')
         for png_file in text_png_path_ls:
             # 放大后的png图片在临时文件夹中的路径
-            scaled_png_path = self.a2t(png_file)
+            scaled_png_path = self.a2p(png_file)
             # 获取原始图片中的png坐标信息
             png_text = self.read_png_text(png_file)
             if png_text is not None:
@@ -341,7 +334,6 @@ class Artemis(Core):
                     with tempfile.TemporaryDirectory() as tmp_folder:
                         self.tmp_folder = Path(tmp_folder)
                         self.emit_info(f'正在处理：{video_file}')
-
                         tmp_video = video_file.copy_as(self.a2t(video_file))
                         if video_extension == 'dat':
                             tmp_video = tmp_video.move_as(tmp_video.with_suffix('.wmv'))

@@ -13,6 +13,7 @@ class ArtemisPart(FTabWidget):
         self.set_resolution_state()
         self.select_all_part()
         self.set_game_resolution_encoding(1280, 720, 'UTF-8')
+        # self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
     def initUI(self):
 

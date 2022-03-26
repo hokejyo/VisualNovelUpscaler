@@ -16,26 +16,27 @@ class MainUI(QMainWindow):
         QMainWindow.__init__(self)
         self.initUI()
         
-        def moveWindow(event):
-            if self.is_maxed:
-                x_left = event.globalPosition().toPoint().x()-self.leftmenu.width()
-                x_right = self.width()-event.globalPosition().toPoint().x()
-                x_left_precent = x_left/self.maincontent.top_bar.width()
-                y_top = event.globalPosition().toPoint().y()
-                self.maximize_restore()
-                if x_left_precent < 0.25:
-                    self.move(event.globalPosition().toPoint()-QPoint(self.leftmenu.width()+x_left, y_top))
-                elif x_left_precent > 0.75:
-                    self.move(event.globalPosition().toPoint()-QPoint(self.width()-x_right, y_top))
-                else:
-                    # 移动到等比例位置
-                    self.move(event.globalPosition().toPoint()-QPoint(self.leftmenu.width()+self.maincontent.top_bar.width()*x_left_precent, y_top))
-            if event.buttons() == Qt.LeftButton:
-                self.move(self.pos() + event.globalPosition().toPoint() - self.dragPos)
-                self.dragPos = event.globalPosition().toPoint()
-                event.accept()
         # 设置标题栏能用鼠标拖动
-        self.maincontent.top_bar.mouseMoveEvent = moveWindow
+        self.maincontent.top_bar.mouseMoveEvent = self.moveWindow
+
+    def moveWindow(self, event):
+        if self.is_maxed:
+            x_left = event.globalPosition().toPoint().x()-self.leftmenu.width()
+            x_right = self.width()-event.globalPosition().toPoint().x()
+            x_left_precent = x_left/self.maincontent.top_bar.width()
+            y_top = event.globalPosition().toPoint().y()
+            self.maximize_restore()
+            if x_left_precent < 0.25:
+                self.move(event.globalPosition().toPoint()-QPoint(self.leftmenu.width()+x_left, y_top))
+            elif x_left_precent > 0.75:
+                self.move(event.globalPosition().toPoint()-QPoint(self.width()-x_right, y_top))
+            else:
+                # 移动到等比例位置
+                self.move(event.globalPosition().toPoint()-QPoint(self.leftmenu.width()+self.maincontent.top_bar.width()*x_left_precent, y_top))
+        if event.buttons() == Qt.LeftButton:
+            self.move(self.pos() + event.globalPosition().toPoint() - self.dragPos)
+            self.dragPos = event.globalPosition().toPoint()
+            event.accept()
 
     def initUI(self):
         # 设置标题
@@ -95,7 +96,6 @@ class MainUI(QMainWindow):
         self.maincontent.maximize_btn.clicked.connect(self.maximize_restore)
         # 退出询问
         self.maincontent.close_btn.clicked.connect(self.quit_question)
-        # self.maincontent.close_btn.clicked.connect(self.close)
 
     def setup_pages(self):
         # 内容页
@@ -144,15 +144,15 @@ class MainUI(QMainWindow):
             self.leftmenu.setting_btn.set_active(True)
 
     def maximize_restore(self):
-        # print(self.settingpage.image_setting_frame.height(), self.settingpage.image_setting_stacks.height())
-        # print(self.width(), self.height())
         if not self.is_maxed:
             # 放大时取消圆角，填补空隙
             self.setStyleSheet("QFrame {border-radius: 0px;}")
+            self.maincontent.sizegrip.hide()
             self.showMaximized()
             self.is_maxed = True
         else:
             self.setStyleSheet("QFrame {border-radius: 15px;}")
+            self.maincontent.sizegrip.show()
             self.showNormal()
             self.is_maxed = False
 

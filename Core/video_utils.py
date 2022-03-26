@@ -108,10 +108,10 @@ class VideoUtils(object):
         """
         special_vcodecs = ['theora']
         if output_vcodec not in special_vcodecs:
-            video_quality = self.video_quality
+            video_quality = str(10 - int(self.video_quality))
         else:
             # 特殊编码视频的质量设定与常规视频不统一
-            video_quality = str(10 - int(self.video_quality))
+            video_quality = self.video_quality
         return video_quality
 
     def png2video(self, png_sequence, origin_video, output_video, output_vcodec=None):
@@ -129,10 +129,10 @@ class VideoUtils(object):
         origin_video = Path(origin_video)
         output_video = Path(output_video)
         origin_video_info = self.video_info(origin_video)
-        if not output_vcodec:
+        if output_vcodec is None:
             output_vcodec = origin_video_info['vcodec']
             if output_vcodec == 'wmv3':
-                output_vcodec == 'wmv2'
+                output_vcodec = 'wmv2'
         elif output_vcodec == 'wmv3':
             raise ValueError('输出视频编码不能为wmv3')
         options = [self.ffmpeg, '-y',
@@ -166,11 +166,11 @@ class VideoUtils(object):
         output_video = Path(output_video)
         if not output_video.parent.exists():
             output_video.parent.mkdir(parents=True)
-        if not output_vcodec:
+        if output_vcodec is None:
             output_vcodec = self.video_info(input_video)['vcodec']
             # ffmpeg不支持wmv3编码
             if output_vcodec == 'wmv3':
-                output_vcodec == 'wmv2'
+                output_vcodec = 'wmv2'
         elif output_vcodec == 'wmv3':
             raise ValueError('输出视频编码不能为wmv3')
         with tempfile.TemporaryDirectory() as video_tmp_folder1:
