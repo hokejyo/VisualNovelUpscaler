@@ -132,7 +132,6 @@ dmypy.json
 /Dependencies
 /old_modules
 /config.ini
-/py2exe.py
 /test*
 /log.txt
 /VNTranslator

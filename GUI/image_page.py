@@ -2,7 +2,7 @@
 
 from .qt_core import *
 from .flat_widgets import *
-from Core import Path
+from CORE import Path
 
 
 class ImagePage(QFrame):

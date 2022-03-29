@@ -1,40 +1,45 @@
-# -*- coding:utf-8 -*-
+# -*- coding: utf-8 -*-
 
-from GeneralFunctions import *
-from Kirikiri import Kirikiri
-from Artemis import Artemis
+from CORE import *
+from VNEngines import *
+from GUI import *
+from GamePageUIConnection import GamePageUIConnection
+from SettingPageUIConnection import SettingPageUIConnection
 
 
-def get_engine_type(game_data):
-    game_data = os.path.abspath(game_data)
-    for file in file_list(game_data):
-        if os.path.basename(file) == 'Config.tjs':
-            return 'Kirikiri'
-        elif os.path.basename(file) == 'list_windows.tbl':
-            return 'Artemis'
-    input('未识别的游戏引擎，按回车键退出：')
-    sys.exit()
+class VisualNovelClearer(Core, SettingPageUIConnection, GamePageUIConnection):
+
+    _version = 'v0.2.0'
+
+    def __init__(self):
+        Core.__init__(self)
+        self.initUI()
+        # 捕获异常
+        sys.excepthook = self.catch_exceptions
+        # 错误日志
+        logging.basicConfig(filename=self.vnc_log_file, encoding='UTF-8', level=logging.DEBUG, filemode='a+', format='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
+
+    def initUI(self):
+        self.ui = MainUI()
+        SettingPageUIConnection.__init__(self)
+        GamePageUIConnection.__init__(self)
+        self.ui.set_version(self._version)
+
+    def catch_exceptions(self, excType, excValue, tb):
+        error_info = ''.join(traceback.format_exception(excType, excValue, tb))
+        logging.error(error_info)
+        error_msg = QMessageBox()
+        reply = error_msg.critical(self.ui, '错误!', error_info, QMessageBox.Yes)
 
 
 if __name__ == '__main__':
-    # 防止多进程内存泄漏
+    # 防止打包运行后多进程内存泄漏
     freeze_support()
-    bundle_dir = Path(sys.argv[0]).resolve().parent
-    vnc_log_file = bundle_dir/'log.txt'
+    # 防止打包后拖拽运行工作路径改变
+    bundle_dir = Path(sys.argv[0]).parent
     os.chdir(bundle_dir)
-    # 错误日志
-    logging.basicConfig(filename=vnc_log_file, level=logging.DEBUG, filemode='a+', format='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
-    try:
-        try:
-            game_data = sys.argv[1]
-        except IndexError:
-            game_data = input('\n请将游戏拆包后放到同一文件夹拖到此处后按回车：\n').replace('\\', '\\\\')
-        game_engine = get_engine_type(game_data)
-        if game_engine == 'Kirikiri':
-            game = Kirikiri(game_data)
-        elif game_engine == 'Artemis':
-            game = Artemis(game_data)
-        game.upscale()
-    except Exception as e:
-        logging.error(e)
-        logging.error(traceback.format_exc())
+    # 启动
+    app = QApplication(sys.argv)
+    visual_novel_clearer = VisualNovelClearer()
+    visual_novel_clearer.ui.show()
+    sys.exit(app.exec())

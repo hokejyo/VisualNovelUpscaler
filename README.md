@@ -14,7 +14,7 @@
 [PySide6](https://wiki.qt.io/Qt_for_Python)  
 [FFmpeg](https://github.com/FFmpeg/FFmpeg)  
 [FreeMote](https://github.com/UlyssesWu/FreeMote)  
-[tlg2png](https://github.com/vn-toolkit/tlg2png)  
+[tlg2png](https://github.com/vn-tools/tlg2png)  
 [krkr2](https://github.com/krkrz/krkr2)  
 [png2tlg](https://github.com/zhiyb/png2tlg)  
 [AlphaMovieDecoder](https://github.com/xmoeproject/AlphaMovieDecoder)  

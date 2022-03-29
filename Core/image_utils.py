@@ -67,17 +67,6 @@ class ImageUtils(object):
         return png_file
 
     @staticmethod
-    def alpha_image(image_path) -> bool:
-        """
-        @brief      检查图片是否含有alpha通道
-
-        @param      image_path  图片路径
-
-        @return     bool
-        """
-        return True if Image.open(image_path).mode in ['RGBA', 'LA'] else False
-
-    @staticmethod
     def get_image_format(image_path) -> str:
         """
         @brief      获取图片真实格式
@@ -123,15 +112,16 @@ class ImageUtils(object):
         return output_path
 
     @staticmethod
-    def image_tRNS_pre_(input_path) -> Path:
+    def palette_png_pre_(input_path) -> Path:
         if input_path.suffix.lower() == '.png':
             img = Image.open(input_path)
             if img.mode == 'P':
                 for chunk_tuple in png.Reader(filename=input_path).chunks():
                     if b'tRNS' in chunk_tuple:
                         img.convert('RGBA').save(input_path, quality=100)
-                        break
-        return input_path
+                        return input_path
+                img.convert('RGB').save(input_path, quality=100)
+                return input_path
 
     def image_upscale(self,
                       input_path,
@@ -192,7 +182,7 @@ class ImageUtils(object):
                             tmp_image_file = img_tmp_folder1/(tmp_stem+image_file.suffix)
                             image_file.copy_as(tmp_image_file)
                             # 预处理
-                            self.image_tRNS_pre_(tmp_image_file)
+                            self.palette_png_pre_(tmp_image_file)
                         # 放大tmp1到tmp2
                         options, zoom_factor = self._get_options_and_zoom_factor(img_tmp_folder1, img_tmp_folder2, scale_ratio, sr_engine)
                         image_upscale_p = subprocess.run(options, capture_output=True)

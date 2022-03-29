@@ -19,10 +19,10 @@ from threading import Thread
 from multiprocessing import Pool, cpu_count, Process, freeze_support
 # 第三方库
 import png
+import construct
 from wmi import WMI
 from numba import jit
 from PIL import Image
-from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 # 自定义库
 from .pathplus import Path
 

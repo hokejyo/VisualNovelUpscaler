@@ -249,4 +249,8 @@ class Path(pathlib.Path):
             raise Exception('self必须是文件夹')
         shutil.rmtree(self)
         self.mkdir()
-        
+
+    def readb(self, size) -> bytes:
+        with open(self, 'rb') as _f:
+            _bytes = _f.read(size)
+        return _bytes

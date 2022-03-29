@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
-from Core import *
+from CORE import *
+from .pf8_struct import PF8Struct
 
 
 class Artemis(Core):
@@ -345,63 +346,9 @@ class Artemis(Core):
 
     """
     ==================================================
-    Artemis引擎封包文件：pfs
+    Artemis引擎封包文件：pfs(pf8)
     ==================================================
     """
-
-    class Pfs(KaitaiStruct):
-        """
-        @brief      Artemis引擎pfs封包文件，modified from https://github.com/Forlos/vn_re
-        """
-
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.magic = self._io.ensure_fixed_contents(b"\x70\x66\x38")
-            self.header = self._root.Header(self._io, self, self._root)
-            self.entries = [None] * (self.header.file_entries_count)
-            for i in range(self.header.file_entries_count):
-                self.entries[i] = self._root.FileEntry(self._io, self, self._root)
-
-        class Header(KaitaiStruct):
-            def __init__(self, _io, _parent=None, _root=None):
-                self._io = _io
-                self._parent = _parent
-                self._root = _root if _root else self
-                self._read()
-
-            def _read(self):
-                self.archive_data_size = self._io.read_u4le()
-                self.file_entries_count = self._io.read_u4le()
-
-        class FileEntry(KaitaiStruct):
-            def __init__(self, _io, _parent=None, _root=None):
-                self._io = _io
-                self._parent = _parent
-                self._root = _root if _root else self
-                self._read()
-
-            def _read(self):
-                self.file_name_size = self._io.read_u4le()
-                self.file_name = self._io.read_bytes(self.file_name_size)
-                self.unk = self._io.read_u4le()
-                self.file_offset = self._io.read_u4le()
-                self.file_size = self._io.read_u4le()
-
-        @property
-        def raw_archive_data(self):
-            if hasattr(self, '_m_raw_archive_data'):
-                return self._m_raw_archive_data if hasattr(self, '_m_raw_archive_data') else None
-
-            _pos = self._io.pos()
-            self._io.seek(7)
-            self._m_raw_archive_data = self._io.read_bytes(self.header.archive_data_size)
-            self._io.seek(_pos)
-            return self._m_raw_archive_data if hasattr(self, '_m_raw_archive_data') else None
 
     def batch_extract_pfs(self, input_folder, output_folder, encoding='utf-8') -> list:
         """
@@ -418,56 +365,40 @@ class Artemis(Core):
         input_folder = Path(input_folder)
         output_folder = Path(output_folder)
         output_file_ls = []
-        pfs_file_ls = [str(pfs_file) for pfs_file in input_folder.file_list() if '.pfs' in pfs_file.name]
+        pfs_file_ls = [str(pfs_file) for pfs_file in input_folder.file_list(walk_mode=False) if pfs_file.readb(3) == b'pf8']
         pfs_file_ls.sort()
         for pfs_file in pfs_file_ls:
             self.emit_info(f'{pfs_file} extracting......')
             output_file_ls += self.extract_pfs(pfs_file, output_folder, encoding)
-        # 去重
-        # real_output_file_ls = list(set(output_file_ls))
-        # real_output_file_ls.sort(key=output_file_ls.index)
         # 输出耗时
         timing_count = time.time() - start_time
         self.emit_info(f'拆包完成，耗时{seconds_format(timing_count)}!\n请把游戏目录中类似script、movie等文件夹及*.ini文件也复制到：\n{output_folder}中')
         return output_file_ls
 
-    def extract_pfs(self, pfs_file, output_folder, encoding='utf-8') -> list:
-        """
-        @brief      pfs解包
-
-        @param      pfs_file       pfs文件路径
-        @param      output_folder  输出文件夹
-        @param      encoding       编码格式
-
-        @return     输出文件列表
-        """
+    def extract_pfs(self, pfs_file, output_folder, encoding='UTF-8') -> list:
         pfs_file = Path(pfs_file)
-        pfs = Artemis.Pfs.from_file(pfs_file)
-        s1 = hashlib.sha1()
-        s1.update(pfs.raw_archive_data)
-        digest = s1.digest()
-        entry_name_contents_offset_list = []
+        output_folder = Path(output_folder)
+        pfs = PF8Struct.parse_file(pfs_file)
+        digest = hashlib.sha1(pfs.hash_data).digest()
+        name_data_dict = {}
         for entry in pfs.entries:
-            with open(pfs_file, 'rb') as archive:
-                archive.seek(entry.file_offset)
-                a = entry.file_name.decode(encoding)
-                b = bytearray(archive.read(entry.file_size))
-                entry_name_contents_offset_list.append((a, b))
-        target_file_ls = self.pool_run(self.decrypt_pfs_and_save_file, entry_name_contents_offset_list, output_folder, digest)
-        return target_file_ls
+            file_path = output_folder / entry.file_name.decode(encoding)
+            name_data_dict[file_path] = bytearray(entry.file_data)
+        file_path_ls = self.pool_run(self.decrypt_pfs_and_save_file, name_data_dict.items(), digest)
+        return file_path_ls
 
-    def decrypt_pfs_and_save_file(self, entry_name_contents_offset, output_folder, digest) -> Path:
-        target_file = output_folder/entry_name_contents_offset[0]
-        if not target_file.parent.exists():
-            target_file.parent.mkdir(parents=True, exist_ok=True)
-        contents = entry_name_contents_offset[1]
+    def decrypt_pfs_and_save_file(self, entry_item, digest) -> Path:
+        file_path = entry_item[0]
+        contents = entry_item[1]
         len_contents = len(contents)
         len_digest = len(digest)
-        contents = self.decrypt_pfs_contents(contents, digest, len_contents, len_digest)
-        with open(target_file, 'wb') as f:
-            f.write(contents)
-        return target_file
+        new_file_data = self.decrypt_pfs_contents(contents, digest, len_contents, len_digest)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(file_path, 'wb') as f:
+            f.write(new_file_data)
+        return file_path
 
+    # @staticmethod
     @jit(fastmath=True)
     def decrypt_pfs_contents(self, contents, digest, len_contents, len_digest):
         for i in range(len_contents):

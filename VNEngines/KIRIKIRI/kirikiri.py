@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
-from Core import *
+from CORE import *
+from .amv_struct import AMVStruct
 
 
 class Kirikiri(Core):
@@ -713,33 +714,53 @@ class Kirikiri(Core):
         tmp_amv_dir = amv_tuple[1][0]
         target_amv_dir = amv_tuple[1][1]
         amv_de_p = subprocess.run([self.amv_de_exe, '-amvpath='+tmp_amv.to_str], capture_output=True)
+        amv_file_info = self.get_amv_file_info(tmp_amv)
+        result = json.dumps(amv_file_info, sort_keys=False, indent=2, ensure_ascii=False)
         tmp_amv.unlink()
         tmp_amv_dir.move_as(target_amv_dir)
-        with open(target_amv_dir/(target_amv_dir.name+'.amv.json'), 'w', newline='', encoding='utf-8') as amv_c:
-            amv_c.write('test')
+        with open(target_amv_dir.parent/(target_amv_dir.name+'.amv.json'), 'w', newline='', encoding='utf-8') as amv_c:
+            amv_c.write(result)
         return target_amv_dir
 
-    def amv_en(self, png_sequence_folder):
+    @staticmethod
+    def get_amv_file_info(amv_file) -> dict:
+        amv_file_info = dict(AMVStruct.parse_file(amv_file).header)
+        amv_file_info.pop('_io')
+        for i, j in amv_file_info.items():
+            amv_file_info[i] = str(j)
+        return amv_file_info
+
+    def amv_en(self, png_sequence_folder, frame_rate=None):
         '''
         将png序列合并为amv动画
         '''
         # 目标amv文件
         target_amv = png_sequence_folder.with_suffix('.amv')
-        # 临时名称防乱码和空格及特殊字符
-        tmp_stem = self.create_str()
-        tmp_folder = png_sequence_folder.with_name(tmp_stem)
-        png_sequence_folder.move_as(tmp_folder)
-        tmp_amv = tmp_folder.with_suffix('.amv')
-        # 运行
-        options = [self.amv_en_exe,
-                   '--png', '--zlib',
-                   '--quality', '100',
-                   tmp_folder, tmp_amv
-                   ]
-        amv_en_p = subprocess.run(options, capture_output=True)
-        # 改名
-        tmp_folder.move_as(png_sequence_folder)
-        tmp_amv.move_as(target_amv)
+        # 防乱码和空格及特殊字符
+        with tempfile.TemporaryDirectory() as tmp_folder:
+            tmp_folder = Path(tmp_folder)
+            png_sequence_folder.copy_as(tmp_folder)
+            tmp_amv = tmp_folder.with_suffix('.amv')
+            # 获取帧率
+            if frame_rate is None:
+                amv_json_file = png_sequence_folder.with_suffix('.amv.json')
+                if amv_json_file.exists():
+                    with open(amv_json_file, newline='', encoding='utf-8') as f:
+                        # 读取文件内容
+                        content = json.load(f)
+                        frame_rate = content['frame_rate']
+                else:
+                    frame_rate = '30'
+            # 运行
+            options = [self.amv_en_exe,
+                       '--png', '--zlib',
+                       '--rate', str(frame_rate),
+                       '--quality', '100',
+                       tmp_folder, tmp_amv
+                       ]
+            amv_en_p = subprocess.run(options, capture_output=True)
+            # 改名
+            tmp_amv.move_as(target_amv)
         return target_amv
 
     def png2amv(self, png_sequence_folder, output_folder):
