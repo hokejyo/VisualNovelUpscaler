@@ -1,9 +1,9 @@
-# Visual Novel Clearer  
+# Visual Novel Upscaler 
 一键将视觉小说/Galgame以高分辨率重制，现已支持Kirikiri2/Z及Artemis引擎  
 ## 使用方法  
 1.下载并解压到纯英文目录  
 2.拆包游戏，放到一个文件夹中  
-3.将文件夹拖拽到VisualNovelClearer.exe运行  
+3.打开程序，指定输入目录和输出目录运行
 ## Credits  
 [waifu2x-ncnn-vulkan](https://github.com/nihui/waifu2x-ncnn-vulkan)  
 [Real-CUGAN](https://github.com/nihui/realcugan-ncnn-vulkan)  
