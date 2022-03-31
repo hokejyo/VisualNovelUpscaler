@@ -35,7 +35,6 @@ class ImagePage(QFrame):
         self.setup_show_image_area()
         self.setup_filters()
 
-
     def setup_filters(self):
         formlayout = QFormLayout()
         self.hlayout.addLayout(formlayout)
@@ -59,14 +58,8 @@ class ImagePage(QFrame):
         input_path = Path(self.input_line_edit.text().strip())
         try:
             self.list_widget.clear()
-            extension_list = [extension.strip().lower() for extension in self.filter_line_edit.text().split(',')]
-            extension_list_ = []
-            for extension in extension_list:
-                if extension not in extension_list_:
-                    extension_list_.append(extension)
-            image_list = []
-            for extension in extension_list_:
-                image_list += input_path.file_list(extension)
+            extension_list = [('.' + extension.strip().lower()) for extension in self.filter_line_edit.text().split(',')]
+            image_list = [file_path for file_path in input_path.file_list() if file_path.suffix.lower() in extension_list]
             for image_file in image_list:
                 self.list_widget.addItem(image_file.to_str)
         except:

@@ -20,6 +20,11 @@ class Kirikiri(Core):
         if self.game_ui_runner is not None:
             self.game_ui_runner.info_sig.emit(info_str)
 
+    def emit_progress(self, _percent, _left_time):
+        print(_percent, _left_time, sep='\t')
+        if self.game_ui_runner is not None:
+            self.game_ui_runner.progress_sig.emit(_percent, _left_time)
+
     def upscale(self):
         # 计时
         start_time = time.time()

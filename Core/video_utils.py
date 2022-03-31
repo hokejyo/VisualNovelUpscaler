@@ -151,7 +151,7 @@ class VideoUtils(object):
         png2video_p = subprocess.run(options, capture_output=True)
         return output_video
 
-    def video_upscale(self, input_video, output_video, scale_ratio=2.0, output_vcodec=None, silent_mode=False):
+    def video_upscale(self, input_video, output_video, scale_ratio=2.0, output_vcodec=None):
         """
         @brief      视频放大
 
@@ -175,15 +175,12 @@ class VideoUtils(object):
             raise ValueError('输出视频编码不能为wmv3')
         with tempfile.TemporaryDirectory() as video_tmp_folder1:
             video_tmp_folder1 = Path(video_tmp_folder1)
-            if not silent_mode:
-                self.emit_info(f'{input_video}拆帧中......')
+            self.emit_info(f'{input_video}拆帧中......')
             png_sequence = self.video2png(input_video, video_tmp_folder1)
-            if not silent_mode:
-                self.emit_info(f'{input_video}放大中......')
-            self.image_upscale(video_tmp_folder1, video_tmp_folder1, scale_ratio, video_mode=True, silent_mode=silent_mode)
+            self.emit_info(f'{input_video}放大中......')
+            self.image_upscale(video_tmp_folder1, video_tmp_folder1, scale_ratio, video_mode=True)
             tmp_video = video_tmp_folder1/output_video.name
-            if not silent_mode:
-                self.emit_info(f'{output_video}编码中......')
+            self.emit_info(f'{output_video}编码中......')
             tmp_video = self.png2video(png_sequence, input_video, tmp_video, output_vcodec)
             tmp_video.move_as(output_video)
         return output_video

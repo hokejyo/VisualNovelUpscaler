@@ -33,15 +33,6 @@ class GamePage(QFrame):
 
         self.setup_game_engine_area()
         layout.addWidget(self.game_engine_area)
-        # # 中部空间
-        # center_spacer = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        # layout.addItem(center_spacer)
-
-        # center_spacer2 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        # layout.addItem(center_spacer2)
-
-        # center_spacer3 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        # layout.addItem(center_spacer3)
 
         self.setup_info_area()
         layout.addWidget(self.info_area_frame)
@@ -101,7 +92,7 @@ class GamePage(QFrame):
         hlayout.addWidget(self.select_output_folder_btn)
 
     def auto_fill_output_folder(self):
-        output_folder_path = Path(self.select_input_folder_line_edit.text().strip()).parent/'VNC_Output'
+        output_folder_path = Path(self.select_input_folder_line_edit.text().strip()).parent/'VNU_Output'
         # while output_folder_path.exists():
         #     output_folder_path = output_folder_path.with_name(output_folder_path.name+'_Output')
         self.select_output_folder_line_edit.setText(str(output_folder_path))
@@ -149,16 +140,36 @@ class GamePage(QFrame):
         self.run_part_frame = QFrame()
         layout = QHBoxLayout(self.run_part_frame)
         layout.setContentsMargins(10, 0, 10, 20)
+
         self.status_progress_bar = FProgressBar(height=30, border_radius=12.5)
         layout.addWidget(self.status_progress_bar)
-        self.start_frame = QFrame()
-        self.start_frame.setMaximumWidth(112)
-        self.start_frame.setMinimumWidth(112)
-        hlayout = QHBoxLayout(self.start_frame)
-        hlayout.setContentsMargins(0, 0, 0, 0)
-        self.run_btn = FPushButton(text="开始处理", minimum_width=50, height=30, text_padding=45, text_align='left', icon_path=self.icon_folder/'icon_send.svg')
-        hlayout.addWidget(self.run_btn)
-        layout.addWidget(self.start_frame)
+
+        self.run_btn = FIconButton(text="开始处理", minimum_width=150, height=30, icon_path=self.icon_folder/'icon_send.svg')
+        layout.addWidget(self.run_btn)
+
+    def set_running_state(self, state):
+        if state == 0:
+            self.run_btn.setEnabled(True)
+            self.run_btn.setText('开始处理')
+            self.run_btn.set_icon(self.icon_folder/'icon_send.svg')
+            self.status_progress_bar.setRange(0, 100)
+            self.status_progress_bar.setValue(0)
+        elif state == 1:
+            self.run_btn.setDisabled(True)
+            self.run_btn.setText('正在处理')
+            self.run_btn.set_icon(self.icon_folder/'clock.svg')
+            self.status_progress_bar.setRange(0, 0)
+        elif state == 2:
+            self.run_btn.setDisabled(True)
+            self.run_btn.setText('正在处理')
+            self.run_btn.set_icon(self.icon_folder/'clock.svg')
+            self.status_progress_bar.setRange(0, 100)
+        elif state == 3:
+            self.run_btn.setEnabled(True)
+            self.run_btn.setText('开始处理')
+            self.run_btn.set_icon(self.icon_folder/'icon_send.svg')
+            self.status_progress_bar.setRange(0, 100)
+            self.status_progress_bar.setValue(100)
 
     def switch_kirikiri(self):
         if not self.kirikiri_btn.is_active:

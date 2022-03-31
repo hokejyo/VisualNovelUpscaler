@@ -77,51 +77,51 @@ class SettingPageUIConnection(object):
         self.ui.settingpage.anime4k_settings.hdn_level_spinbox.setValue(int(self.anime4k_hdn_level))
 
     def ui_config_save(self):
-        with open(self.vnc_config_file, 'w', newline='', encoding='utf-8') as vcf:
+        with open(self.vnu_config_file, 'w', newline='', encoding='utf-8') as vcf:
             # 通用设置
-            self.vnc_config.set('General', 'cpu_cores', str(self.ui.settingpage.cpu_spinbox.value()))
-            self.vnc_config.set('General', 'gpu_id', get_gpu_id(self.ui.settingpage.gpu_combobox.currentText()))
-            self.vnc_config.set('General', 'encoding_list', self.ui.settingpage.text_encoding_line_edit.text().strip())
+            self.vnu_config.set('General', 'cpu_cores', str(self.ui.settingpage.cpu_spinbox.value()))
+            self.vnu_config.set('General', 'gpu_id', get_gpu_id(self.ui.settingpage.gpu_combobox.currentText()))
+            self.vnu_config.set('General', 'encoding_list', self.ui.settingpage.text_encoding_line_edit.text().strip())
             # 图片设置
-            self.vnc_config.set('Image', 'image_sr_engine', self.ui.settingpage.image_sr_engine_combobox.currentText())
-            self.vnc_config.set('Image', 'image_batch_size', str(self.ui.settingpage.image_batch_size_spinbox.value()))
+            self.vnu_config.set('Image', 'image_sr_engine', self.ui.settingpage.image_sr_engine_combobox.currentText())
+            self.vnu_config.set('Image', 'image_batch_size', str(self.ui.settingpage.image_batch_size_spinbox.value()))
             # 视频设置
-            self.vnc_config.set('Video', 'video_sr_engine', self.ui.settingpage.video_sr_engine_combobox.currentText())
-            self.vnc_config.set('Video', 'video_batch_size', str(self.ui.settingpage.video_batch_size_spinbox.value()))
-            self.vnc_config.set('Video', 'video_quality', str(self.ui.settingpage.video_quality_spinbox.value()))
+            self.vnu_config.set('Video', 'video_sr_engine', self.ui.settingpage.video_sr_engine_combobox.currentText())
+            self.vnu_config.set('Video', 'video_batch_size', str(self.ui.settingpage.video_batch_size_spinbox.value()))
+            self.vnu_config.set('Video', 'video_quality', str(self.ui.settingpage.video_quality_spinbox.value()))
             # 超分引擎设置
             tta = '1' if self.ui.settingpage.tta_checkbox.isChecked() else '0'
-            self.vnc_config.set('SREngine', 'tta', tta)
+            self.vnu_config.set('SREngine', 'tta', tta)
             # waifu2x_ncnn
-            self.vnc_config.set('waifu2x_ncnn', 'noise_level', str(self.ui.settingpage.waifu2x_ncnn_settings.noise_level_spinbox.value()))
-            self.vnc_config.set('waifu2x_ncnn', 'tile_size', self.ui.settingpage.waifu2x_ncnn_settings.tile_size_line_edit.text())
-            self.vnc_config.set('waifu2x_ncnn', 'model_name', self.ui.settingpage.waifu2x_ncnn_settings.modle_name_combobox.currentText())
-            self.vnc_config.set('waifu2x_ncnn', 'load_proc_save', self.ui.settingpage.waifu2x_ncnn_settings.load_proc_save_line_edit.text())
+            self.vnu_config.set('waifu2x_ncnn', 'noise_level', str(self.ui.settingpage.waifu2x_ncnn_settings.noise_level_spinbox.value()))
+            self.vnu_config.set('waifu2x_ncnn', 'tile_size', self.ui.settingpage.waifu2x_ncnn_settings.tile_size_line_edit.text())
+            self.vnu_config.set('waifu2x_ncnn', 'model_name', self.ui.settingpage.waifu2x_ncnn_settings.modle_name_combobox.currentText())
+            self.vnu_config.set('waifu2x_ncnn', 'load_proc_save', self.ui.settingpage.waifu2x_ncnn_settings.load_proc_save_line_edit.text())
             # Real-CUGAN
-            self.vnc_config.set('real_cugan', 'noise_level', str(self.ui.settingpage.real_cugan_settings.noise_level_spinbox.value()))
-            self.vnc_config.set('real_cugan', 'tile_size', self.ui.settingpage.real_cugan_settings.tile_size_line_edit.text())
-            self.vnc_config.set('real_cugan', 'sync_gap_mode', str(self.ui.settingpage.real_cugan_settings.sync_gap_mode_spinbox.value()))
-            self.vnc_config.set('real_cugan', 'model_name', self.ui.settingpage.real_cugan_settings.modle_name_combobox.currentText())
-            self.vnc_config.set('real_cugan', 'load_proc_save', self.ui.settingpage.real_cugan_settings.load_proc_save_line_edit.text())
+            self.vnu_config.set('real_cugan', 'noise_level', str(self.ui.settingpage.real_cugan_settings.noise_level_spinbox.value()))
+            self.vnu_config.set('real_cugan', 'tile_size', self.ui.settingpage.real_cugan_settings.tile_size_line_edit.text())
+            self.vnu_config.set('real_cugan', 'sync_gap_mode', str(self.ui.settingpage.real_cugan_settings.sync_gap_mode_spinbox.value()))
+            self.vnu_config.set('real_cugan', 'model_name', self.ui.settingpage.real_cugan_settings.modle_name_combobox.currentText())
+            self.vnu_config.set('real_cugan', 'load_proc_save', self.ui.settingpage.real_cugan_settings.load_proc_save_line_edit.text())
             # real_esrgan
-            self.vnc_config.set('real_esrgan', 'tile_size', self.ui.settingpage.real_esrgan_settings.tile_size_line_edit.text())
-            self.vnc_config.set('real_esrgan', 'model_name', self.ui.settingpage.real_esrgan_settings.modle_name_combobox.currentText())
-            self.vnc_config.set('real_esrgan', 'load_proc_save', self.ui.settingpage.real_esrgan_settings.load_proc_save_line_edit.text())
+            self.vnu_config.set('real_esrgan', 'tile_size', self.ui.settingpage.real_esrgan_settings.tile_size_line_edit.text())
+            self.vnu_config.set('real_esrgan', 'model_name', self.ui.settingpage.real_esrgan_settings.modle_name_combobox.currentText())
+            self.vnu_config.set('real_esrgan', 'load_proc_save', self.ui.settingpage.real_esrgan_settings.load_proc_save_line_edit.text())
             # srmd_ncnn
-            self.vnc_config.set('srmd_ncnn', 'noise_level', str(self.ui.settingpage.srmd_ncnn_settings.noise_level_spinbox.value()))
-            self.vnc_config.set('srmd_ncnn', 'tile_size', self.ui.settingpage.srmd_ncnn_settings.tile_size_line_edit.text())
-            self.vnc_config.set('srmd_ncnn', 'load_proc_save', self.ui.settingpage.srmd_ncnn_settings.load_proc_save_line_edit.text())
+            self.vnu_config.set('srmd_ncnn', 'noise_level', str(self.ui.settingpage.srmd_ncnn_settings.noise_level_spinbox.value()))
+            self.vnu_config.set('srmd_ncnn', 'tile_size', self.ui.settingpage.srmd_ncnn_settings.tile_size_line_edit.text())
+            self.vnu_config.set('srmd_ncnn', 'load_proc_save', self.ui.settingpage.srmd_ncnn_settings.load_proc_save_line_edit.text())
             # realsr_ncnn
-            self.vnc_config.set('realsr_ncnn', 'tile_size', self.ui.settingpage.realsr_ncnn_settings.tile_size_line_edit.text())
-            self.vnc_config.set('realsr_ncnn', 'model_name', self.ui.settingpage.realsr_ncnn_settings.modle_name_combobox.currentText())
-            self.vnc_config.set('realsr_ncnn', 'load_proc_save', self.ui.settingpage.realsr_ncnn_settings.load_proc_save_line_edit.text())
+            self.vnu_config.set('realsr_ncnn', 'tile_size', self.ui.settingpage.realsr_ncnn_settings.tile_size_line_edit.text())
+            self.vnu_config.set('realsr_ncnn', 'model_name', self.ui.settingpage.realsr_ncnn_settings.modle_name_combobox.currentText())
+            self.vnu_config.set('realsr_ncnn', 'load_proc_save', self.ui.settingpage.realsr_ncnn_settings.load_proc_save_line_edit.text())
             # anime4kcpp
             acnet = '1' if self.ui.settingpage.anime4k_settings.acnet_checkbox.isChecked() else '0'
-            self.vnc_config.set('anime4k', 'acnet', acnet)
+            self.vnu_config.set('anime4k', 'acnet', acnet)
             hdn_mode = '1' if self.ui.settingpage.anime4k_settings.hdn_mode_checkbox.isChecked() else '0'
-            self.vnc_config.set('anime4k', 'hdn_mode', hdn_mode)
-            self.vnc_config.set('anime4k', 'hdn_level', str(self.ui.settingpage.anime4k_settings.hdn_level_spinbox.value()))
-            self.vnc_config.write(vcf)
+            self.vnu_config.set('anime4k', 'hdn_mode', hdn_mode)
+            self.vnu_config.set('anime4k', 'hdn_level', str(self.ui.settingpage.anime4k_settings.hdn_level_spinbox.value()))
+            self.vnu_config.write(vcf)
         self.ui_config_load()
 
     def ui_config_reset(self):

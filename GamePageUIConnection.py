@@ -32,7 +32,7 @@ class GamePageUIConnection(object):
                 warn_message = '输入路径和输出路径不能相同'
         if warn_message is not None:
             warn_msg = QMessageBox()
-            reply = warn_msg.warning(self.ui, '提示', warn_message+'!', QMessageBox.Yes)
+            reply = warn_msg.warning(self.ui, '提示', warn_message + '!', QMessageBox.Yes)
             return False
         else:
             if check_output:
@@ -55,26 +55,25 @@ class GamePageUIConnection(object):
 
     def start_game_page_runner_and_lock(self):
         # 开始时锁定，防止重复操作
-        self.ui.gamepage.run_btn.setDisabled(True)
+        self.ui.gamepage.set_running_state(1)
         # 清空历史信息
         self.ui.gamepage.info_text_edit.clear()
-        self.ui.gamepage.status_progress_bar.setRange(0, 0)
-
-        self.ui.gamepage.run_btn.setText('正在处理')
         self.emit_info(format('开始处理', '=^76'))
         self.ui.gamepage.info_text_edit.append(format('开始处理', '=^76'))
 
     def append_info_text_edit(self, info_str):
         self.ui.gamepage.info_text_edit.append(info_str)
 
-    def update_progress_bar(self, int_value):
-        self.ui.gamepage.status_progress_bar.setValue(int_value)
+    def update_progress_bar(self, _percent, _left_time):
+        self.ui.gamepage.set_running_state(2)
+        self.ui.gamepage.status_progress_bar.setValue(_percent)
+        left_time_str = seconds_format(_left_time)
+        self.ui.gamepage.run_btn.setText(left_time_str)
+        if _percent == 100:
+            self.ui.gamepage.set_running_state(1)
 
     def finish_game_page_runner_and_unlock(self, info_str=''):
-        self.ui.gamepage.run_btn.setEnabled(True)
-        self.ui.gamepage.status_progress_bar.setRange(0, 100)
-        self.update_progress_bar(100)
-        self.ui.gamepage.run_btn.setText('开始处理')
+        self.ui.gamepage.set_running_state(3)
         self.emit_info(format('结束处理', '=^76'))
         self.ui.gamepage.info_text_edit.append(format('结束处理', '=^76'))
         finish_info_msg = QMessageBox()
@@ -82,10 +81,7 @@ class GamePageUIConnection(object):
         os.system(f'start {self.output_folder}') if reply == QMessageBox.Yes else None
 
     def crash_game_page_runner_and_unlock(self, info_str):
-        self.ui.gamepage.run_btn.setEnabled(True)
-        self.ui.gamepage.status_progress_bar.setRange(0, 100)
-        self.update_progress_bar(0)
-        self.ui.gamepage.run_btn.setText('开始处理')
+        self.ui.gamepage.set_running_state(0)
         self.emit_info(format('中断处理', '=^76'))
         self.ui.gamepage.info_text_edit.append(format('中断处理', '=^76'))
         raise Exception(info_str)
@@ -121,24 +117,24 @@ class GamePageRunner(QThread):
     # 信息文本框
     info_sig = Signal(str)
     # 进度(0-100)
-    progress_sig = Signal(int)
+    progress_sig = Signal(int, int)
     # 结束弹窗信息
     finish_sig = Signal(str)
     # 崩溃错误信息
     crash_sig = Signal(str)
 
-    def __init__(self, vnc):
+    def __init__(self, vnu):
         QThread.__init__(self)
-        self.vnc = vnc
+        self.vnu = vnu
 
     def run(self):
         self.start_sig.emit()
         try:
             # Kirikiri
-            if self.vnc.ui.gamepage.game_engine_area.currentWidget() is self.vnc.ui.gamepage.kirikiri:
+            if self.vnu.ui.gamepage.game_engine_area.currentWidget() is self.vnu.ui.gamepage.kirikiri:
                 self.kirikiri_run()
             # Artemis
-            elif self.vnc.ui.gamepage.game_engine_area.currentWidget() is self.vnc.ui.gamepage.artemis:
+            elif self.vnu.ui.gamepage.game_engine_area.currentWidget() is self.vnu.ui.gamepage.artemis:
                 self.artemis_run()
         except Exception as e:
             self.crash_sig.emit(traceback.format_exc())
@@ -146,10 +142,10 @@ class GamePageRunner(QThread):
     def kirikiri_run(self):
         kirikiri = Kirikiri(self)
         # 给ui起个别名
-        ugk = self.vnc.ui.gamepage.kirikiri
+        ugk = self.vnu.ui.gamepage.kirikiri
         if ugk.currentWidget() is ugk.hd_parts_frame:
             # 设置输入、输出路径
-            kirikiri.set_vn_hd_io_folder(self.vnc.input_folder, self.vnc.output_folder)
+            kirikiri.set_vn_hd_io_folder(self.vnu.input_folder, self.vnu.output_folder)
             # 设置原生分辨率和主要编码
             scwidth, scheight = map(int, ugk.before_resolution.text().split('x'))
             encoding = ugk.main_encoding.text()
@@ -171,7 +167,7 @@ class GamePageRunner(QThread):
             if ugk.stand_crt_btn.isChecked():
                 face_zoom = ugk.crt_ratio.value()
                 xpos_move = ugk.crt_movex.value()
-                kirikiri.stand_correction(self.vnc.input_folder, self.vnc.output_folder, face_zoom, xpos_move)
+                kirikiri.stand_correction(self.vnu.input_folder, self.vnu.output_folder, face_zoom, xpos_move)
                 self.finish_sig.emit('对话框头像坐标调整完成!')
             # tlg图片格式转换
             elif ugk.tlg_convert_btn.isChecked():
@@ -179,34 +175,34 @@ class GamePageRunner(QThread):
                 output_format = ugk.tlg_out.currentText()
                 if input_format == 'tlg':
                     if output_format == 'png':
-                        kirikiri.tlg2png_batch(self.vnc.input_folder, self.vnc.output_folder)
+                        kirikiri.tlg2png_batch(self.vnu.input_folder, self.vnu.output_folder)
                     else:
                         tlg5_mode = False if output_format == 'tlg6' else True
-                        kirikiri.tlg2tlg_batch(self.vnc.input_folder, self.vnc.output_folder, tlg5_mode)
+                        kirikiri.tlg2tlg_batch(self.vnu.input_folder, self.vnu.output_folder, tlg5_mode)
                 elif input_format == 'png':
                     tlg5_mode = False if output_format == 'tlg6' else True
-                    kirikiri.png2tlg_batch(self.vnc.input_folder, self.vnc.output_folder, tlg5_mode)
+                    kirikiri.png2tlg_batch(self.vnu.input_folder, self.vnu.output_folder, tlg5_mode)
                 self.finish_sig.emit('tlg图片转换完成!')
             # amv动画格式转换
             elif ugk.amv_cvt_btn.isChecked():
                 input_format = ugk.amv_in.currentText()
                 output_format = ugk.amv_out.currentText()
                 if input_format == 'amv' and output_format == 'png':
-                    kirikiri.amv2png(self.vnc.input_folder, self.vnc.output_folder)
+                    kirikiri.amv2png(self.vnu.input_folder, self.vnu.output_folder)
                 elif input_format == 'png' and output_format == 'amv':
-                    kirikiri.png2amv(self.vnc.input_folder, self.vnc.output_folder)
+                    kirikiri.png2amv(self.vnu.input_folder, self.vnu.output_folder)
                 self.finish_sig.emit('amv转换完成!')
             elif ugk.flat_patch_btn.isChecked():
-                kirikiri.flat_kirikiri_patch_folder(self.vnc.input_folder, self.vnc.output_folder)
+                kirikiri.flat_kirikiri_patch_folder(self.vnu.input_folder, self.vnu.output_folder)
                 self.finish_sig.emit('补丁文件平铺完成!')
 
     def artemis_run(self):
         artemis = Artemis(self)
         # 给ui起个别名
-        uga = self.vnc.ui.gamepage.artemis
+        uga = self.vnu.ui.gamepage.artemis
         if uga.currentWidget() is uga.hd_parts_frame:
             # 设置输入、输出路径
-            artemis.set_vn_hd_io_folder(self.vnc.input_folder, self.vnc.output_folder)
+            artemis.set_vn_hd_io_folder(self.vnu.input_folder, self.vnu.output_folder)
             # 设置原生分辨率和主要编码
             scwidth, scheight = map(int, uga.before_resolution.text().split('x'))
             encoding = uga.main_encoding.text()
@@ -223,5 +219,5 @@ class GamePageRunner(QThread):
         elif uga.currentWidget() is uga.work_up_frame:
             if uga.pfs_unpack_btn.isChecked():
                 pfs_encoding = uga.pfs_encoding_line_edit.text().strip()
-                artemis.batch_extract_pfs(self.vnc.input_folder, self.vnc.output_folder, pfs_encoding)
-                self.finish_sig.emit(f'拆包完成!\n请把游戏目录中类似script、movie等文件夹及*.ini文件也复制到：\n{self.vnc.output_folder}中')
+                artemis.batch_extract_pfs(self.vnu.input_folder, self.vnu.output_folder, pfs_encoding)
+                self.finish_sig.emit(f'拆包完成!\n请把游戏目录中类似script、movie等文件夹及*.ini文件也复制到：\n{self.vnu.output_folder}中')

@@ -28,6 +28,9 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
         print(info_str)
         logging.info(info_str)
 
+    def emit_progress(self, _percent, _left_time):
+        print(_percent, _left_time, sep='\t')
+
     def pool_run(self, target, runs, *args) -> list:
         """
         @brief      使用进程池多进程加速计算

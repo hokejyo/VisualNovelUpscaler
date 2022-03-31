@@ -43,7 +43,7 @@ class ImageUtils(object):
                 continue
         for i in range(len(tmp_ls)):
             if real_digit(tmp_ls[i]):
-                tmp_ls[i] = str(int(int(tmp_ls[i])*scale_ratio))
+                tmp_ls[i] = str(int(int(tmp_ls[i]) * scale_ratio))
         new_text = ','.join(tmp_ls)
         new_text2bytes = bytes(new_text, current_encoding)
         text_ls[1] = new_text2bytes
@@ -87,8 +87,8 @@ class ImageUtils(object):
         """
         image = Image.open(image_file)
         if zoom_factor != 1:
-            image_resize = image.resize((int(image.width*zoom_factor),
-                                         int(image.height*zoom_factor)),
+            image_resize = image.resize((int(image.width * zoom_factor),
+                                         int(image.height * zoom_factor)),
                                         Image.LANCZOS).save(image_file)
         return image_file
 
@@ -102,7 +102,7 @@ class ImageUtils(object):
 
         @return     输出图片路径对象
         """
-        output_path = input_path.with_suffix('.'+output_extention)
+        output_path = input_path.with_suffix('.' + output_extention)
         if output_path != input_path:
             try:
                 Image.open(input_path).save(output_path, quality=100)
@@ -113,6 +113,13 @@ class ImageUtils(object):
 
     @staticmethod
     def palette_png_pre_(input_path) -> Path:
+        """
+        @brief      PALETTE PNG图片预处理为RGBA或RGB
+
+        @param      input_path  输入路径
+
+        @return     输出文件路径
+        """
         if input_path.suffix.lower() == '.png':
             img = Image.open(input_path)
             if img.mode == 'P':
@@ -130,8 +137,7 @@ class ImageUtils(object):
                       output_extention='png',
                       filters=['png', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp'],
                       walk_mode=True,
-                      video_mode=False,
-                      silent_mode=False
+                      video_mode=False
                       ) -> list:
         """
         @brief      放大图片
@@ -143,7 +149,6 @@ class ImageUtils(object):
         @param      filters           格式过滤器
         @param      walk_mode         是否处理子文件夹中的图片，默认是
         @param      video_mode        使用视频超分引擎
-        @param      silent_mode       输出细节
 
         @return     所有输出图片的路径对象列表
         """
@@ -155,14 +160,17 @@ class ImageUtils(object):
         upscale_batch_size = self.video_batch_size if video_mode else self.image_batch_size
         # 获取原始图片文件列表
         org_image_ls = []
+        _filters = [('.' + extension) for extension in filters]
         if single_file_mode:
-            if input_path.suffix.lower()[1:] in filters:
+            if input_path.suffix.lower() in _filters:
                 org_image_ls.append(input_path)
         else:
-            for extension in filters:
-                org_image_ls += input_path.file_list(extension, walk_mode=walk_mode)
+            org_image_ls = [file_path for file_path in input_path.file_list(walk_mode=walk_mode) if file_path.suffix.lower() in _filters]
         output_image_list = []
-        if org_image_ls:
+        # 记录总数和开始时间
+        len_org_image_ls = len(org_image_ls)
+        _start_time = time.time()
+        if len_org_image_ls != 0:
             group_list = batch_group_list(org_image_ls, batch_size=upscale_batch_size)
             for group in group_list:
                 # 创建两个临时文件夹
@@ -175,11 +183,11 @@ class ImageUtils(object):
                         for image_file in group:
                             tmp_stem = self.create_str()
                             if single_file_mode:
-                                target_image_file = image_file.reio_path(input_path.parent, output_folder, mk_dir=True).with_suffix('.'+output_extention)
+                                target_image_file = image_file.reio_path(input_path.parent, output_folder, mk_dir=True).with_suffix('.' + output_extention)
                             else:
-                                target_image_file = image_file.reio_path(input_path, output_folder, mk_dir=True).with_suffix('.'+output_extention)
+                                target_image_file = image_file.reio_path(input_path, output_folder, mk_dir=True).with_suffix('.' + output_extention)
                             tmp_target_dict[tmp_stem] = target_image_file
-                            tmp_image_file = img_tmp_folder1/(tmp_stem+image_file.suffix)
+                            tmp_image_file = img_tmp_folder1 / (tmp_stem + image_file.suffix)
                             image_file.copy_as(tmp_image_file)
                             # 预处理
                             self.palette_png_pre_(tmp_image_file)
@@ -196,9 +204,24 @@ class ImageUtils(object):
                             target_image_file = tmp_target_dict[tmp_image.stem]
                             tmp_image.move_as(target_image_file)
                             output_image_list.append(target_image_file)
-                            if not silent_mode:
-                                self.emit_info(f'{target_image_file} upscaled!')
+                # 进度更新
+                len_finished_image_list = len(output_image_list)
+                _now_time = time.time()
+                self._update_progress_and_left_time(len_org_image_ls, len_finished_image_list, _start_time, _now_time)
+        else:
+            self.emit_progress(100, 0)
         return output_image_list
+
+    def _update_progress_and_left_time(self, len_org_image_ls, len_finished_image_list, _start_time, _now_time):
+        if len_finished_image_list == 0:
+            _percent = 0
+            _lefe_time = 0
+        else:
+            _progress = len_finished_image_list / len_org_image_ls
+            passed_time = _now_time - _start_time
+            _percent = int(_progress * 100)
+            _lefe_time = passed_time / _progress - passed_time
+        self.emit_progress(_percent, _lefe_time)
 
     @staticmethod
     def _get_actual_scale_ratio(legal_scale_ratio, target_scale_ratio) -> int:
@@ -339,5 +362,5 @@ class ImageUtils(object):
                         options.insert(-2, self.anime4k_hdn_level)
             case _:
                 raise Exception('请选择正确的超分引擎！')
-        zoom_factor = scale_ratio/actual_scale_ratio
+        zoom_factor = scale_ratio / actual_scale_ratio
         return options, zoom_factor

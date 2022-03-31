@@ -40,7 +40,7 @@ class MainContent(QFrame):
         self.top_bar_layout = QHBoxLayout(self.top_bar)
         # 左边距为10
         self.top_bar_layout.setContentsMargins(20, 0, 0, 0)
-        self.top_label_left = QLabel("Visual Novel Clearer")
+        self.top_label_left = QLabel("Visual Novel Upscaler")
         self.top_label_left.setStyleSheet("font: 700 10pt 'Segoe UI'")
         # 空间
         self.top_spacer = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)

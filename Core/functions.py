@@ -102,7 +102,7 @@ def seconds_format(time_length) -> str:
     """
     m, s = divmod(time_length, 60)
     h, m = divmod(m, 60)
-    return "%dh%02dm%02ds" % (h, m, s)
+    return "%02dh%02dm%02ds" % (h, m, s)
 
 
 def batch_group_list(inlist, batch_size=10) -> list:

@@ -19,6 +19,11 @@ class Artemis(Core):
         if self.game_ui_runner is not None:
             self.game_ui_runner.info_sig.emit(info_str)
 
+    def emit_progress(self, _percent, _left_time):
+        print(_percent, _left_time, sep='\t')
+        if self.game_ui_runner is not None:
+            self.game_ui_runner.progress_sig.emit(_percent, _left_time)
+
     def upscale(self):
         # 计时
         start_time = time.time()
@@ -102,7 +107,7 @@ class Artemis(Core):
                                 line = 'SAVEPATH = savedataHD\r\n'
                                 _save_change = False
                         else:
-                            line = ';'+line
+                            line = ';' + line
                     f.write(line)
 
     # def tbl2x(self):
@@ -145,7 +150,7 @@ class Artemis(Core):
             # ls1 = ['game_scale', 'game_wasmbar', 'title_anime', 'fontsize', 'line_size', 'line_window', 'line_back', 'line_scroll', 'line_name01', 'line_name02']
             for keyn1 in ls1:
                 if line.startswith(keyn1):
-                    pattern_rule1 = '('+keyn1+r'\W+?\{'+')'+'(.*?)'+r'(\}.*)'
+                    pattern_rule1 = '(' + keyn1 + r'\W+?\{' + ')' + '(.*?)' + r'(\}.*)'
                     pattern1 = re.compile(pattern_rule1)
                     re_result1 = re.match(pattern1, line)
                     if re_result1:
@@ -153,7 +158,7 @@ class Artemis(Core):
                         tmp_ls = line_ls[1].split(',')
                         for i in range(len(tmp_ls)):
                             if real_digit(tmp_ls[i]):
-                                tmp_ls[i] = str(int(int(tmp_ls[i])*self.scale_ratio))
+                                tmp_ls[i] = str(int(int(tmp_ls[i]) * self.scale_ratio))
                         line_ls[1] = ','.join(tmp_ls)
                         line = ''.join([i for i in line_ls if i != None])
             ls2 = ['x', 'y', 'w', 'h', 'r', 'cx', 'cy', 'cw', 'ch', 'fx', 'fy', 'fw', 'fh', 'left', 'top', 'size', 'width', 'height', 'spacetop', 'spacemiddle', 'spacebottom', 'kerning', 'rubysize']
@@ -171,7 +176,7 @@ class Artemis(Core):
                     tmp_ls = line_ls[1].split(',')
                     for i in range(len(tmp_ls)):
                         if real_digit(tmp_ls[i]):
-                            tmp_ls[i] = str(int(int(tmp_ls[i])*self.scale_ratio))
+                            tmp_ls[i] = str(int(int(tmp_ls[i]) * self.scale_ratio))
                     line_ls[1] = ','.join(tmp_ls)
                     line = ''.join([i for i in line_ls if i != None])
             ls4 = ['game_width', 'game_height']
@@ -207,7 +212,7 @@ class Artemis(Core):
                     num_str_ls = line2ls[1].split(',')
                     for i, num_str in enumerate(num_str_ls):
                         if real_digit(num_str):
-                            num_str_ls[i] = str(int(int(num_str)*self.scale_ratio))
+                            num_str_ls[i] = str(int(int(num_str) * self.scale_ratio))
                     line2ls[1] = ','.join(num_str_ls)
                     line = ''.join(line2ls)
                 result.append(line)

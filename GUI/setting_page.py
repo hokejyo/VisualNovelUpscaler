@@ -136,6 +136,23 @@ class SettingPage(QFrame):
         sr_engine = self.image_sr_engine_combobox.currentText()
         self.sr_engine_combobox.setCurrentText(sr_engine)
 
+    def setup_image_settings(self):
+        self.image_setting_frame = QFrame()
+        layout = QFormLayout(self.image_setting_frame)
+        layout.setSpacing(5)
+        self.image_setting_lb = QLabel('图片设置')
+        layout.addRow(self.image_setting_lb)
+        self.image_sr_engine_lb = QLabel('图片超分引擎：')
+        self.image_sr_engine_combobox = QComboBox()
+        image_sr_engine_list = [sr_engine for sr_engine in self.sr_engine_list]
+        # image_sr_engine_list.remove('anime4k')
+        self.image_sr_engine_combobox.addItems(image_sr_engine_list)
+        layout.addRow(self.image_sr_engine_lb, self.image_sr_engine_combobox)
+        self.image_batch_size_lb = QLabel('图片批次大小：')
+        self.image_batch_size_spinbox = QSpinBox()
+        self.image_batch_size_spinbox.setRange(0, 999)
+        layout.addRow(self.image_batch_size_lb, self.image_batch_size_spinbox)
+
     def video_engine_auto_switch(self):
         sr_engine = self.video_sr_engine_combobox.currentText()
         self.sr_engine_combobox.setCurrentText(sr_engine)
@@ -150,7 +167,7 @@ class SettingPage(QFrame):
         self.video_sr_engine_combobox = QComboBox()
         self.video_sr_engine_combobox.addItems(self.sr_engine_list)
         layout.addRow(self.video_sr_engine_lb, self.video_sr_engine_combobox)
-        self.video_batch_size_lb = QLabel('视频分组大小：')
+        self.video_batch_size_lb = QLabel('视频批次大小：')
         self.video_batch_size_spinbox = QSpinBox()
         self.video_batch_size_spinbox.setRange(0, 999)
         layout.addRow(self.video_batch_size_lb, self.video_batch_size_spinbox)
@@ -158,20 +175,3 @@ class SettingPage(QFrame):
         self.video_quality_spinbox = QSpinBox()
         self.video_quality_spinbox.setRange(0, 10)
         layout.addRow(self.video_quality_lb, self.video_quality_spinbox)
-
-    def setup_image_settings(self):
-        self.image_setting_frame = QFrame()
-        layout = QFormLayout(self.image_setting_frame)
-        layout.setSpacing(5)
-        self.image_setting_lb = QLabel('图片设置')
-        layout.addRow(self.image_setting_lb)
-        self.image_sr_engine_lb = QLabel('图片超分引擎：')
-        self.image_sr_engine_combobox = QComboBox()
-        image_sr_engine_list = [sr_engine for sr_engine in self.sr_engine_list]
-        # image_sr_engine_list.remove('anime4k')
-        self.image_sr_engine_combobox.addItems(image_sr_engine_list)
-        layout.addRow(self.image_sr_engine_lb, self.image_sr_engine_combobox)
-        self.image_batch_size_lb = QLabel('图片分组大小：')
-        self.image_batch_size_spinbox = QSpinBox()
-        self.image_batch_size_spinbox.setRange(0, 999)
-        layout.addRow(self.image_batch_size_lb, self.image_batch_size_spinbox)
