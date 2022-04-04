@@ -14,10 +14,10 @@ class VisualNovelUpscaler(Core, SettingPageUIConnection, GamePageUIConnection):
     def __init__(self):
         Core.__init__(self)
         self.initUI()
-        # 捕获异常
-        sys.excepthook = self.catch_exceptions
         # 错误日志
         logging.basicConfig(filename=self.vnu_log_file, encoding='UTF-8', level=logging.DEBUG, filemode='a+', format='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
+        # 捕获异常
+        sys.excepthook = self.catch_exceptions
 
     def initUI(self):
         self.ui = MainUI()

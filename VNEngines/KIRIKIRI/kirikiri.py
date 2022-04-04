@@ -93,7 +93,7 @@ class Kirikiri(Core):
         self.uicsv2x()
         self.asd2x()
         self.stand2x()
-        self.scn2x()
+        # self.scn2x()
 
     def tjs2x(self):
         tjs_file_ls = patch9_first(self.game_data.file_list('tjs'))
@@ -678,24 +678,19 @@ class Kirikiri(Core):
             with tempfile.TemporaryDirectory() as tmp_folder:
                 self.tmp_folder = Path(tmp_folder)
                 amv_file_ls = [amv_file.copy_as(self.a2t(amv_file)) for amv_file in ori_amv_file_ls]
-
                 self.emit_info('AMV动画拆帧中......')
                 png_sequence_folder_ls = self.amv2png(self.tmp_folder, self.tmp_folder)
                 [amv_file.unlink() for amv_file in amv_file_ls]
-
                 self.emit_info('AMV动画拆帧完成，正在放大中......')
                 self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png', video_mode=True)
-
                 self.emit_info('AMV动画组装中......')
-                scaled_amv_file_ls = self.pool_run(self.amv_en, png_sequence_folder_ls)
-
-                [scaled_amv_file.move_as(self.t2p(scaled_amv_file)) for scaled_amv_file in scaled_amv_file_ls]
+                scaled_amv_file_ls = self.png2amv(self.tmp_folder, self.patch_folder)
 
     def amv2png(self, input_dir, output_dir) -> list:
         input_dir = Path(input_dir)
         output_dir = Path(output_dir)
         amv_dict = self._amv2png_pre(input_dir, output_dir)
-        target_amv_dirs = self.pool_run(self.amv_de, amv_dict.items())
+        target_amv_dirs = self.pool_run(self._amv_de, amv_dict.items())
         return target_amv_dirs
 
     def _amv2png_pre(self, input_dir, output_dir) -> dict:
@@ -711,7 +706,7 @@ class Kirikiri(Core):
             amv_dict[tmp_amv] = (tmp_amv_dir, target_amv_dir, target_amv_file)
         return amv_dict
 
-    def amv_de(self, amv_tuple) -> Path:
+    def _amv_de(self, amv_tuple) -> Path:
         '''
         拆分amv动画为png序列
         '''
@@ -719,47 +714,39 @@ class Kirikiri(Core):
         tmp_amv_dir = amv_tuple[1][0]
         target_amv_dir = amv_tuple[1][1]
         amv_de_p = subprocess.run([self.amv_de_exe, '-amvpath='+tmp_amv.to_str], capture_output=True)
-        amv_file_info = self.get_amv_file_info(tmp_amv)
+        amv_file_info = self._get_amv_file_info(tmp_amv)
         result = json.dumps(amv_file_info, sort_keys=False, indent=2, ensure_ascii=False)
         tmp_amv.unlink()
         tmp_amv_dir.move_as(target_amv_dir)
-        with open(target_amv_dir.parent/(target_amv_dir.name+'.amv.json'), 'w', newline='', encoding='utf-8') as amv_c:
+        with open(target_amv_dir.parent/(target_amv_dir.name+'.json'), 'w', newline='', encoding='utf-8') as amv_c:
             amv_c.write(result)
         return target_amv_dir
 
     @staticmethod
-    def get_amv_file_info(amv_file) -> dict:
+    def _get_amv_file_info(amv_file) -> dict:
         amv_file_info = dict(AMVStruct.parse_file(amv_file).header)
         amv_file_info.pop('_io')
         for i, j in amv_file_info.items():
             amv_file_info[i] = str(j)
+        amv_file_info['type'] = 'amv'
         return amv_file_info
 
-    def amv_en(self, png_sequence_folder, frame_rate=None):
+    def _amv_en(self, amv_dict_item):
         '''
         将png序列合并为amv动画
         '''
-        # 目标amv文件
-        target_amv = png_sequence_folder.with_suffix('.amv')
+        png_sequence_folder = Path(amv_dict_item[0])
+        target_amv = Path(amv_dict_item[1][0])
+        frame_rate = str(amv_dict_item[1][1])
         # 防乱码和空格及特殊字符
         with tempfile.TemporaryDirectory() as tmp_folder:
             tmp_folder = Path(tmp_folder)
             png_sequence_folder.copy_as(tmp_folder)
             tmp_amv = tmp_folder.with_suffix('.amv')
-            # 获取帧率
-            if frame_rate is None:
-                amv_json_file = png_sequence_folder.with_suffix('.amv.json')
-                if amv_json_file.exists():
-                    with open(amv_json_file, newline='', encoding='utf-8') as f:
-                        # 读取文件内容
-                        content = json.load(f)
-                        frame_rate = content['frame_rate']
-                else:
-                    frame_rate = '30'
             # 运行
             options = [self.amv_en_exe,
                        '--png', '--zlib',
-                       '--rate', str(frame_rate),
+                       '--rate', frame_rate,
                        '--quality', '100',
                        tmp_folder, tmp_amv
                        ]
@@ -768,20 +755,26 @@ class Kirikiri(Core):
             tmp_amv.move_as(target_amv)
         return target_amv
 
-    def png2amv(self, png_sequence_folder, output_folder):
-        """
-        @brief      将png序列合成为amv动画
-
-        @param      png_sequence_folder  The png sequence folder
-        @param      output_folder        The output folder
-
-        @return     输出amv文件路径
-        """
-        png_sequence_folder = Path(png_sequence_folder)
+    def png2amv(self, input_folder, output_folder):
+        input_folder = Path(input_folder)
         output_folder = Path(output_folder)
-        amv_file = self.amv_en(png_sequence_folder)
-        target_amv_path = amv_file.move_to(output_folder)
-        return target_amv_path
+        amv_json_file_ls = input_folder.file_list('json')
+        amv_en_dict = {}
+        for amv_json_file in amv_json_file_ls:
+            try:
+                with open(amv_json_file, newline='', encoding='utf-8') as f:
+                    # 读取文件内容
+                    content = json.load(f)
+                    if content['type'] == 'amv':
+                        # png序列
+                        png_sequence_folder = amv_json_file.with_suffix('')
+                        target_amv = amv_json_file.reio_path(input_folder, output_folder, mk_dir=True).with_suffix('.amv')
+                        amv_en_dict[png_sequence_folder] = (target_amv, content['frame_rate'])
+            except:
+                pass
+        target_amv_file_ls = self.pool_run(self._amv_en, amv_en_dict.items())
+        return target_amv_file_ls
+
 
     """
     ==================================================

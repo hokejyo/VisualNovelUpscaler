@@ -41,7 +41,7 @@ class Path(pathlib.Path):
                     shutil.rmtree(target_path)
                 shutil.move(self, target_path)
             else:
-                raise Exception('self必须是文件或文件夹')
+                raise Exception(f'{self}必须是文件或文件夹')
         return target_path
 
     def copy_to(self, target_dir):
@@ -70,7 +70,7 @@ class Path(pathlib.Path):
                     shutil.rmtree(target_path)
                 shutil.copytree(self, target_path)
             else:
-                raise Exception('self必须是文件或文件夹')
+                raise Exception(f'{self}必须是文件或文件夹')
         return target_path
 
     def move_as(self, target_path):
@@ -96,7 +96,7 @@ class Path(pathlib.Path):
                     shutil.rmtree(target_path)
                 shutil.move(self, target_path)
             else:
-                raise Exception('self必须是文件或文件夹')
+                raise Exception(f'{self}必须是文件或文件夹')
         return target_path
 
     def copy_as(self, target_path):
@@ -122,7 +122,7 @@ class Path(pathlib.Path):
                     shutil.rmtree(target_path)
                 shutil.copytree(self, target_path)
             else:
-                raise Exception('self必须是文件或文件夹')
+                raise Exception(f'{self}必须是文件或文件夹')
         return target_path
 
     @property
@@ -148,7 +148,7 @@ class Path(pathlib.Path):
         @return     文件路径对象列表
         """
         if not self.is_dir():
-            raise Exception('self必须是文件夹')
+            raise Exception(f'{self}必须是文件夹')
         file_path_ls = []
         for root, dirs, files in os.walk(self, topdown=True):
             root = self.__class__(root)
@@ -174,7 +174,7 @@ class Path(pathlib.Path):
         @return     子文件夹路径列表
         """
         if not self.is_dir():
-            raise Exception('self必须是文件夹')
+            raise Exception(f'{self}必须是文件夹')
         dir_path_ls = []
         for root, dirs, files in os.walk(self, topdown=True):
             root = self.__class__(root)
@@ -192,7 +192,7 @@ class Path(pathlib.Path):
         @return     所有文件列表
         """
         if not self.is_dir():
-            raise Exception('self必须是文件夹')
+            raise Exception(f'{self}必须是文件夹')
         flat_file_ls = [file.move_to(self) for file in self.file_list()]
         if del_folder:
             for i in self.iterdir():
@@ -209,7 +209,7 @@ class Path(pathlib.Path):
         @return     所有目标文件列表
         """
         if not self.is_dir():
-            raise Exception('self必须是文件夹')
+            raise Exception(f'{self}必须是文件夹')
         output_folder = self.__class__(output_folder)
         flat_file_ls = [file.copy_to(output_folder) for file in self.file_list()]
         return flat_file_ls
@@ -246,7 +246,7 @@ class Path(pathlib.Path):
         @brief      清空文件夹
         """
         if not self.is_dir():
-            raise Exception('self必须是文件夹')
+            raise Exception(f'{self}必须是文件夹')
         shutil.rmtree(self)
         self.mkdir()
 

@@ -112,7 +112,7 @@ class ImageUtils(object):
         return output_path
 
     @staticmethod
-    def palette_png_pre_(input_path) -> Path:
+    def _palette_png_pre_(input_path) -> Path:
         """
         @brief      PALETTE PNG图片预处理为RGBA或RGB
 
@@ -160,7 +160,7 @@ class ImageUtils(object):
         upscale_batch_size = self.video_batch_size if video_mode else self.image_batch_size
         # 获取原始图片文件列表
         org_image_ls = []
-        _filters = [('.' + extension) for extension in filters]
+        _filters = [('.' + extension).lower() for extension in filters]
         if single_file_mode:
             if input_path.suffix.lower() in _filters:
                 org_image_ls.append(input_path)
@@ -190,12 +190,20 @@ class ImageUtils(object):
                             tmp_image_file = img_tmp_folder1 / (tmp_stem + image_file.suffix)
                             image_file.copy_as(tmp_image_file)
                             # 预处理
-                            self.palette_png_pre_(tmp_image_file)
+                            self._palette_png_pre_(tmp_image_file)
                         # 放大tmp1到tmp2
-                        options, zoom_factor = self._get_options_and_zoom_factor(img_tmp_folder1, img_tmp_folder2, scale_ratio, sr_engine)
+                        options, step_scale_ratio = self._get_options_and_step_scale_ratio(img_tmp_folder1, img_tmp_folder2, sr_engine)
                         image_upscale_p = subprocess.run(options, capture_output=True)
+                        actual_scale_ratio = step_scale_ratio
+                        # 未达指定倍数循环放大
+                        while actual_scale_ratio < scale_ratio:
+                            img_tmp_folder2.move_as(img_tmp_folder1)
+                            img_tmp_folder2.mk_dir(parents=True, exist_ok=True)
+                            image_upscale_p = subprocess.run(options, capture_output=True)
+                            actual_scale_ratio *= step_scale_ratio
                         tmp_image_ls = img_tmp_folder2.file_list()
                         # 缩放
+                        zoom_factor = scale_ratio/actual_scale_ratio
                         if zoom_factor != 1:
                             tmp_image_ls = self.pool_run(self.image_resize_, tmp_image_ls, zoom_factor)
                         # 转格式
@@ -212,6 +220,137 @@ class ImageUtils(object):
             self.emit_progress(100, 0)
         return output_image_list
 
+    def _get_options_and_step_scale_ratio(self, in_folder, out_folder, sr_engine):
+        if sr_engine == 'waifu2x_ncnn':
+            options, step_scale_ratio = self._waifu2x_ncnn_options_and_step_scale_ratio(in_folder, out_folder)
+        elif sr_engine == 'real_cugan':
+            options, step_scale_ratio = self._real_cugan_options_and_step_scale_ratio(in_folder, out_folder)
+        elif sr_engine == 'real_esrgan':
+            options, step_scale_ratio = self._real_esrgan_options_and_step_scale_ratio(in_folder, out_folder)
+        elif sr_engine == 'srmd_ncnn':
+            options, step_scale_ratio = self._srmd_ncnn_options_and_step_scale_ratio(in_folder, out_folder)
+        elif sr_engine == 'realsr_ncnn':
+            options, step_scale_ratio = self._realsr_ncnn_options_and_step_scale_ratio(in_folder, out_folder)
+        elif sr_engine == 'anime4k':
+            options, step_scale_ratio = self._anime4k_options_and_step_scale_ratio(in_folder, out_folder)
+        else:
+            raise Exception('请选择正确的超分引擎！')
+        return options, step_scale_ratio
+
+    def _waifu2x_ncnn_options_and_step_scale_ratio(self, in_folder, out_folder):
+        step_scale_ratio = 2
+        options = [self.waifu2x_ncnn_exe,
+                   '-i', in_folder,
+                   '-o', out_folder,
+                   '-n', self.waifu2x_ncnn_noise_level,
+                   '-s', str(step_scale_ratio),
+                   '-t', self.waifu2x_ncnn_tile_size,
+                   '-m', self.waifu2x_ncnn_model_path,
+                   '-g', self.gpu_id,
+                   '-j', self.waifu2x_ncnn_load_proc_save,
+                   '-f', 'png',
+                   '-x'
+                   ]
+        if self.tta == '0':
+            options.remove('-x')
+        return options, step_scale_ratio
+
+    def _real_cugan_options_and_step_scale_ratio(self, in_folder, out_folder):
+        # 因为原版3倍和4倍不稳定，暂时只保留2倍
+        step_scale_ratio = 2
+        options = [self.real_cugan_exe,
+                   '-i', in_folder,
+                   '-o', out_folder,
+                   '-n', self.real_cugan_noise_level,
+                   '-s', str(step_scale_ratio),
+                   '-t', self.real_cugan_tile_size,
+                   '-c', self.real_cugan_sync_gap_mode,
+                   '-m', self.real_cugan_model_path,
+                   '-g', self.gpu_id,
+                   '-j', self.real_cugan_load_proc_save,
+                   '-f', 'png',
+                   '-x'
+                   ]
+        if self.tta == '0':
+            options.remove('-x')
+        return options, step_scale_ratio
+
+    def _real_esrgan_options_and_step_scale_ratio(self, in_folder, out_folder):
+        if self.real_esrgan_model_name == 'RealESRGANv2-animevideo-xsx2':
+            step_scale_ratio = 2
+        else:
+            step_scale_ratio = 4
+        options = [self.real_esrgan_exe,
+                   '-i', in_folder,
+                   '-o', out_folder,
+                   '-s', str(step_scale_ratio),
+                   '-t', self.real_esrgan_tile_size,
+                   '-m', self.real_esrgan_model_path,
+                   '-n', self.real_esrgan_model_name,
+                   '-g', self.gpu_id,
+                   '-j', self.real_esrgan_load_proc_save,
+                   '-f', 'png',
+                   '-x'
+                   ]
+        if self.tta == '0':
+            options.remove('-x')
+        return options, step_scale_ratio
+
+    def _srmd_ncnn_options_and_step_scale_ratio(self, in_folder, out_folder):
+        step_scale_ratio = 2
+        options = [self.srmd_ncnn_exe,
+                   '-i', in_folder,
+                   '-o', out_folder,
+                   '-n', self.srmd_ncnn_noise_level,
+                   '-s', str(step_scale_ratio),
+                   '-t', self.srmd_ncnn_tile_size,
+                   '-m', self.srmd_ncnn_model_path,
+                   '-g', self.gpu_id,
+                   '-j', self.srmd_ncnn_load_proc_save,
+                   '-f', 'png',
+                   '-x'
+                   ]
+        if self.tta == '0':
+            options.remove('-x')
+        return options, step_scale_ratio
+
+    def _realsr_ncnn_options_and_step_scale_ratio(self, in_folder, out_folder):
+        step_scale_ratio = 4
+        options = [self.realsr_ncnn_exe,
+                   '-i', in_folder,
+                   '-o', out_folder,
+                   '-s', str(step_scale_ratio),
+                   '-t', self.realsr_ncnn_tile_size,
+                   '-m', self.realsr_ncnn_model_path,
+                   '-g', self.gpu_id,
+                   '-j', self.realsr_ncnn_load_proc_save,
+                   '-f', 'png',
+                   '-x'
+                   ]
+        if self.tta == '0':
+            options.remove('-x')
+        return options, step_scale_ratio
+
+    def _anime4k_options_and_step_scale_ratio(self, in_folder, out_folder):
+        step_scale_ratio = 2
+        options = [self.anime4k_exe,
+                   '-i', in_folder,
+                   '-z', str(step_scale_ratio),
+                   '-t', str(self.cpu_cores),
+                   '-b',
+                   '-q',
+                   '-d', self.gpu_id,
+                   '-A',
+                   '-o', out_folder
+                   ]
+        if self.anime4k_acnet == '1':
+            options.insert(-2, '-w')
+            if self.anime4k_hdn_mode == '1':
+                options.insert(-2, '-H')
+                options.insert(-2, '-L')
+                options.insert(-2, self.anime4k_hdn_level)
+        return options, step_scale_ratio
+
     def _update_progress_and_left_time(self, len_org_image_ls, len_finished_image_list, _start_time, _now_time):
         if len_finished_image_list == 0:
             _percent = 0
@@ -222,145 +361,3 @@ class ImageUtils(object):
             _percent = int(_progress * 100)
             _lefe_time = passed_time / _progress - passed_time
         self.emit_progress(_percent, _lefe_time)
-
-    @staticmethod
-    def _get_actual_scale_ratio(legal_scale_ratio, target_scale_ratio) -> int:
-        """
-        @brief      获取不同超分辨率引擎下的实际放大倍率
-
-        @param      legal_scale_ratio  不同超分辨率引擎支持的放大倍率
-
-        @return     实际放大倍率
-        """
-        actual_scale_ratio = legal_scale_ratio**math.ceil(math.log(target_scale_ratio, legal_scale_ratio))
-        return actual_scale_ratio
-
-    def _get_options_and_zoom_factor(self, in_folder, out_folder, scale_ratio, sr_engine):
-        """
-        @brief      获取image_upscale函数所需的命令和实际缩放系数
-
-        @param      in_folder    输出文件夹
-        @param      out_folder   输出文件夹
-        @param      scale_ratio  放大倍数
-        @param      sr_engine    超分引擎
-
-        @return     命令和实际缩放系数
-        """
-        match sr_engine:
-            case 'waifu2x_ncnn':
-                # 将指定放大倍数转换成waifu2x-ncnn-valkan支持的放大倍数
-                actual_scale_ratio = ImageUtils._get_actual_scale_ratio(2, scale_ratio)
-                options = [self.waifu2x_ncnn_exe,
-                           '-i', in_folder,
-                           '-o', out_folder,
-                           '-n', self.waifu2x_ncnn_noise_level,
-                           '-s', str(actual_scale_ratio),
-                           '-t', self.waifu2x_ncnn_tile_size,
-                           '-m', self.waifu2x_ncnn_model_path,
-                           '-g', self.gpu_id,
-                           '-j', self.waifu2x_ncnn_load_proc_save,
-                           '-f', 'png',
-                           '-x'
-                           ]
-                if self.tta == '0':
-                    options.remove('-x')
-            case 'real_cugan':
-                # 将指定放大倍数转换成Real-CUGAN支持的放大倍数
-                if scale_ratio <= 4:
-                    actual_scale_ratio = math.ceil(scale_ratio)
-                    # 屏蔽3倍放大，4倍更快更稳定
-                    if actual_scale_ratio == 3:
-                        actual_scale_ratio = 4
-                else:
-                    raise Exception('Real-Cugan仅支持4倍及以下放大倍率!')
-                options = [self.real_cugan_exe,
-                           '-i', in_folder,
-                           '-o', out_folder,
-                           '-n', self.real_cugan_noise_level,
-                           '-s', str(actual_scale_ratio),
-                           '-t', self.real_cugan_tile_size,
-                           '-c', self.real_cugan_sync_gap_mode,
-                           '-m', self.real_cugan_model_path,
-                           '-g', self.gpu_id,
-                           '-j', self.real_cugan_load_proc_save,
-                           '-f', 'png',
-                           '-x'
-                           ]
-                if self.tta == '0':
-                    options.remove('-x')
-            case 'real_esrgan':
-                # 将指定放大倍数转换成Real-ESRGAN支持的放大倍数
-                if self.real_esrgan_model_name == 'RealESRGANv2-animevideo-xsx2':
-                    actual_scale_ratio = ImageUtils._get_actual_scale_ratio(2, scale_ratio)
-                else:
-                    actual_scale_ratio = ImageUtils._get_actual_scale_ratio(4, scale_ratio)
-                options = [self.real_esrgan_exe,
-                           '-i', in_folder,
-                           '-o', out_folder,
-                           '-s', str(actual_scale_ratio),
-                           '-t', self.real_esrgan_tile_size,
-                           '-m', self.real_esrgan_model_path,
-                           '-n', self.real_esrgan_model_name,
-                           '-g', self.gpu_id,
-                           '-j', self.real_esrgan_load_proc_save,
-                           '-f', 'png',
-                           '-x'
-                           ]
-                if self.tta == '0':
-                    options.remove('-x')
-            case 'srmd_ncnn':
-                # 将指定放大倍数转换成srmd-ncnn-vulkan支持的放大倍数
-                actual_scale_ratio = ImageUtils._get_actual_scale_ratio(2, scale_ratio)
-                options = [self.srmd_ncnn_exe,
-                           '-i', in_folder,
-                           '-o', out_folder,
-                           '-n', self.srmd_ncnn_noise_level,
-                           '-s', str(actual_scale_ratio),
-                           '-t', self.srmd_ncnn_tile_size,
-                           '-m', self.srmd_ncnn_model_path,
-                           '-g', self.gpu_id,
-                           '-j', self.srmd_ncnn_load_proc_save,
-                           '-f', 'png',
-                           '-x'
-                           ]
-                if self.tta == '0':
-                    options.remove('-x')
-            case 'realsr_ncnn':
-                # 将指定放大倍数转换成realsr-ncnn-vulkan支持的放大倍数
-                actual_scale_ratio = ImageUtils._get_actual_scale_ratio(4, scale_ratio)
-                options = [self.realsr_ncnn_exe,
-                           '-i', in_folder,
-                           '-o', out_folder,
-                           '-s', str(actual_scale_ratio),
-                           '-t', self.realsr_ncnn_tile_size,
-                           '-m', self.realsr_ncnn_model_path,
-                           '-g', self.gpu_id,
-                           '-j', self.realsr_ncnn_load_proc_save,
-                           '-f', 'png',
-                           '-x'
-                           ]
-                if self.tta == '0':
-                    options.remove('-x')
-            case 'anime4k':
-                # anime4kcpp非整数倍放大会有alpha通道错位的bug
-                actual_scale_ratio = ImageUtils._get_actual_scale_ratio(2, scale_ratio)
-                options = [self.anime4k_exe,
-                           '-i', in_folder,
-                           '-z', str(actual_scale_ratio),
-                           '-t', str(self.cpu_cores),
-                           '-b',
-                           '-q',
-                           '-d', self.gpu_id,
-                           '-A',
-                           '-o', out_folder
-                           ]
-                if self.anime4k_acnet == '1':
-                    options.insert(-2, '-w')
-                    if self.anime4k_hdn_mode == '1':
-                        options.insert(-2, '-H')
-                        options.insert(-2, '-L')
-                        options.insert(-2, self.anime4k_hdn_level)
-            case _:
-                raise Exception('请选择正确的超分引擎！')
-        zoom_factor = scale_ratio / actual_scale_ratio
-        return options, zoom_factor
