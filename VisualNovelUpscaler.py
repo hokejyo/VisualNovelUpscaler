@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from CORE import *
+from Core import *
 from VNEngines import *
 from GUI import *
 from GamePageUIConnection import GamePageUIConnection

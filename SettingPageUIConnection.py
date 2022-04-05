@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from CORE import *
+from Core import *
 from GUI import *
 
 

@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 
-from .KIRIKIRI.kirikiri import Kirikiri
-from .ARTEMIS.artemis import Artemis
+from .Kirikiri.kirikiri import Kirikiri
+from .Artemis.artemis import Artemis

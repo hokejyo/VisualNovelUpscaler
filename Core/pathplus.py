@@ -54,7 +54,7 @@ class Path(pathlib.Path):
         """
         target_dir = self.__class__(target_dir)
         if target_dir.exists() and target_dir.is_file():
-            raise Exception('目标路径必须是文件夹')
+            raise Exception(f'{target_dir}必须是文件夹')
         target_path = target_dir/self.name
         if target_path == self:
             pass

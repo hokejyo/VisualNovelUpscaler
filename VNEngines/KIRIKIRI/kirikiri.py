@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from CORE import *
+from Core import *
 from .amv_struct import AMVStruct
 
 
@@ -315,6 +315,7 @@ class Kirikiri(Core):
         asd_keyword_list = ['clipleft', 'cliptop', 'clipwidth', 'clipheight', 'left',
                             'top', 'height', 'weight', 'dx', 'dy', 'dw', 'dh', 'sx', 'sy', 'sw', 'sh', 'x', 'y']
         # 忽略人物表情处理，这东西不需要改，改了反而不正常
+        # asd_file_ls = patch9_first(self.game_data.file_list('asd'))
         asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         for asd_file in asd_file_ls:
             result = []
@@ -466,6 +467,7 @@ class Kirikiri(Core):
         '''
         image_extension_ls = ['bmp', 'jpg', 'jpeg', 'png', 'webp']
         for image_extension in image_extension_ls:
+            # image_file_list = patch9_first(self.game_data.file_list(image_extension))
             image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
             if image_file_list:
                 with tempfile.TemporaryDirectory() as tmp_folder:
@@ -545,6 +547,7 @@ class Kirikiri(Core):
         '''
         对tlg格式图片进行放大处理
         '''
+        # ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
         ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         if ori_tlg_file_ls:
             with tempfile.TemporaryDirectory() as tmp_folder:

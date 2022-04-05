@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-from CORE import *
+from Core import *
 from .pf8_struct import PF8Struct
 
 
