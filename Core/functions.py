@@ -8,6 +8,7 @@ import json
 import time
 import math
 import uuid
+import zlib
 import shutil
 import hashlib
 import logging
@@ -16,6 +17,7 @@ import traceback
 import subprocess
 import configparser
 from threading import Thread
+from io import StringIO as PrivateStringIO
 from multiprocessing import Pool, cpu_count, Process, freeze_support
 # 第三方库
 import png
@@ -77,9 +79,10 @@ def pattern_num2x(re_result, scale_ratio, test_mode=False, line=None) -> str:
 
     @return     放大数字后的行字符串
     """
+    re_result_ls = list(re_result.groups())
     if test_mode:
         print(line, end='')
-    re_result_ls = list(re_result.groups())
+        print(re_result_ls)
     for i in range(len(re_result_ls)):
         if real_digit(re_result_ls[i]):
             if test_mode:

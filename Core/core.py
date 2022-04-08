@@ -46,8 +46,12 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
         for i in runs:
             processer = pool.apply_async(target, args=(i, *args))
             processer_ls.append(processer)
+        # results = []
+        # for processer in processer_ls:
+        #     results.append(processer.get())
         pool.close()
         pool.join()
+        # return results
         return [processer.get() for processer in processer_ls]
 
     def a2p(self, file_path) -> Path:

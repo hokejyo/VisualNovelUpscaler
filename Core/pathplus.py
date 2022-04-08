@@ -31,7 +31,7 @@ class Path(pathlib.Path):
             pass
         else:
             if not target_dir.exists():
-                target_dir.mkdir(parents=True)
+                target_dir.mkdirs()
             if self.is_file():
                 if target_path.exists():
                     target_path.unlink()
@@ -60,7 +60,7 @@ class Path(pathlib.Path):
             pass
         else:
             if not target_dir.exists():
-                target_dir.mkdir(parents=True)
+                target_dir.mkdirs()
             if self.is_file():
                 if target_path.exists():
                     target_path.unlink()
@@ -86,7 +86,7 @@ class Path(pathlib.Path):
             pass
         else:
             if not target_path.parent.exists():
-                target_path.parent.mkdir(parents=True)
+                target_path.parent.mkdirs()
             if self.is_file():
                 if target_path.exists():
                     target_path.unlink()
@@ -112,7 +112,7 @@ class Path(pathlib.Path):
             pass
         else:
             if not target_path.parent.exists():
-                target_path.parent.mkdir(parents=True)
+                target_path.parent.mkdirs()
             if self.is_file():
                 if target_path.exists():
                     target_path.unlink()
@@ -229,7 +229,7 @@ class Path(pathlib.Path):
         target_path = output_folder/self.relative_to(input_folder)
         if mk_dir:
             if not target_path.parent.exists():
-                target_path.parent.mkdir(parents=True)
+                target_path.parent.mkdirs()
         return target_path
 
     @property
@@ -248,9 +248,22 @@ class Path(pathlib.Path):
         if not self.is_dir():
             raise Exception(f'{self}必须是文件夹')
         shutil.rmtree(self)
-        self.mkdir()
+        self.mkdirs()
 
-    def readb(self, size) -> bytes:
+    def readbs(self, size=None) -> bytes:
+        """
+        @brief      读取指定长度字节，不指定长度则全部读取
+
+        @param      size  长度
+
+        @return     指定长度字节
+        """
         with open(self, 'rb') as _f:
-            _bytes = _f.read(size)
+            _bytes = _f.read(size) if size is not None else _f.read()
         return _bytes
+
+    def mkdirs(self):
+        """
+        @brief      创建多级目录，并防止并发时小概率因文件夹已存在的错误
+        """
+        self.mkdir(parents=True, exist_ok=True)

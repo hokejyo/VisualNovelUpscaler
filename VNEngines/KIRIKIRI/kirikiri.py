@@ -9,6 +9,7 @@ class Kirikiri(Core):
 
     def __init__(self, game_ui_runner=None):
         Core.__init__(self)
+        self.encoding = 'Shift_JIS'
         self.load_config()
         self.__class__.game_ui_runner = game_ui_runner
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
@@ -93,6 +94,7 @@ class Kirikiri(Core):
         self.uicsv2x()
         self.asd2x()
         self.stand2x()
+        self.fg_text2x()
         # self.scn2x()
 
     def tjs2x(self):
@@ -314,9 +316,9 @@ class Kirikiri(Core):
         '''
         asd_keyword_list = ['clipleft', 'cliptop', 'clipwidth', 'clipheight', 'left',
                             'top', 'height', 'weight', 'dx', 'dy', 'dw', 'dh', 'sx', 'sy', 'sw', 'sh', 'x', 'y']
+        asd_file_ls = patch9_first(self.game_data.file_list('asd'))
         # 忽略人物表情处理，这东西不需要改，改了反而不正常
-        # asd_file_ls = patch9_first(self.game_data.file_list('asd'))
-        asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+        # asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         for asd_file in asd_file_ls:
             result = []
             lines, current_encoding = self.get_lines_encoding(asd_file)
@@ -444,6 +446,66 @@ class Kirikiri(Core):
                 for line in result:
                     f.write(line)
 
+    def fg_text2x(self):
+        extension_list = ['txt', 'tjs', 'ks', 'pbd']
+        for extension in extension_list:
+            for file_path in patch9_first(self.game_data.file_list(extension)):
+                try:
+                    self._fg_text2x(file_path, self.scale_ratio, self.a2p(file_path))
+                except:
+                    self.emit_info(f'未识别的加密文件{file_path}!')
+
+    def _fg_text2x(self, file_path, scale_ratio, output_path):
+        if file_path.readbs(2) == b'\xfe\xfe':
+            mode, content = self._decrypt_text(file_path)
+            current_encoding = self.encoding
+        else:
+            try:
+                with open(file_path, newline='', encoding=self.encoding) as f:
+                    current_encoding = self.encoding
+                    content = f.read()
+            except:
+                current_encoding = self.get_encoding(file_path)
+                with open(file_path, newline='', encoding=current_encoding) as f:
+                    content = f.read()
+        fgimage_text_sign = '#layer_type\tname\tleft\ttop\twidth\theight\ttype\topacity\tvisible\tlayer_id\tgroup_layer_id\tbase\timages\t'
+        if not content.startswith(fgimage_text_sign):
+            self.emit_info(f'{file_path}不是立绘坐标文件!')
+            return None
+        with PrivateStringIO(content) as _f:
+            reader = csv.DictReader(_f, delimiter='\t')
+            content_ls = list(reader)
+            for i, j in enumerate(content_ls):
+                kwds = ['left', 'top', 'width', 'height']
+                for kwd in kwds:
+                    _num = j[kwd]
+                    if real_digit(_num):
+                        j[kwd] = str(int(float(_num)*scale_ratio))
+                content_ls[i] = j
+        with open(output_path, 'w', newline='', encoding=current_encoding) as f:
+            writer = csv.DictWriter(f, delimiter='\t', fieldnames=fgimage_text_sign.split('\t'))
+            writer.writeheader()
+            writer.writerows(content_ls)
+        self.emit_info(f'{file_path}立绘坐标处理完成!')
+        return output_path
+
+    def _decrypt_text(self, file_path):
+        content = file_path.readbs()
+        # if content[:5] == b'\xfe\xfe\x00\xff\xfe':
+        #     pass
+        if content[:5] == b'\xfe\xfe\x01\xff\xfe':
+            mode = 1
+            content_p = bytearray(content[5:])
+            for i in range(len(content_p)):
+                c = content_p[i]
+                if c:
+                    content_p[i] = (((c & 0x55) << 1) | ((c & 0xaa) >> 1)) & 0xff
+            result = content_p.decode('UTF-16LE')
+        elif content[:5] == b'\xfe\xfe\x02\xff\xfe':
+            mode = 2
+            result = zlib.decompress(content[0x15:]).decode('UTF-16')
+        return mode, result
+
     """
     ==================================================
     Kirikiri引擎图片文件：pimg, tlg, png, jpg, jpeg, bmp, webp, eri
@@ -461,14 +523,15 @@ class Kirikiri(Core):
         # self.eri2x()
         # self.emit_info('eri图片处理完成')
 
+
     def general_image2x(self):
         '''
         对常规格式图片进行放大处理
         '''
         image_extension_ls = ['bmp', 'jpg', 'jpeg', 'png', 'webp']
         for image_extension in image_extension_ls:
-            # image_file_list = patch9_first(self.game_data.file_list(image_extension))
-            image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+            image_file_list = patch9_first(self.game_data.file_list(image_extension))
+            # image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
             if image_file_list:
                 with tempfile.TemporaryDirectory() as tmp_folder:
                     self.tmp_folder = Path(tmp_folder)
@@ -547,8 +610,8 @@ class Kirikiri(Core):
         '''
         对tlg格式图片进行放大处理
         '''
-        # ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
-        ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+        ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
+        # ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         if ori_tlg_file_ls:
             with tempfile.TemporaryDirectory() as tmp_folder:
                 self.tmp_folder = Path(tmp_folder)

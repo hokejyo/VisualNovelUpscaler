@@ -9,6 +9,7 @@ class Artemis(Core):
 
     def __init__(self, game_ui_runner=None):
         Core.__init__(self)
+        self.encoding = 'UTF-8'
         self.load_config()
         self.__class__.game_ui_runner = game_ui_runner
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
@@ -370,7 +371,7 @@ class Artemis(Core):
         input_folder = Path(input_folder)
         output_folder = Path(output_folder)
         output_file_ls = []
-        pfs_file_ls = [str(pfs_file) for pfs_file in input_folder.file_list(walk_mode=False) if pfs_file.readb(3) == b'pf8']
+        pfs_file_ls = [str(pfs_file) for pfs_file in input_folder.file_list(walk_mode=False) if pfs_file.readbs(3) == b'pf8']
         pfs_file_ls.sort()
         for pfs_file in pfs_file_ls:
             self.emit_info(f'{pfs_file} extracting......')
