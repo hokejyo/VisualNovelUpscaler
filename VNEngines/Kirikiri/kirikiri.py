@@ -514,17 +514,16 @@ class Kirikiri(Core):
 
     def image2x(self):
         self.emit_info('开始处理游戏图片......')
-        self.general_image2x()
+        self._general_image2x()
         self.emit_info('常规图片处理完成')
-        self.pimg2x()
+        self._pimg2x()
         self.emit_info('pimg图片处理完成')
-        self.tlg2x()
+        self._tlg2x()
         self.emit_info('tlg图片处理完成')
         # self.eri2x()
         # self.emit_info('eri图片处理完成')
 
-
-    def general_image2x(self):
+    def _general_image2x(self):
         '''
         对常规格式图片进行放大处理
         '''
@@ -539,52 +538,103 @@ class Kirikiri(Core):
                     self.emit_info(f'开始放大{image_extension}图片......')
                     self.image_upscale(self.tmp_folder, self.patch_folder, self.scale_ratio, image_extension)
 
-    def pimg2x(self):
+    def _pimg2x(self):
         org_pimg_file_ls = patch9_first(self.game_data.file_list('pimg'))
         if org_pimg_file_ls:
             with tempfile.TemporaryDirectory() as tmp_folder:
                 self.tmp_folder = Path(tmp_folder)
-
                 pimg_file_ls = [pimg_file.copy_as(self.a2t(pimg_file)) for pimg_file in org_pimg_file_ls]
+
                 self.emit_info('正在拆分pimg文件')
-                self.pool_run(self.pimg_de, pimg_file_ls)
+                out_pimg_json_file_ls = self.pimg_de_batch(self.tmp_folder, self.tmp_folder)
 
                 self.emit_info('pimg图片放大中......')
                 self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png')
 
-                # 获得json文件列表并删除原pimg
-                pimg_json_file_ls = []
-                for pimg_file in pimg_file_ls:
-                    pimg_json_file_ls.append(pimg_file.with_suffix('.json'))
-                    pimg_file.unlink()
                 self.emit_info('pimg图片放大完成，正在修正坐标')
-                self.pool_run(self.pimg_json2x_, pimg_json_file_ls)
+                self.pool_run(self._pimg_json2x_, out_pimg_json_file_ls)
 
                 self.emit_info('pimg组装中......')
-                scaled_pimg_file_ls = self.pool_run(self.pimg_en, pimg_json_file_ls)
-                [scaled_pimg_file.move_as(self.t2p(scaled_pimg_file)) for scaled_pimg_file in scaled_pimg_file_ls]
+                scaled_pimg_file_ls = self.pimg_en_batch(self.tmp_folder, self.patch_folder)
 
-    def pimg_de(self, pimg_file):
-        '''
-        拆分pimg文件
-        '''
-        pimg_de_p = subprocess.run([self.psb_de_exe, pimg_file], capture_output=True)
+    def pimg_de_batch(self, input_path, output_folder) -> list:
+        """
+        @brief      拆分pimg文件
 
-    def pimg_en(self, pimg_json_file):
+        @param      input_path     输入文件或文件夹
+        @param      output_folder  The output folder
+
+        @return     json文件路径列表
+        """
+        input_path = Path(input_path)
+        output_folder = Path(output_folder)
+        pimg_out_path_dict = {}
+        if input_path.is_file():
+            out_dir = input_path.reio_path(input_path.parent, output_folder, mk_dir=True).parent
+            pimg_out_path_dict[input_path] = out_dir
+        else:
+            pimg_file_ls = input_path.file_list('pimg')
+            for pimg_file in pimg_file_ls:
+                out_dir = pimg_file.reio_path(input_path, output_folder, mk_dir=True).parent
+                pimg_out_path_dict[pimg_file] = out_dir
+        out_pimg_json_file_ls = self.pool_run(self._pimg_de, pimg_out_path_dict.items())
+        return out_pimg_json_file_ls
+
+    def _pimg_de(self, pimg_out_path) -> Path:
+        '''
+        拆分pimg文件到指定目录
+        '''
+        pimg_file, output_dir = pimg_out_path
+        with tempfile.TemporaryDirectory() as pimg_tmp_folder:
+            pimg_tmp_folder = Path(pimg_tmp_folder)
+            tmp_pimg = pimg_file.copy_to(pimg_tmp_folder)
+            # 拆分pimg文件到pimg文件所在目录
+            pimg_de_p = subprocess.run([self.psb_de_exe, tmp_pimg], capture_output=True)
+            tmp_png_folder = tmp_pimg.with_suffix('')
+            tmp_png_folder.move_to(output_dir)
+            tmp_json_file1 = tmp_pimg.with_suffix('.json')
+            pimg_json = tmp_json_file1.move_to(output_dir)
+            tmp_json_file2 = tmp_pimg.with_suffix('.resx.json')
+            tmp_json_file2.move_to(output_dir)
+            return pimg_json
+
+    def pimg_en_batch(self, input_path, output_folder) -> list:
+        """
+        @brief      批量合成pimg
+
+        @param      input_path     The input path
+        @param      output_folder  The output folder
+
+        @return     pimg路径列表
+        """
+        input_path = Path(input_path)
+        output_folder = Path(output_folder)
+        json_work_path_dict = {}
+        if input_path.is_file():
+            json_work_path_dict[input_path] = output_folder
+        else:
+            json_file_ls = [json_file for json_file in input_path.file_list('json') if (json_file.with_suffix('').exists() and json_file.with_suffix('').is_dir())]
+            for json_file in json_file_ls:
+                work_dir = json_file.reio_path(input_path, output_folder, mk_dir=True).parent
+                json_work_path_dict[json_file] = work_dir
+        output_pimg_file_ls = self.pool_run(self._pimg_en, json_work_path_dict.items())
+        return output_pimg_file_ls
+
+    def _pimg_en(self, json_work_path) -> Path:
         '''
         组装pimg文件，原程序直接输出到工作路径，所以需要修改输出路径
         '''
-        output_folder = pimg_json_file.parent
-        pimg_en_p = subprocess.run([self.psb_en_exe, pimg_json_file, ], shell=True, cwd=output_folder, capture_output=True)
+        pimg_json_file, output_folder = json_work_path
+        pimg_en_p = subprocess.run([self.psb_en_exe, pimg_json_file], shell=True, cwd=output_folder, capture_output=True)
         # 重命名
-        tmp_pimg_file = pimg_json_file.with_suffix('.pure.pimg')
-        out_pimg_file = pimg_json_file.with_suffix('.pimg')
+        tmp_pimg_file = output_folder/pimg_json_file.with_suffix('.pure.pimg').name
+        out_pimg_file = output_folder/pimg_json_file.with_suffix('.pimg').name
         tmp_pimg_file.move_as(out_pimg_file)
         return out_pimg_file
 
-    def pimg_json2x_(self, pimg_json_file):
+    def _pimg_json2x_(self, pimg_json_file):
         '''
-        pimg坐标修正
+        pimg坐标修正，覆盖
         '''
         keyn_ls = ['height', 'width', 'left', 'top']
         with open(pimg_json_file, newline='', encoding='utf-8') as f:
@@ -606,7 +656,7 @@ class Kirikiri(Core):
         with open(pimg_json_file, 'w', newline='', encoding='utf-8') as f:
             f.write(result)
 
-    def tlg2x(self):
+    def _tlg2x(self):
         '''
         对tlg格式图片进行放大处理
         '''
@@ -617,98 +667,112 @@ class Kirikiri(Core):
                 self.tmp_folder = Path(tmp_folder)
                 [tlg_file.copy_as(self.a2t(tlg_file)) for tlg_file in ori_tlg_file_ls]
 
-                tlg_file_ls = self.tmp_folder.file_list()
                 self.emit_info('tlg图片转换中......')
-                png_file_ls = self.pool_run(self.tlg2png, tlg_file_ls)
-                [tlg_file.unlink() for tlg_file in tlg_file_ls]
+                png_file_ls = self.tlg2png_batch(self.tmp_folder, self.tmp_folder)
 
                 self.emit_info('tlg转换完成，正在放大中......')
                 self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png')
 
                 self.emit_info('tlg格式图片放大完成，正在进行格式转换......')
-                scaled_tlg_file_ls = self.pool_run(self.png2tlg6, png_file_ls)
-                [tlg_file.move_as(self.t2p(tlg_file)) for tlg_file in scaled_tlg_file_ls]
+                scaled_tlg_file_ls = self.png2tlg_batch(self.tmp_folder, self.patch_folder)
 
-    def tlg2png_batch(self, input_folder, output_folder) -> list:
+    def tlg2png_batch(self, input_path, output_folder) -> list:
         """
         @brief      tlg转png
 
-        @param      input_folder   输入文件夹
+        @param      input_path     输入文件或文件夹
         @param      output_folder  输出文件夹
 
         @return     输出png图片路径列表
         """
-        input_folder = Path(input_folder)
+        input_path = Path(input_path)
         output_folder = Path(output_folder)
-        tlg_file_ls = input_folder.file_list('tlg')
-        output_png_file_ls = self.pool_run(self.tlg2png, tlg_file_ls)
-        target_png_file_ls = []
-        for output_png_file in output_png_file_ls:
-            target_png_file = output_png_file.reio_path(input_folder, output_folder, mk_dir=True)
-            output_png_file.move_as(target_png_file)
-            target_png_file_ls.append(target_png_file)
-        return target_png_file_ls
+        tlg_png_path_dict = {}
+        if input_path.is_file():
+            out_png = input_path.reio_path(input_path.parent, output_folder, mk_dir=True).with_suffix('.png')
+            tlg_png_path_dict[input_path] = out_png
+        else:
+            tlg_file_ls = input_path.file_list('tlg')
+            for tlg_file in tlg_file_ls:
+                out_png = tlg_file.reio_path(input_path, output_folder, mk_dir=True).with_suffix('.png')
+                tlg_png_path_dict[tlg_file] = out_png
+        output_png_file_ls = self.pool_run(self._tlg2png, tlg_png_path_dict.items())
+        return output_png_file_ls
 
-    def png2tlg_batch(self, input_folder, output_folder, tlg5_mode=False) -> list:
+    def _tlg2png(self, tlg_png_path) -> Path:
+        '''
+        将tlg图片转化为png格式
+        '''
+        tlg_file, png_file = tlg_png_path
+        tlg2png_p = subprocess.run([self.tlg2png_exe, tlg_file, png_file], capture_output=True)
+        return png_file
+
+    def png2tlg_batch(self, input_path, output_folder, tlg5_mode=False) -> list:
         """
         @brief      png转tlg
 
-        @param      input_folder   输入文件夹
+        @param      input_path     输入文件或文件夹
         @param      output_folder  输出文件夹
         @param      tlg5_mode      输出为tlg5，适用于krkr2.24以下版本
 
         @return     输出tlg图片路径列表
         """
-        input_folder = Path(input_folder)
+        input_path = Path(input_path)
         output_folder = Path(output_folder)
-        png_file_ls = input_folder.file_list('png')
-        if tlg5_mode:
-            self.emit_info('请将弹出文件夹及其子文件中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
-            os.system(f'start {input_folder}')
-            os.system(str(self.krkrtpc_exe))
-            tmp_tlg_file_ls = [png_file.with_suffix('.tlg') for png_file in png_file_ls]
+        png_tlg_path_dict = {}
+        if input_path.is_file():
+            out_tlg = input_path.reio_path(input_path.parent, output_folder, mk_dir=True).with_suffix('.tlg')
+            png_tlg_path_dict[input_path] = out_tlg
         else:
-            tmp_tlg_file_ls = self.pool_run(self.png2tlg6, png_file_ls)
-        target_tlg_file_ls = []
-        for tlg_file in tmp_tlg_file_ls:
-            target_tlg_file = tlg_file.reio_path(input_folder, output_folder, mk_dir=True)
-            tlg_file.move_to(target_tlg_file.parent)
-            target_tlg_file_ls.append(target_tlg_file)
-        return target_tlg_file_ls
+            png_file_ls = input_path.file_list('png')
+            for png_file in png_file_ls:
+                out_tlg = png_file.reio_path(input_path, output_folder, mk_dir=True).with_suffix('.tlg')
+                png_tlg_path_dict[png_file] = out_tlg
+        if tlg5_mode:
+            with tempfile.TemporaryDirectory() as tlg_tmp_folder:
+                tlg_tmp_folder = Path(tlg_tmp_folder)
+                tmp_target_dict = {}
+                for png_file, target_tlg in png_tlg_path_dict.items():
+                    tmp_png = tlg_tmp_folder/(self.create_str()+'.png')
+                    png_file.copy_as(tmp_png)
+                    tmp_target_dict[tmp_png] = target_tlg
+                self.emit_info('请将弹出文件夹中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
+                os.system(f'start {tlg_tmp_folder}')
+                os.system(str(self.krkrtpc_exe))
+                output_tlg_file_ls = []
+                for tmp_png, target_tlg in tmp_target_dict.items():
+                    tmp_tlg = tmp_png.with_suffix('.tlg')
+                    tmp_tlg.move_as(target_tlg)
+                    output_tlg_file_ls.append(target_tlg)
+        else:
+            output_tlg_file_ls = self.pool_run(self._png2tlg6, png_tlg_path_dict.items())
+        return output_tlg_file_ls
 
-    def tlg2tlg_batch(self, input_folder, output_folder, tlg5_mode=False) -> list:
+    def _png2tlg6(self, png_tlg_path) -> Path:
+        '''
+        将png图片转化为tlg6格式，适用于krkr2.24及以上版本
+        '''
+        png_file, tlg_file = png_tlg_path
+        png2tlg6_p = subprocess.run([self.png2tlg6_exe, png_file, tlg_file], capture_output=True)
+        return tlg_file
+
+    def tlg2tlg_batch(self, input_path, output_folder, tlg5_mode=False) -> list:
         """
         @brief      tlg转tlg6或tlg5
 
-        @param      input_folder   输入文件夹
+        @param      input_path     输入文件或文件夹
         @param      output_folder  输出文件夹
         @param      tlg5_mode      输出tlg5
 
         @return     tlg图片路径列表
         """
-        input_folder = Path(input_folder)
+        input_path = Path(input_path)
         output_folder = Path(output_folder)
         with tempfile.TemporaryDirectory() as tmp_folder:
             tmp_folder = Path(tmp_folder)
-            tmp_png_ls = self.tlg2png_batch(input_folder, tmp_folder)
+            tmp_png_ls = self.tlg2png_batch(input_path, tmp_folder)
             target_tlg_file_ls = self.png2tlg_batch(tmp_folder, output_folder, tlg5_mode=tlg5_mode)
         return target_tlg_file_ls
-
-    def tlg2png(self, tlg_file) -> Path:
-        '''
-        将tlg图片转化为png格式
-        '''
-        output_png_file = tlg_file.with_suffix('.png')
-        tlg2png_p = subprocess.run([self.tlg2png_exe, tlg_file, output_png_file], capture_output=True)
-        return output_png_file
-
-    def png2tlg6(self, png_file) -> Path:
-        '''
-        将png图片转化为tlg6格式，适用于krkr2.24及以上版本
-        '''
-        output_tlg_file = png_file.with_suffix('.tlg')
-        png2tlg6_p = subprocess.run([self.png2tlg6_exe, png_file, output_tlg_file], capture_output=True)
-        return output_tlg_file
 
     def eri2x(self):
         eri_file_ls = self.game_data.file_list('eri')
@@ -723,7 +787,7 @@ class Kirikiri(Core):
 
     def animation2x(self):
         self.emit_info('开始处理游戏动画......')
-        self.amv2x()
+        self._amv2x()
         # self.psb2x()
         # self.swf2x()
 
@@ -738,7 +802,7 @@ class Kirikiri(Core):
         if swf_file_ls:
             self.emit_info('swf这东西没见过有游戏用过，有需求再加进去')
 
-    def amv2x(self):
+    def _amv2x(self):
         ori_amv_file_ls = patch9_first(self.game_data.file_list('amv'))
         if ori_amv_file_ls:
             with tempfile.TemporaryDirectory() as tmp_folder:
@@ -840,7 +904,6 @@ class Kirikiri(Core):
                 pass
         target_amv_file_ls = self.pool_run(self._amv_en, amv_en_dict.items())
         return target_amv_file_ls
-
 
     """
     ==================================================

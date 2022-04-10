@@ -27,8 +27,8 @@ class FLineEdit(QLineEdit):
         if place_holder_text:
             self.setPlaceholderText(place_holder_text)
         if height:
-            self.setMinimumHeight(35)
-            self.setMaximumHeight(35)
+            self.setMinimumHeight(height)
+            self.setMaximumHeight(height)
         self.text_padding = text_padding
         self.radius = radius
         self.border_size = border_size

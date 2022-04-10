@@ -15,7 +15,7 @@ class GamePageUIConnection(object):
         self.ui.gamepage.artemis.check_resolution_btn.clicked.connect(self.artemis_check_resolution)
         self.ui.gamepage.run_btn.clicked.connect(self.game_page_run)
 
-    def check_in_out_folder(self, input_folder, output_folder='', check_output=True, only_folder=True) -> bool:
+    def check_game_in_out_folder(self, input_folder, output_folder='', check_output=True, only_folder=True) -> bool:
         input_folder = Path(input_folder)
         output_folder = Path(output_folder)
         warn_message = None
@@ -43,12 +43,12 @@ class GamePageUIConnection(object):
     def game_page_run(self):
         self.input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip())
         self.output_folder = Path(self.ui.gamepage.select_output_folder_line_edit.text().strip())
-        if self.check_in_out_folder(self.input_folder, self.output_folder):
+        if self.check_game_in_out_folder(self.input_folder, self.output_folder):
             self.game_page_runner = GamePageRunner(self)
             # 信号绑定
             self.game_page_runner.start_sig.connect(self.start_game_page_runner_and_lock)
-            self.game_page_runner.info_sig.connect(self.append_info_text_edit)
-            self.game_page_runner.progress_sig.connect(self.update_progress_bar)
+            self.game_page_runner.info_sig.connect(self.append_game_info_text_edit)
+            self.game_page_runner.progress_sig.connect(self.update_game_progress_bar)
             self.game_page_runner.finish_sig.connect(self.finish_game_page_runner_and_unlock)
             self.game_page_runner.crash_sig.connect(self.crash_game_page_runner_and_unlock)
             self.game_page_runner.start()
@@ -61,10 +61,10 @@ class GamePageUIConnection(object):
         self.emit_info(format('开始处理', '=^76'))
         self.ui.gamepage.info_text_edit.append(format('开始处理', '=^76'))
 
-    def append_info_text_edit(self, info_str):
+    def append_game_info_text_edit(self, info_str):
         self.ui.gamepage.info_text_edit.append(info_str)
 
-    def update_progress_bar(self, _percent, _left_time):
+    def update_game_progress_bar(self, _percent, _left_time):
         self.ui.gamepage.set_running_state(2)
         self.ui.gamepage.status_progress_bar.setValue(_percent)
         left_time_str = seconds_format(_left_time)
@@ -88,7 +88,7 @@ class GamePageUIConnection(object):
 
     def kirikiri_check_resolution(self):
         input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip())
-        if self.check_in_out_folder(input_folder, check_output=False):
+        if self.check_game_in_out_folder(input_folder, check_output=False):
             try:
                 _kirikiri = Kirikiri()
                 scwidth, scheight, encoding = _kirikiri.get_resolution_encoding(input_folder)
@@ -99,7 +99,7 @@ class GamePageUIConnection(object):
 
     def artemis_check_resolution(self):
         input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip())
-        if self.check_in_out_folder(input_folder, check_output=False):
+        if self.check_game_in_out_folder(input_folder, check_output=False):
             try:
                 _artemis = Artemis()
                 scwidth, scheight, encoding = _artemis.get_resolution_encoding(input_folder)
@@ -183,13 +183,22 @@ class GamePageRunner(QThread):
                     tlg5_mode = False if output_format == 'tlg6' else True
                     kirikiri.png2tlg_batch(self.vnu.input_folder, self.vnu.output_folder, tlg5_mode)
                 self.finish_sig.emit('tlg图片转换完成!')
+            # pimg格式转换
+            elif ugk.pimg_cvt_btn.isChecked():
+                input_format = ugk.pimg_in.currentText()
+                output_format = ugk.pimg_out.currentText()
+                if input_format == 'pimg':
+                    kirikiri.pimg_de_batch(self.vnu.input_folder, self.vnu.output_folder)
+                elif input_format == 'json&png':
+                    kirikiri.pimg_en_batch(self.vnu.input_folder, self.vnu.output_folder)
+                self.finish_sig.emit('pimg转换完成!')
             # amv动画格式转换
             elif ugk.amv_cvt_btn.isChecked():
                 input_format = ugk.amv_in.currentText()
                 output_format = ugk.amv_out.currentText()
-                if input_format == 'amv' and output_format == 'png':
+                if input_format == 'amv' and output_format == 'json&png':
                     kirikiri.amv2png(self.vnu.input_folder, self.vnu.output_folder)
-                elif input_format == 'png' and output_format == 'amv':
+                elif input_format == 'json&png' and output_format == 'amv':
                     kirikiri.png2amv(self.vnu.input_folder, self.vnu.output_folder)
                 self.finish_sig.emit('amv转换完成!')
             elif ugk.flat_patch_btn.isChecked():

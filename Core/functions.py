@@ -81,17 +81,17 @@ def pattern_num2x(re_result, scale_ratio, test_mode=False, line=None) -> str:
     """
     re_result_ls = list(re_result.groups())
     if test_mode:
-        print(line, end='')
+        print(line)
         print(re_result_ls)
     for i in range(len(re_result_ls)):
         if real_digit(re_result_ls[i]):
             if test_mode:
-                print(re_result_ls[i])
+                print(re_result_ls[i], sep=', ')
             re_result_ls[i] = str(int(float(re_result_ls[i])*scale_ratio))
     re_result_ls = [i for i in re_result_ls if i != None]
     line = ''.join(re_result_ls)
     if test_mode:
-        print(line, end='\n'*2)
+        print(line)
     return line
 
 

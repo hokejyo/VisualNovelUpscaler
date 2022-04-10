@@ -92,7 +92,7 @@ class GamePage(QFrame):
         hlayout.addWidget(self.select_output_folder_btn)
 
     def auto_fill_output_folder(self):
-        output_folder_path = Path(self.select_input_folder_line_edit.text().strip()).parent/'VNU_Output'
+        output_folder_path = Path(self.select_input_folder_line_edit.text().strip()).parent/'VNU_OUTPUT'
         # while output_folder_path.exists():
         #     output_folder_path = output_folder_path.with_name(output_folder_path.name+'_Output')
         self.select_output_folder_line_edit.setText(str(output_folder_path))

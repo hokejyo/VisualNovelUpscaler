@@ -142,6 +142,9 @@ class ArtemisPart(FTabWidget):
 
         self.setup_pfs_unpack()
 
+        self.work_up_group = QButtonGroup()
+        self.work_up_group.addButton(self.pfs_unpack_btn)
+
     def setup_pfs_unpack(self):
         self.pfs_unpack_btn = QRadioButton('一键解包：')
         self.pfs_unpack_btn.setChecked(True)
@@ -151,6 +154,9 @@ class ArtemisPart(FTabWidget):
         self.pfs_encoding_line_edit = FLineEdit('UTF-8')
         layout.addWidget(self.pfs_encoding_label)
         layout.addWidget(self.pfs_encoding_line_edit)
+
+    def check_pfs_unpack_btn(self):
+        self.pfs_unpack_btn.setChecked(True)
 
 
     def setup_connections(self):
@@ -164,6 +170,7 @@ class ArtemisPart(FTabWidget):
         self.height_line_edit.textEdited.connect(self.auto_change_width_ratio)
         self.select_all_btn.clicked.connect(self.select_all_part)
         self.select_none_btn.clicked.connect(self.select_none_part)
+        self.pfs_encoding_line_edit.textChanged.connect(self.check_pfs_unpack_btn)
 
     def select_all_part(self):
         for check_box in self.select_run_parts_frame.findChildren(QCheckBox):

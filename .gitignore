@@ -135,3 +135,4 @@ dmypy.json
 /test*
 /log.txt
 /VNTranslator
+/env*

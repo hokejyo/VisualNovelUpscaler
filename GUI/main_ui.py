@@ -56,7 +56,7 @@ class MainUI(QMainWindow):
         # 设置圆角
         self.setStyleSheet("QFrame {border-radius: 15px;}")
         # 设置透明度
-        self.setWindowOpacity(0.9)
+        self.setWindowOpacity(1)
         # 显示页面2
         self.show_image_page()
 

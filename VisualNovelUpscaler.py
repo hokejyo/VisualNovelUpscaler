@@ -3,11 +3,12 @@
 from Core import *
 from VNEngines import *
 from GUI import *
+from ImagePageUIConnection import ImagePageUIConnection
 from GamePageUIConnection import GamePageUIConnection
 from SettingPageUIConnection import SettingPageUIConnection
 
 
-class VisualNovelUpscaler(Core, SettingPageUIConnection, GamePageUIConnection):
+class VisualNovelUpscaler(Core, SettingPageUIConnection, GamePageUIConnection, ImagePageUIConnection):
 
     _version = 'v0.2.0'
 
@@ -23,6 +24,7 @@ class VisualNovelUpscaler(Core, SettingPageUIConnection, GamePageUIConnection):
         self.ui = MainUI()
         SettingPageUIConnection.__init__(self)
         GamePageUIConnection.__init__(self)
+        ImagePageUIConnection.__init__(self)
         self.ui.set_version(self._version)
 
     def catch_exceptions(self, excType, excValue, tb):

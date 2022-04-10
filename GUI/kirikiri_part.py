@@ -141,12 +141,14 @@ class KirikiriPart(FTabWidget):
 
         self.setup_stand_correction()
         self.setup_tlg_converter()
+        self.setup_pimg_cvt()
         self.setup_amv_cvt()
         self.setup_flat_patch_folder()
 
         self.work_up_group = QButtonGroup()
         self.work_up_group.addButton(self.stand_crt_btn)
         self.work_up_group.addButton(self.tlg_convert_btn)
+        self.work_up_group.addButton(self.pimg_cvt_btn)
         self.work_up_group.addButton(self.amv_cvt_btn)
         self.work_up_group.addButton(self.flat_patch_btn)
 
@@ -158,13 +160,12 @@ class KirikiriPart(FTabWidget):
         self.amv_cvt_btn = QRadioButton('AMV动画格式转换：')
         layout = QHBoxLayout()
         self.work_up_layout.addRow(self.amv_cvt_btn, layout)
-
         self.amv_in_label = QLabel('输入格式：')
         self.amv_in = QComboBox()
-        self.amv_in.addItems(['amv', 'png'])
+        self.amv_in.addItems(['amv', 'json&png'])
         self.amv_out_label = QLabel('输出格式：')
         self.amv_out = QComboBox()
-        self.amv_out.addItems(['png'])
+        self.amv_out.addItems(['json&png'])
         layout.addWidget(self.amv_in_label)
         layout.addWidget(self.amv_in)
         layout.addWidget(self.amv_out_label)
@@ -176,10 +177,38 @@ class KirikiriPart(FTabWidget):
         match self.amv_in.currentText():
             case 'amv':
                 self.amv_out.clear()
-                self.amv_out.addItems(['png'])
-            case 'png':
+                self.amv_out.addItems(['json&png'])
+            case 'json&png':
                 self.amv_out.clear()
                 self.amv_out.addItems(['amv'])
+        self.amv_cvt_btn.setChecked(True)
+
+    def setup_pimg_cvt(self):
+        self.pimg_cvt_btn = QRadioButton('PIMG格式转换：')
+        layout = QHBoxLayout()
+        self.work_up_layout.addRow(self.pimg_cvt_btn, layout)
+        self.pimg_in_label = QLabel('输入格式：')
+        self.pimg_in = QComboBox()
+        self.pimg_in.addItems(['pimg', 'json&png'])
+        self.pimg_out_label = QLabel('输出格式：')
+        self.pimg_out = QComboBox()
+        self.pimg_out.addItems(['json&png'])
+        layout.addWidget(self.pimg_in_label)
+        layout.addWidget(self.pimg_in)
+        layout.addWidget(self.pimg_out_label)
+        layout.addWidget(self.pimg_out)
+        sapcer = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        layout.addItem(sapcer)
+
+    def change_pimg_out(self):
+        match self.pimg_in.currentText():
+            case 'pimg':
+                self.pimg_out.clear()
+                self.pimg_out.addItems(['json&png'])
+            case 'json&png':
+                self.pimg_out.clear()
+                self.pimg_out.addItems(['pimg'])
+        self.pimg_cvt_btn.setChecked(True)
 
     def setup_stand_correction(self):
         self.stand_crt_btn = QRadioButton('对话框头像调整：')
@@ -203,6 +232,9 @@ class KirikiriPart(FTabWidget):
         layout.addWidget(self.crt_movex)
         sapcer = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         layout.addItem(sapcer)
+
+    def check_stand_crt_btn(self):
+        self.stand_crt_btn.setChecked(True)
 
     def setup_tlg_converter(self):
         self.tlg_convert_btn = QRadioButton('TLG图片格式转换：')
@@ -230,6 +262,7 @@ class KirikiriPart(FTabWidget):
             case 'png':
                 self.tlg_out.clear()
                 self.tlg_out.addItems(['tlg6', 'tlg5'])
+        self.tlg_convert_btn.setChecked(True)
 
     def setup_connections(self):
         self.s1080p_btn.toggled.connect(self.s1080p_btn_ratio)
@@ -244,6 +277,9 @@ class KirikiriPart(FTabWidget):
         self.select_none_btn.clicked.connect(self.select_none_part)
         self.tlg_in.currentTextChanged.connect(self.change_tlg_out)
         self.amv_in.currentTextChanged.connect(self.change_amv_out)
+        self.pimg_in.currentTextChanged.connect(self.change_pimg_out)
+        self.crt_ratio.textChanged.connect(self.check_stand_crt_btn)
+        self.crt_movex.textChanged.connect(self.check_stand_crt_btn)
 
     def select_all_part(self):
         for check_box in self.select_run_parts_frame.findChildren(QCheckBox):

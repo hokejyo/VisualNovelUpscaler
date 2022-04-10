@@ -135,9 +135,10 @@ class ImageUtils(object):
                       output_folder,
                       scale_ratio=2.0,
                       output_extention='png',
-                      filters=['png', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp'],
+                      filters=None,
                       walk_mode=True,
-                      video_mode=False
+                      video_mode=False,
+                      rename_sfx=None
                       ) -> list:
         """
         @brief      放大图片
@@ -146,9 +147,10 @@ class ImageUtils(object):
         @param      output_folder     输出文件夹
         @param      scale_ratio       放大倍数
         @param      output_extention  输出图片格式
-        @param      filters           格式过滤器
+        @param      filters           格式过滤器，默认['png', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp']
         @param      walk_mode         是否处理子文件夹中的图片，默认是
         @param      video_mode        使用视频超分引擎
+        @param      rename_sfx        重命名后缀
 
         @return     所有输出图片的路径对象列表
         """
@@ -160,11 +162,13 @@ class ImageUtils(object):
         upscale_batch_size = self.video_batch_size if video_mode else self.image_batch_size
         # 获取原始图片文件列表
         org_image_ls = []
-        _filters = [('.' + extension).lower() for extension in filters]
         if single_file_mode:
-            if input_path.suffix.lower() in _filters:
-                org_image_ls.append(input_path)
+            org_image_ls.append(input_path)
         else:
+            # 格式过滤
+            if filters is None:
+                filters = ['png', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp']
+            _filters = [('.' + extension).lower() for extension in filters]
             org_image_ls = [file_path for file_path in input_path.file_list(walk_mode=walk_mode) if file_path.suffix.lower() in _filters]
         output_image_list = []
         # 记录总数和开始时间
@@ -186,6 +190,9 @@ class ImageUtils(object):
                                 target_image_file = image_file.reio_path(input_path.parent, output_folder, mk_dir=True).with_suffix('.' + output_extention)
                             else:
                                 target_image_file = image_file.reio_path(input_path, output_folder, mk_dir=True).with_suffix('.' + output_extention)
+                            # 重命名后缀
+                            if rename_sfx is not None:
+                                target_image_file = target_image_file.with_stem(target_image_file.stem+rename_sfx)
                             tmp_target_dict[tmp_stem] = target_image_file
                             tmp_image_file = img_tmp_folder1 / (tmp_stem + image_file.suffix)
                             image_file.copy_as(tmp_image_file)
