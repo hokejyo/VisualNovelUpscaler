@@ -316,9 +316,9 @@ class Kirikiri(Core):
         '''
         asd_keyword_list = ['clipleft', 'cliptop', 'clipwidth', 'clipheight', 'left',
                             'top', 'height', 'weight', 'dx', 'dy', 'dw', 'dh', 'sx', 'sy', 'sw', 'sh', 'x', 'y']
-        asd_file_ls = patch9_first(self.game_data.file_list('asd'))
+        # asd_file_ls = patch9_first(self.game_data.file_list('asd'))
         # 忽略人物表情处理，这东西不需要改，改了反而不正常
-        # asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+        asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         for asd_file in asd_file_ls:
             result = []
             lines, current_encoding = self.get_lines_encoding(asd_file)
@@ -362,7 +362,7 @@ class Kirikiri(Core):
                 [scn_file.move_as(self.t2p(scn_file)) for scn_file in scaled_scn_file_ls]
 
     def scn_de(self, scn_file):
-        scn_de_p = subprocess.run([self.psb_de_exe, scn_file], capture_output=True)
+        scn_de_p = subprocess.run([self.psb_de_exe, scn_file], capture_output=True, shell=True)
 
     def scn_en(self, scn_json_file):
         output_folder = scn_json_file.parent
@@ -529,8 +529,8 @@ class Kirikiri(Core):
         '''
         image_extension_ls = ['bmp', 'jpg', 'jpeg', 'png', 'webp']
         for image_extension in image_extension_ls:
-            image_file_list = patch9_first(self.game_data.file_list(image_extension))
-            # image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+            # image_file_list = patch9_first(self.game_data.file_list(image_extension))
+            image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
             if image_file_list:
                 with tempfile.TemporaryDirectory() as tmp_folder:
                     self.tmp_folder = Path(tmp_folder)
@@ -589,7 +589,7 @@ class Kirikiri(Core):
             pimg_tmp_folder = Path(pimg_tmp_folder)
             tmp_pimg = pimg_file.copy_to(pimg_tmp_folder)
             # 拆分pimg文件到pimg文件所在目录
-            pimg_de_p = subprocess.run([self.psb_de_exe, tmp_pimg], capture_output=True)
+            pimg_de_p = subprocess.run([self.psb_de_exe, tmp_pimg], capture_output=True, shell=True)
             tmp_png_folder = tmp_pimg.with_suffix('')
             tmp_png_folder.move_to(output_dir)
             tmp_json_file1 = tmp_pimg.with_suffix('.json')
@@ -660,8 +660,8 @@ class Kirikiri(Core):
         '''
         对tlg格式图片进行放大处理
         '''
-        ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
-        # ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+        # ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
+        ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         if ori_tlg_file_ls:
             with tempfile.TemporaryDirectory() as tmp_folder:
                 self.tmp_folder = Path(tmp_folder)
@@ -704,7 +704,7 @@ class Kirikiri(Core):
         将tlg图片转化为png格式
         '''
         tlg_file, png_file = tlg_png_path
-        tlg2png_p = subprocess.run([self.tlg2png_exe, tlg_file, png_file], capture_output=True)
+        tlg2png_p = subprocess.run([self.tlg2png_exe, tlg_file, png_file], capture_output=True, shell=True)
         return png_file
 
     def png2tlg_batch(self, input_path, output_folder, tlg5_mode=False) -> list:
@@ -737,8 +737,9 @@ class Kirikiri(Core):
                     png_file.copy_as(tmp_png)
                     tmp_target_dict[tmp_png] = target_tlg
                 self.emit_info('请将弹出文件夹中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
-                os.system(f'start {tlg_tmp_folder}')
-                os.system(str(self.krkrtpc_exe))
+                show_folder(tlg_tmp_folder)
+                _p = subprocess.run([self.krkrtpc_exe,], capture_output=True, shell=True)
+                # os.system(str(self.krkrtpc_exe))
                 output_tlg_file_ls = []
                 for tmp_png, target_tlg in tmp_target_dict.items():
                     tmp_tlg = tmp_png.with_suffix('.tlg')
@@ -753,7 +754,7 @@ class Kirikiri(Core):
         将png图片转化为tlg6格式，适用于krkr2.24及以上版本
         '''
         png_file, tlg_file = png_tlg_path
-        png2tlg6_p = subprocess.run([self.png2tlg6_exe, png_file, tlg_file], capture_output=True)
+        png2tlg6_p = subprocess.run([self.png2tlg6_exe, png_file, tlg_file], capture_output=True, shell=True)
         return tlg_file
 
     def tlg2tlg_batch(self, input_path, output_folder, tlg5_mode=False) -> list:
@@ -843,7 +844,7 @@ class Kirikiri(Core):
         tmp_amv = amv_tuple[0]
         tmp_amv_dir = amv_tuple[1][0]
         target_amv_dir = amv_tuple[1][1]
-        amv_de_p = subprocess.run([self.amv_de_exe, '-amvpath='+tmp_amv.to_str], capture_output=True)
+        amv_de_p = subprocess.run([self.amv_de_exe, '-amvpath='+tmp_amv.to_str], capture_output=True, shell=True)
         amv_file_info = self._get_amv_file_info(tmp_amv)
         result = json.dumps(amv_file_info, sort_keys=False, indent=2, ensure_ascii=False)
         tmp_amv.unlink()
@@ -880,7 +881,7 @@ class Kirikiri(Core):
                        '--quality', '100',
                        tmp_folder, tmp_amv
                        ]
-            amv_en_p = subprocess.run(options, capture_output=True)
+            amv_en_p = subprocess.run(options, capture_output=True, shell=True)
             # 改名
             tmp_amv.move_as(target_amv)
         return target_amv

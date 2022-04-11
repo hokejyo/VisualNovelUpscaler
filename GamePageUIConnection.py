@@ -78,7 +78,8 @@ class GamePageUIConnection(object):
         self.ui.gamepage.info_text_edit.append(format('结束处理', '=^76'))
         finish_info_msg = QMessageBox()
         reply = finish_info_msg.information(self.ui, '处理完成', f'{info_str}\n是否打开输出文件夹?', QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-        os.system(f'start {self.output_folder}') if reply == QMessageBox.Yes else None
+        show_folder(self.output_folder) if reply == QMessageBox.Yes else None
+        # os.system(f'start {self.output_folder}') if reply == QMessageBox.Yes else None
 
     def crash_game_page_runner_and_unlock(self, info_str):
         self.ui.gamepage.set_running_state(0)

@@ -23,7 +23,7 @@ class VideoUtils(object):
                    '-of', 'json',
                    input_video
                    ]
-        get_video_info_p = subprocess.run(options, capture_output=True)
+        get_video_info_p = subprocess.run(options, capture_output=True, shell=True)
         unsort_video_info = json.loads(get_video_info_p.stdout.decode('utf-8'))
         # 非常规编码视频返回空字典
         if not unsort_video_info or len(unsort_video_info['streams']) == 0:
@@ -69,7 +69,7 @@ class VideoUtils(object):
                    '-q:v', self.output_video_quality(output_vcodec),
                    output_video
                    ]
-        format_trans_p = subprocess.run(options, capture_output=True)
+        format_trans_p = subprocess.run(options, capture_output=True, shell=True)
         return output_video
 
     def video2png(self, input_video, output_folder):
@@ -95,7 +95,7 @@ class VideoUtils(object):
                    '-threads', str(self.cpu_cores),
                    png_sequence
                    ]
-        video2png_p = subprocess.run(options, capture_output=True)
+        video2png_p = subprocess.run(options, capture_output=True, shell=True)
         return png_sequence
 
     def output_video_quality(self, output_vcodec) -> str:
@@ -148,7 +148,7 @@ class VideoUtils(object):
                    '-threads', str(self.cpu_cores),
                    output_video
                    ]
-        png2video_p = subprocess.run(options, capture_output=True)
+        png2video_p = subprocess.run(options, capture_output=True, shell=True)
         return output_video
 
     def video_upscale(self, input_video, output_video, scale_ratio=2.0, output_vcodec=None):

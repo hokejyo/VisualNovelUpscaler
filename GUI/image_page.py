@@ -14,9 +14,9 @@ class ImagePage(QFrame):
     def initUI(self):
         self.setup_layouts()
         self.setup_connections()
-        add_shadow(self.list_widget)
-        add_shadow(self.image_show_label)
-        add_shadow(self.setting_frame)
+        # add_shadow(self.list_widget)
+        # add_shadow(self.image_show_label)
+        # add_shadow(self.setting_frame)
 
     def setup_connections(self):
         self.input_line_edit.editingFinished.connect(self.get_image_list)
@@ -47,6 +47,7 @@ class ImagePage(QFrame):
 
     def setup_settings(self):
         self.setting_frame = QFrame()
+        self.setting_frame.setStyleSheet('background-color:#456')
         self.hlayout.addWidget(self.setting_frame)
         self.set_formlayout = QFormLayout(self.setting_frame)
 
@@ -78,10 +79,12 @@ class ImagePage(QFrame):
 
     def setup_image_list_view(self):
         self.list_widget = QListWidget()
+        self.list_widget.setStyleSheet('background-color:#456')
         self.hlayout.addWidget(self.list_widget)
 
     def setup_show_image_area(self):
         self.image_show_label = QLabel()
+        self.image_show_label.setStyleSheet('background-color:#456')
         self.image_show_label.setMinimumWidth(540)
         self.image_show_label.setMinimumHeight(360)
         self.layout.addWidget(self.image_show_label)

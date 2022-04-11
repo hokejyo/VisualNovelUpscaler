@@ -43,5 +43,6 @@ if __name__ == '__main__':
     # 启动
     app = QApplication(sys.argv)
     visual_novel_upscaler = VisualNovelUpscaler()
+    visual_novel_upscaler.ui.setWindowIcon(QIcon(str(bundle_dir/'Icons'/'icon.ico')))
     visual_novel_upscaler.ui.show()
     sys.exit(app.exec())

@@ -34,7 +34,7 @@ class MainContent(QFrame):
     def setup_top_bar(self):
         # 顶部标题栏
         self.top_bar = QFrame()
-        # 设置高度、背景颜色
+        # 设置高度
         self.top_bar.setMinimumHeight(40)
         self.top_bar.setMaximumHeight(40)
         self.top_bar_layout = QHBoxLayout(self.top_bar)

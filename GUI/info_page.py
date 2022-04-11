@@ -39,5 +39,5 @@ class InfoPage(QFrame):
         self.tab_view.addTab(self.update_bug_frame, '更新&&反馈')
 
         layout = QVBoxLayout(self.update_bug_frame)
-        self.check_update_btn = FPushButton('检查更新')
+        self.check_update_btn = FIconButton('检查更新')
         layout.addWidget(self.check_update_btn)

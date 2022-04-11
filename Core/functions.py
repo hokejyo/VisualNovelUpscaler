@@ -148,3 +148,8 @@ def pool_run(workers, target, runs, *args) -> list:
     pool.close()
     pool.join()
     return [processer.get() for processer in processer_ls]
+
+
+def show_folder(folder_path):
+    folder_path = Path(folder_path)
+    _p = subprocess.run(['start', folder_path], capture_output=True, shell=True)
