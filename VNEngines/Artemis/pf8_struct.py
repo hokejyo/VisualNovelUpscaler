@@ -20,5 +20,5 @@ PF8Struct = Struct(
     ),
     'hash_data' / Pointer(7, Bytes(this.header.hash_data_size)),
     # 'checksum' / Checksum(Bytes(64), lambda data: hashlib.sha1(data).digest(),
-    #                       this.raw_archive_data),
+    #                       this.hash_data),
 )

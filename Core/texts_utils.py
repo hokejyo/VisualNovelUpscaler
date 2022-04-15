@@ -73,3 +73,15 @@ class TextsUtils(object):
         @return     放大数字后的行字符串
         """
         return pattern_num2x(re_result, self.scale_ratio, test_mode=test_mode, line=line)
+
+    def scale_num(self, match):
+        """
+        @brief      用于放大正则替换匹配到的数字pattern.sub(self.scale_num), line)，放大倍数为self.scale_ratio
+
+        @param      match        The match
+
+        @return     放大后的数字
+        """
+        num_ = match.group()
+        scaled_num_ = str(int(float(num_) * self.scale_ratio))
+        return scaled_num_

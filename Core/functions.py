@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 
 import os
-import re
 import sys
 import csv
 import json
@@ -17,14 +16,16 @@ import traceback
 import subprocess
 import configparser
 from threading import Thread
+from functools import partial
 from io import StringIO as PrivateStringIO
 from multiprocessing import Pool, cpu_count, Process, freeze_support
 # 第三方库
 import png
 import construct
+import regex as re
 from wmi import WMI
-from numba import jit
 from PIL import Image
+from numba import jit
 # 自定义库
 from .pathplus import Path
 
@@ -151,5 +152,24 @@ def pool_run(workers, target, runs, *args) -> list:
 
 
 def show_folder(folder_path):
+    """
+    @brief      显示文件夹
+
+    @param      folder_path  文件夹路径
+    """
     folder_path = Path(folder_path)
     _p = subprocess.run(['start', folder_path], capture_output=True, shell=True)
+
+
+def scale_num(match, scale_ratio):
+    """
+    @brief      用于放大正则替换匹配到的数字pattern.sub(partial(scale_num, scale_ratio), line)
+
+    @param      match        The match
+    @param      scale_ratio  放大倍数
+
+    @return     放大后的数字
+    """
+    num_ = match.group()
+    scaled_num_ = str(int(float(num_) * scale_ratio))
+    return scaled_num_

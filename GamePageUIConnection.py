@@ -15,37 +15,73 @@ class GamePageUIConnection(object):
         self.ui.gamepage.artemis.check_resolution_btn.clicked.connect(self.artemis_check_resolution)
         self.ui.gamepage.run_btn.clicked.connect(self.game_page_run)
 
-    def check_game_in_out_folder(self, input_folder, output_folder='', check_output=True, only_folder=True) -> bool:
-        input_folder = Path(input_folder)
-        output_folder = Path(output_folder)
+    def _check_game_page_in_out_folder(self, only_folder=True, check_output=True) -> bool:
         warn_message = None
-        if not input_folder.exists():
-            warn_message = '输入路径不存在'
-        if not input_folder.is_dir() and only_folder:
-            warn_message = '输入路径需要是文件夹'
-        if input_folder == Path('./'):
-            warn_message = '输入路径不能与工作目录相同'
+        if not self.input_folder.exists():
+            warn_message = '输入路径不存在!'
+        if self.input_folder == Path('./'):
+            warn_message = '输入路径不能与工作目录相同!'
+        if only_folder:
+            if not self.input_folder.is_dir():
+                warn_message = '输入路径需要是文件夹!'
         if check_output:
-            if output_folder == Path('./'):
-                warn_message = '输出路径不能与工作目录相同'
-            if input_folder == output_folder:
-                warn_message = '输入路径和输出路径不能相同'
+            if self.output_folder == Path('./'):
+                warn_message = '输出路径不能与工作目录相同!'
+            if self.input_folder == self.output_folder:
+                warn_message = '输入路径和输出路径不能相同!'
         if warn_message is not None:
             warn_msg = QMessageBox()
-            reply = warn_msg.warning(self.ui, '提示', warn_message + '!', QMessageBox.Yes)
+            reply = warn_msg.warning(self.ui, '提示', warn_message, QMessageBox.Yes)
             return False
         else:
             if check_output:
-                if not output_folder.exists():
-                    output_folder.mkdir(parents=True)
+                if not self.output_folder.exists():
+                    self.output_folder.mkdir(parents=True)
             return True
+
+    def _check_game_page_path_access(self):
+        # Kirikiri
+        if self.ui.gamepage.game_engine_area.currentWidget() is self.ui.gamepage.kirikiri:
+            # 给ui起个别名
+            ugk = self.ui.gamepage.kirikiri
+            # 高清重制
+            if ugk.currentWidget() is ugk.hd_parts_frame:
+                return self._check_game_page_in_out_folder()
+            # 后处理
+            elif ugk.currentWidget() is ugk.work_up_frame:
+                if ugk.stand_crt_btn.isChecked():
+                    return self._check_game_page_in_out_folder()
+                # tlg图片格式转换
+                elif ugk.tlg_convert_btn.isChecked():
+                    return self._check_game_page_in_out_folder(only_folder=False)
+                # pimg格式转换
+                elif ugk.pimg_cvt_btn.isChecked():
+                    return self._check_game_page_in_out_folder(only_folder=False)
+                # amv动画格式转换
+                elif ugk.amv_cvt_btn.isChecked():
+                    return self._check_game_page_in_out_folder()
+                # 补丁文件平铺
+                elif ugk.flat_patch_btn.isChecked():
+                    return self._check_game_page_in_out_folder()
+        # Artemis
+        elif self.ui.gamepage.game_engine_area.currentWidget() is self.ui.gamepage.artemis:
+            # 给ui起个别名
+            uga = self.ui.gamepage.artemis
+            # 高清重制
+            if uga.currentWidget() is uga.hd_parts_frame:
+                return self._check_game_page_in_out_folder()
+            # 后处理
+            elif uga.currentWidget() is uga.work_up_frame:
+                # 拆包
+                if uga.pfs_unpack_btn.isChecked():
+                    return self._check_game_page_in_out_folder(only_folder=False)
 
     def game_page_run(self):
         self.input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip())
         self.output_folder = Path(self.ui.gamepage.select_output_folder_line_edit.text().strip())
-        if self.check_game_in_out_folder(self.input_folder, self.output_folder):
+        if self._check_game_page_path_access():
             self.game_page_runner = GamePageRunner(self)
-            # 信号绑定
+            # pyside6信号需要通过实例绑定
             self.game_page_runner.start_sig.connect(self.start_game_page_runner_and_lock)
             self.game_page_runner.info_sig.connect(self.append_game_info_text_edit)
             self.game_page_runner.progress_sig.connect(self.update_game_progress_bar)
@@ -79,7 +115,6 @@ class GamePageUIConnection(object):
         finish_info_msg = QMessageBox()
         reply = finish_info_msg.information(self.ui, '处理完成', f'{info_str}\n是否打开输出文件夹?', QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         show_folder(self.output_folder) if reply == QMessageBox.Yes else None
-        # os.system(f'start {self.output_folder}') if reply == QMessageBox.Yes else None
 
     def crash_game_page_runner_and_unlock(self, info_str):
         self.ui.gamepage.set_running_state(0)
@@ -89,25 +124,23 @@ class GamePageUIConnection(object):
 
     def kirikiri_check_resolution(self):
         input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip())
-        if self.check_game_in_out_folder(input_folder, check_output=False):
-            try:
-                _kirikiri = Kirikiri()
-                scwidth, scheight, encoding = _kirikiri.get_resolution_encoding(input_folder)
-                self.ui.gamepage.kirikiri.set_game_resolution_encoding(scwidth, scheight, encoding)
-            except:
-                warn_msg = QMessageBox()
-                reply = warn_msg.warning(self.ui, '提示', '未能找到游戏分辨率和主要编码格式!', QMessageBox.Yes)
+        try:
+            _kirikiri = Kirikiri()
+            scwidth, scheight, encoding = _kirikiri.get_resolution_encoding(input_folder)
+            self.ui.gamepage.kirikiri.set_game_resolution_encoding(scwidth, scheight, encoding)
+        except:
+            warn_msg = QMessageBox()
+            reply = warn_msg.warning(self.ui, '提示', '未能找到游戏分辨率和主要编码格式!', QMessageBox.Yes)
 
     def artemis_check_resolution(self):
         input_folder = Path(self.ui.gamepage.select_input_folder_line_edit.text().strip())
-        if self.check_game_in_out_folder(input_folder, check_output=False):
-            try:
-                _artemis = Artemis()
-                scwidth, scheight, encoding = _artemis.get_resolution_encoding(input_folder)
-                self.ui.gamepage.artemis.set_game_resolution_encoding(scwidth, scheight, encoding)
-            except:
-                warn_msg = QMessageBox()
-                reply = warn_msg.warning(self.ui, '提示', '未能找到游戏分辨率和主要编码格式!', QMessageBox.Yes)
+        try:
+            _artemis = Artemis()
+            scwidth, scheight, encoding = _artemis.get_resolution_encoding(input_folder)
+            self.ui.gamepage.artemis.set_game_resolution_encoding(scwidth, scheight, encoding)
+        except:
+            warn_msg = QMessageBox()
+            reply = warn_msg.warning(self.ui, '提示', '未能找到游戏分辨率和主要编码格式!', QMessageBox.Yes)
 
 
 class GamePageRunner(QThread):

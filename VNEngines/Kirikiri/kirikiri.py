@@ -101,7 +101,7 @@ class Kirikiri(Core):
         tjs_file_ls = patch9_first(self.game_data.file_list('tjs'))
         for tjs_file in tjs_file_ls:
             if tjs_file.name == 'Config.tjs':
-                self.Configtjs2x(tjs_file)
+                self._config_tjs2x(tjs_file)
             elif tjs_file.name == 'envinit.tjs':
                 self.envinit2x(tjs_file)
             elif tjs_file.name == 'custom.tjs':
@@ -129,7 +129,7 @@ class Kirikiri(Core):
                 except:
                     pass
 
-    def Configtjs2x(self, tjs_file):
+    def _config_tjs2x(self, tjs_file):
         '''
         Config.tjs文件处理，游戏分辨率，默认字体等
         '''
@@ -165,6 +165,27 @@ class Kirikiri(Core):
                 # 独立存档位置
                 if line.startswith(';freeSaveDataMode'):
                     f.write(';saveDataLocation = "savedataHD";\r\n')
+
+    def _envinit2x(self, tjs_file):
+        kwds = ['width', 'height', 'xoff', 'yoff', 'xpos', 'ypos', 'originx', 'originy', 'emotionX', 'emotionY']
+        # kwds = ['width', 'height', 'xoff', 'yoff', 'xpos', 'ypos', 'originx', 'originy', 'emotionX', 'emotionY', 'value', 'start']
+        kwds_ = '|'.join(kwds)
+        ptn = re.compile(rf'(?<=(\W|\b)({kwds_})(\W+|\b)(int(\W+|\b))?)(\d+)(?=\W|\b)', re.IGNORECASE)
+        result = []
+        lines, current_encoding = self.get_lines_encoding(tjs_file)
+        for line in lines:
+            line = ptn.sub(self.scale_num, line)
+            result.append(line)
+        with open(self.a2p(tjs_file).to_str+'2', 'w', newline='', encoding=current_encoding) as f:
+            tmp_count = 0
+            for line in result:
+                # 开启对话框头像位置修正模式，使对stand文件的修改生效
+                if 'autoFaceShow' in line and tmp_count == 0:
+                    f.write('\t"facePosMode", 1,\r\n')
+                    tmp_count = 1
+                if line.startswith('\t"facePosMode'):
+                    continue
+                f.write(line)
 
     def envinit2x(self, tjs_file):
         '''
@@ -316,9 +337,9 @@ class Kirikiri(Core):
         '''
         asd_keyword_list = ['clipleft', 'cliptop', 'clipwidth', 'clipheight', 'left',
                             'top', 'height', 'weight', 'dx', 'dy', 'dw', 'dh', 'sx', 'sy', 'sw', 'sh', 'x', 'y']
-        # asd_file_ls = patch9_first(self.game_data.file_list('asd'))
+        asd_file_ls = patch9_first(self.game_data.file_list('asd'))
         # 忽略人物表情处理，这东西不需要改，改了反而不正常
-        asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+        # asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         for asd_file in asd_file_ls:
             result = []
             lines, current_encoding = self.get_lines_encoding(asd_file)
@@ -403,7 +424,7 @@ class Kirikiri(Core):
                     re_result = re.match(pattern, line)
                     if re_result:
                         re_result_ls = list(re_result.groups())
-                        re_result_ls[1] = str(int(re_result_ls[1]) - int((self.scwidth*self.scale_ratio-self.scwidth)/2))
+                        re_result_ls[1] = str(int(re_result_ls[1]) - int((self.scwidth * self.scale_ratio - self.scwidth) / 2))
                         re_result_ls = [i for i in re_result_ls if i != None]
                         line = ''.join(re_result_ls)
                 # 大小修正
@@ -470,7 +491,7 @@ class Kirikiri(Core):
                     content = f.read()
         fgimage_text_sign = '#layer_type\tname\tleft\ttop\twidth\theight\ttype\topacity\tvisible\tlayer_id\tgroup_layer_id\tbase\timages\t'
         if not content.startswith(fgimage_text_sign):
-            self.emit_info(f'{file_path}不是立绘坐标文件!')
+            # self.emit_info(f'{file_path}不是立绘坐标文件!')
             return None
         with PrivateStringIO(content) as _f:
             reader = csv.DictReader(_f, delimiter='\t')
@@ -480,7 +501,7 @@ class Kirikiri(Core):
                 for kwd in kwds:
                     _num = j[kwd]
                     if real_digit(_num):
-                        j[kwd] = str(int(float(_num)*scale_ratio))
+                        j[kwd] = str(int(float(_num) * scale_ratio))
                 content_ls[i] = j
         with open(output_path, 'w', newline='', encoding=current_encoding) as f:
             writer = csv.DictWriter(f, delimiter='\t', fieldnames=fgimage_text_sign.split('\t'))
@@ -529,8 +550,8 @@ class Kirikiri(Core):
         '''
         image_extension_ls = ['bmp', 'jpg', 'jpeg', 'png', 'webp']
         for image_extension in image_extension_ls:
-            # image_file_list = patch9_first(self.game_data.file_list(image_extension))
-            image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+            image_file_list = patch9_first(self.game_data.file_list(image_extension))
+            # image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
             if image_file_list:
                 with tempfile.TemporaryDirectory() as tmp_folder:
                     self.tmp_folder = Path(tmp_folder)
@@ -627,8 +648,8 @@ class Kirikiri(Core):
         pimg_json_file, output_folder = json_work_path
         pimg_en_p = subprocess.run([self.psb_en_exe, pimg_json_file], shell=True, cwd=output_folder, capture_output=True)
         # 重命名
-        tmp_pimg_file = output_folder/pimg_json_file.with_suffix('.pure.pimg').name
-        out_pimg_file = output_folder/pimg_json_file.with_suffix('.pimg').name
+        tmp_pimg_file = output_folder / pimg_json_file.with_suffix('.pure.pimg').name
+        out_pimg_file = output_folder / pimg_json_file.with_suffix('.pimg').name
         tmp_pimg_file.move_as(out_pimg_file)
         return out_pimg_file
 
@@ -660,8 +681,8 @@ class Kirikiri(Core):
         '''
         对tlg格式图片进行放大处理
         '''
-        # ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
-        ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+        ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
+        # ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         if ori_tlg_file_ls:
             with tempfile.TemporaryDirectory() as tmp_folder:
                 self.tmp_folder = Path(tmp_folder)
@@ -733,12 +754,12 @@ class Kirikiri(Core):
                 tlg_tmp_folder = Path(tlg_tmp_folder)
                 tmp_target_dict = {}
                 for png_file, target_tlg in png_tlg_path_dict.items():
-                    tmp_png = tlg_tmp_folder/(self.create_str()+'.png')
+                    tmp_png = tlg_tmp_folder / (self.create_str() + '.png')
                     png_file.copy_as(tmp_png)
                     tmp_target_dict[tmp_png] = target_tlg
                 self.emit_info('请将弹出文件夹中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
                 show_folder(tlg_tmp_folder)
-                _p = subprocess.run([self.krkrtpc_exe,], capture_output=True, shell=True)
+                _p = subprocess.run([self.krkrtpc_exe, ], capture_output=True, shell=True)
                 # os.system(str(self.krkrtpc_exe))
                 output_tlg_file_ls = []
                 for tmp_png, target_tlg in tmp_target_dict.items():
@@ -789,16 +810,16 @@ class Kirikiri(Core):
     def animation2x(self):
         self.emit_info('开始处理游戏动画......')
         self._amv2x()
-        # self.psb2x()
-        # self.swf2x()
+        # self._psb2x()
+        # self._swf2x()
 
-    def psb2x(self):
+    def _psb2x(self):
         psb_file_ls = self.game_data.file_list('psb')
         if psb_file_ls:
             self.emit_info('暂不支持psb文件处理，后续会加进去')
             pass
 
-    def swf2x(self):
+    def _swf2x(self):
         swf_file_ls = self.game_data.file_list('swf')
         if swf_file_ls:
             self.emit_info('swf这东西没见过有游戏用过，有需求再加进去')
@@ -818,6 +839,14 @@ class Kirikiri(Core):
                 scaled_amv_file_ls = self.png2amv(self.tmp_folder, self.patch_folder)
 
     def amv2png(self, input_dir, output_dir) -> list:
+        """
+        @brief      拆amv为png和json，json记录帧率等数据
+
+        @param      input_dir   The input dir
+        @param      output_dir  The output dir
+
+        @return     图片序列文件夹列表
+        """
         input_dir = Path(input_dir)
         output_dir = Path(output_dir)
         amv_dict = self._amv2png_pre(input_dir, output_dir)
@@ -830,10 +859,10 @@ class Kirikiri(Core):
         amv_dict = {}
         for index_i, amv_file in enumerate(amv_file_ls, start=1):
             target_amv_file = amv_file.reio_path(input_dir, output_dir, mk_dir=True)
-            target_amv_dir = target_amv_file.parent/target_amv_file.stem
-            tmp_amv = self.amv_de_folder/('%03d' % index_i + '.amv')
+            target_amv_dir = target_amv_file.parent / target_amv_file.stem
+            tmp_amv = self.amv_de_folder / ('%03d' % index_i + '.amv')
             amv_file.copy_as(tmp_amv)
-            tmp_amv_dir = tmp_amv.parent/(tmp_amv.stem+'frames')
+            tmp_amv_dir = tmp_amv.parent / (tmp_amv.stem + 'frames')
             amv_dict[tmp_amv] = (tmp_amv_dir, target_amv_dir, target_amv_file)
         return amv_dict
 
@@ -844,12 +873,12 @@ class Kirikiri(Core):
         tmp_amv = amv_tuple[0]
         tmp_amv_dir = amv_tuple[1][0]
         target_amv_dir = amv_tuple[1][1]
-        amv_de_p = subprocess.run([self.amv_de_exe, '-amvpath='+tmp_amv.to_str], capture_output=True, shell=True)
+        amv_de_p = subprocess.run([self.amv_de_exe, '-amvpath=' + tmp_amv.to_str], capture_output=True, shell=True)
         amv_file_info = self._get_amv_file_info(tmp_amv)
         result = json.dumps(amv_file_info, sort_keys=False, indent=2, ensure_ascii=False)
         tmp_amv.unlink()
         tmp_amv_dir.move_as(target_amv_dir)
-        with open(target_amv_dir.parent/(target_amv_dir.name+'.json'), 'w', newline='', encoding='utf-8') as amv_c:
+        with open(target_amv_dir.parent / (target_amv_dir.name + '.json'), 'w', newline='', encoding='utf-8') as amv_c:
             amv_c.write(result)
         return target_amv_dir
 
@@ -966,12 +995,12 @@ def patch_num(file_path):
     @return     数字或False
     """
     for folder_name in file_path.parent_names:
-        try:
-            if folder_name[:5] == 'patch':
-                if len(folder_name) == 5:
-                    return 0
-                else:
+        if folder_name.startswith('patch'):
+            if len(folder_name) == 5:
+                return 0
+            else:
+                try:
                     return int(folder_name[5:])
-        except:
-            pass
+                except:
+                    pass
     return False

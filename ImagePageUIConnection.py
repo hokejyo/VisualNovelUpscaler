@@ -12,7 +12,7 @@ class ImagePageUIConnection(object):
     def image_page_run(self):
         self.input_path = Path(self.ui.imagepage.input_line_edit.text().strip())
         self.output_folder = Path(self.ui.imagepage.output_line_edit.text().strip())
-        if self.check_image_in_out_folder(self.input_path, self.output_folder):
+        if self.check_image_page_in_out_folder(self.input_path, self.output_folder):
             self.image_page_runner = ImagePageRunner(self)
             # 信号绑定
             self.image_page_runner.start_sig.connect(self.start_image_page_runner_and_lock)
@@ -21,7 +21,7 @@ class ImagePageUIConnection(object):
             self.image_page_runner.crash_sig.connect(self.crash_image_page_runner_and_unlock)
             self.image_page_runner.start()
 
-    def check_image_in_out_folder(self, input_path, output_folder) -> bool:
+    def check_image_page_in_out_folder(self, input_path, output_folder) -> bool:
         input_path = Path(input_path)
         output_folder = Path(output_folder)
         warn_message = None

@@ -356,11 +356,11 @@ class Artemis(Core):
     ==================================================
     """
 
-    def batch_extract_pfs(self, input_folder, output_folder, encoding='utf-8') -> list:
+    def batch_extract_pfs(self, input_path, output_folder, encoding='utf-8') -> list:
         """
         @brief      pfs批量解包
 
-        @param      input_folder   输入文件夹
+        @param      input_path   输入文件夹
         @param      output_folder  输出文件夹
         @param      encoding       编码格式
 
@@ -368,14 +368,17 @@ class Artemis(Core):
         """
         # 计时
         start_time = time.time()
-        input_folder = Path(input_folder)
+        input_path = Path(input_path)
         output_folder = Path(output_folder)
         output_file_ls = []
-        pfs_file_ls = [str(pfs_file) for pfs_file in input_folder.file_list(walk_mode=False) if pfs_file.readbs(3) == b'pf8']
-        pfs_file_ls.sort()
-        for pfs_file in pfs_file_ls:
-            self.emit_info(f'{pfs_file} extracting......')
-            output_file_ls += self.extract_pfs(pfs_file, output_folder, encoding)
+        if input_path.is_dir():
+            pfs_file_ls = [str(pfs_file) for pfs_file in input_path.file_list(walk_mode=False) if pfs_file.readbs(3) == b'pf8']
+            pfs_file_ls.sort()
+            for pfs_file in pfs_file_ls:
+                self.emit_info(f'{pfs_file} extracting......')
+                output_file_ls += self.extract_pfs(pfs_file, output_folder, encoding)
+        else:
+            output_file_ls = self.extract_pfs(input_path, output_folder, encoding)
         # 输出耗时
         timing_count = time.time() - start_time
         self.emit_info(f'拆包完成，耗时{seconds_format(timing_count)}!\n请把游戏目录中类似script、movie等文件夹及*.ini文件也复制到：\n{output_folder}中')

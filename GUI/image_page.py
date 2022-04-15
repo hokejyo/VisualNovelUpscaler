@@ -44,7 +44,6 @@ class ImagePage(QFrame):
 
         self.setup_run_part()
 
-
     def setup_settings(self):
         self.setting_frame = QFrame()
         self.setting_frame.setStyleSheet('background-color:#456')

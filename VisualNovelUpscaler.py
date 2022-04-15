@@ -10,7 +10,7 @@ from SettingPageUIConnection import SettingPageUIConnection
 
 class VisualNovelUpscaler(Core, SettingPageUIConnection, GamePageUIConnection, ImagePageUIConnection):
 
-    _version = 'v0.2.0'
+    _version = 'v0.2.1'
 
     def __init__(self):
         Core.__init__(self)
@@ -43,6 +43,5 @@ if __name__ == '__main__':
     # 启动
     app = QApplication(sys.argv)
     visual_novel_upscaler = VisualNovelUpscaler()
-    visual_novel_upscaler.ui.setWindowIcon(QIcon(str(bundle_dir/'Icons'/'icon.ico')))
     visual_novel_upscaler.ui.show()
     sys.exit(app.exec())

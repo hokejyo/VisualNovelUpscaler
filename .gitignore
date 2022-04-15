@@ -136,3 +136,4 @@ dmypy.json
 /log.txt
 /VNTranslator
 /env*
+/make_exe.py

@@ -14,6 +14,7 @@ class MainUI(QMainWindow):
 
     def __init__(self):
         QMainWindow.__init__(self)
+        self.icon_folder = Path(sys.argv[0]).parent/'Icons'
         self.initUI()
         
         # 设置标题栏能用鼠标拖动
@@ -41,6 +42,8 @@ class MainUI(QMainWindow):
     def initUI(self):
         # 设置标题
         self.setWindowTitle('Visual Novel Upscaler')
+        # 设置图标
+        self.setWindowIcon(QIcon(str(self.icon_folder/'icon.ico')))
         # 移除标题栏
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
