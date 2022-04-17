@@ -74,9 +74,9 @@ class TextsUtils(object):
         """
         return pattern_num2x(re_result, self.scale_ratio, test_mode=test_mode, line=line)
 
-    def scale_num(self, match):
+    def sub_scale_num(self, match):
         """
-        @brief      用于放大正则替换匹配到的数字pattern.sub(self.scale_num), line)，放大倍数为self.scale_ratio
+        @brief      用于放大正则替换匹配到的数字pattern.sub(self.sub_scale_num), line)，放大倍数为self.scale_ratio
 
         @param      match        The match
 

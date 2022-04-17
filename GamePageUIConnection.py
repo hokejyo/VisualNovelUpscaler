@@ -191,8 +191,6 @@ class GamePageRunner(QThread):
             kirikiri.run_dict['image'] = ugk.image_part.isChecked()
             kirikiri.run_dict['animation'] = ugk.animation_part.isChecked()
             kirikiri.run_dict['video'] = ugk.video_part.isChecked()
-            # 设置是否保存目录结构
-            kirikiri.keep_path_struct_mode = ugk.keep_mode_btn.isChecked()
             # 开始放大
             kirikiri.upscale()
             self.finish_sig.emit('高清重制完成!')

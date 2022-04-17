@@ -63,7 +63,7 @@ class GamePage(QFrame):
         self.input_folder_frame = QFrame()
         hlayout = QHBoxLayout(self.input_folder_frame)
         hlayout.setContentsMargins(10, 20, 10, 0)
-        self.select_input_folder_lb = QLabel('输入目录')
+        self.select_input_folder_lb = QLabel('输入路径')
         self.select_input_folder_lb.setStyleSheet("font: 700 12pt 'Segoe UI'")
         hlayout.addWidget(self.select_input_folder_lb)
         self.select_input_folder_line_edit = FLineEdit(place_holder_text='选择或拖拽需要处理的文件夹', height=30, radius=12, text_padding=10)

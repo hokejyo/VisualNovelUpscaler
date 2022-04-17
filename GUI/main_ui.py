@@ -6,6 +6,7 @@ from .left_menu import LeftMenu
 from .main_content import MainContent
 from .image_page import ImagePage
 from .game_page import GamePage
+from .text_page import TextPage
 from .info_page import InfoPage
 from .setting_page import SettingPage
 
@@ -93,6 +94,7 @@ class MainUI(QMainWindow):
     def setup_connections(self):
         self.leftmenu.image_button.clicked.connect(self.show_image_page)
         self.leftmenu.game_button.clicked.connect(self.show_game_page)
+        self.leftmenu.text_button.clicked.connect(self.show_text_page)
         self.leftmenu.info_btn.clicked.connect(self.show_info_page)
         self.leftmenu.setting_btn.clicked.connect(self.show_setting_page)
         self.maincontent.minimize_btn.clicked.connect(self.showMinimized)
@@ -107,6 +109,9 @@ class MainUI(QMainWindow):
 
         self.gamepage = GamePage()
         self.maincontent.pages.addWidget(self.gamepage)
+
+        self.textpage = TextPage()
+        self.maincontent.pages.addWidget(self.textpage)
 
         self.infopage = InfoPage()
         self.maincontent.pages.addWidget(self.infopage)
@@ -129,6 +134,14 @@ class MainUI(QMainWindow):
         else:
             self.leftmenu.reset_selection()
             self.leftmenu.game_button.set_active(True)
+
+    def show_text_page(self):
+        self.maincontent.pages.setCurrentWidget(self.textpage)
+        if self.leftmenu.text_button.is_active:
+            self.leftmenu.fold_menu()
+        else:
+            self.leftmenu.reset_selection()
+            self.leftmenu.text_button.set_active(True)
 
     def show_info_page(self):
         self.maincontent.pages.setCurrentWidget(self.infopage)

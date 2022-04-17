@@ -132,6 +132,7 @@ class KirikiriPart(FTabWidget):
         self.keep_mode_btn = QCheckBox('保持目录结构')
         layout1.addRow(self.patch_mode_lb, self.keep_mode_btn)
         self.keep_mode_btn.setChecked(True)
+        self.keep_mode_btn.setDisabled(True)
 
     def setup_work_up(self):
         self.work_up_frame = QFrame()

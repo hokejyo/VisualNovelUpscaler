@@ -161,9 +161,9 @@ def show_folder(folder_path):
     _p = subprocess.run(['start', folder_path], capture_output=True, shell=True)
 
 
-def scale_num(match, scale_ratio):
+def sub_scale_num(match, scale_ratio):
     """
-    @brief      用于放大正则替换匹配到的数字pattern.sub(partial(scale_num, scale_ratio), line)
+    @brief      用于放大正则替换匹配到的数字pattern.sub(partial(sub_scale_num, scale_ratio), line)
 
     @param      match        The match
     @param      scale_ratio  放大倍数

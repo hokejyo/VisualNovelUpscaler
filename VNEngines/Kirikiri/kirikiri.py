@@ -13,7 +13,6 @@ class Kirikiri(Core):
         self.load_config()
         self.__class__.game_ui_runner = game_ui_runner
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
-        self.keep_path_struct_mode = True
 
     def emit_info(self, info_str):
         print(info_str)
@@ -45,9 +44,6 @@ class Kirikiri(Core):
         if self.run_dict['video']:
             self.video2x()
             self.emit_info('视频文件处理完成')
-        # 将文件平铺
-        if not self.keep_path_struct_mode:
-            self.patch_folder.flat_folder_()
         timing_count = time.time() - start_time
         self.emit_info(f'共耗时：{seconds_format(timing_count)}')
 
@@ -103,7 +99,7 @@ class Kirikiri(Core):
             if tjs_file.name == 'Config.tjs':
                 self._config_tjs2x(tjs_file)
             elif tjs_file.name == 'envinit.tjs':
-                self.envinit2x(tjs_file)
+                self._envinit_tjs2x(tjs_file)
             elif tjs_file.name == 'custom.tjs':
                 self.customtjs2x(tjs_file)
             elif tjs_file.name == 'default.tjs':
@@ -166,53 +162,53 @@ class Kirikiri(Core):
                 if line.startswith(';freeSaveDataMode'):
                     f.write(';saveDataLocation = "savedataHD";\r\n')
 
-    def _envinit2x(self, tjs_file):
+    def _envinit_tjs2x(self, tjs_file):
         kwds = ['width', 'height', 'xoff', 'yoff', 'xpos', 'ypos', 'originx', 'originy', 'emotionX', 'emotionY']
         # kwds = ['width', 'height', 'xoff', 'yoff', 'xpos', 'ypos', 'originx', 'originy', 'emotionX', 'emotionY', 'value', 'start']
         kwds_ = '|'.join(kwds)
-        ptn = re.compile(rf'(?<=(\W|\b)({kwds_})(\W+|\b)(int(\W+|\b))?)(\d+)(?=\W|\b)', re.IGNORECASE)
+        ptn = re.compile(rf'(?<=(\W|^)({kwds_})(\W+|\b)(int\W+)?)(\d+)(?=\W|$)', re.IGNORECASE)
         result = []
         lines, current_encoding = self.get_lines_encoding(tjs_file)
         for line in lines:
-            line = ptn.sub(self.scale_num, line)
-            result.append(line)
-        with open(self.a2p(tjs_file).to_str+'2', 'w', newline='', encoding=current_encoding) as f:
-            tmp_count = 0
-            for line in result:
-                # 开启对话框头像位置修正模式，使对stand文件的修改生效
-                if 'autoFaceShow' in line and tmp_count == 0:
-                    f.write('\t"facePosMode", 1,\r\n')
-                    tmp_count = 1
-                if line.startswith('\t"facePosMode'):
-                    continue
-                f.write(line)
-
-    def envinit2x(self, tjs_file):
-        '''
-        envinit.tjs文件处理，图层修改，开启对话框头像修正模式
-        '''
-        pattern_dict = {'amv动画和粒子效果显示层': r'(.*width:)(\d+)(.*height:)(\d+)(.*)(amovie|particle)(.*)',
-                        '纯色层1': r'(.*"width", )(\d+)(, "height", )(\d+)(.*color.*)',
-                        '纯色层2和motion': r'(^\t*)("width"\D*|"height"\D*)(\d+)(\D*)'}
-        result = []
-        lines, current_encoding = self.get_lines_encoding(tjs_file)
-        for line in lines:
-            for i in pattern_dict.values():
-                pattern = re.compile(i)
-                re_result = re.match(pattern, line)
-                if re_result:
-                    line = self.line_pattern_num2x(re_result)
+            line = ptn.sub(self.sub_scale_num, line)
             result.append(line)
         with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
             tmp_count = 0
             for line in result:
-                # 开启对话框头像位置修正模式，使对stand文件的修改生效
-                if 'autoFaceShow' in line and tmp_count == 0:
-                    f.write('\t"facePosMode", 1,\r\n')
-                    tmp_count = 1
-                if line.startswith('\t"facePosMode'):
-                    continue
+                # # 开启对话框头像位置修正模式，使对stand文件的修改生效
+                # if 'autoFaceShow' in line and tmp_count == 0:
+                #     f.write('\t"facePosMode", 1,\r\n')
+                #     tmp_count = 1
+                # if line.startswith('\t"facePosMode'):
+                #     continue
                 f.write(line)
+
+    # def envinit2x(self, tjs_file):
+    #     '''
+    #     envinit.tjs文件处理，图层修改，开启对话框头像修正模式
+    #     '''
+    #     pattern_dict = {'amv动画和粒子效果显示层': r'(.*width:)(\d+)(.*height:)(\d+)(.*)(amovie|particle)(.*)',
+    #                     '纯色层1': r'(.*"width", )(\d+)(, "height", )(\d+)(.*color.*)',
+    #                     '纯色层2和motion': r'(^\t*)("width"\D*|"height"\D*)(\d+)(\D*)'}
+    #     result = []
+    #     lines, current_encoding = self.get_lines_encoding(tjs_file)
+    #     for line in lines:
+    #         for i in pattern_dict.values():
+    #             pattern = re.compile(i)
+    #             re_result = re.match(pattern, line)
+    #             if re_result:
+    #                 line = self.line_pattern_num2x(re_result)
+    #         result.append(line)
+    #     with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
+    #         tmp_count = 0
+    #         for line in result:
+    #             # 开启对话框头像位置修正模式，使对stand文件的修改生效
+    #             if 'autoFaceShow' in line and tmp_count == 0:
+    #                 f.write('\t"facePosMode", 1,\r\n')
+    #                 tmp_count = 1
+    #             if line.startswith('\t"facePosMode'):
+    #                 continue
+    #             f.write(line)
 
     def customtjs2x(self, tjs_file):
         '''
