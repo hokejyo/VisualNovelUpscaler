@@ -9,9 +9,9 @@ class Kirikiri(Core):
 
     def __init__(self, game_ui_runner=None):
         Core.__init__(self)
-        self.encoding = 'Shift_JIS'
         self.load_config()
         self.__class__.game_ui_runner = game_ui_runner
+        self.encoding = 'Shift_JIS'
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
 
     def emit_info(self, info_str):
@@ -173,7 +173,7 @@ class Kirikiri(Core):
             line = ptn.sub(self.sub_scale_num, line)
             result.append(line)
         with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
-            tmp_count = 0
+            # tmp_count = 0
             for line in result:
                 # # 开启对话框头像位置修正模式，使对stand文件的修改生效
                 # if 'autoFaceShow' in line and tmp_count == 0:

@@ -9,9 +9,9 @@ class Artemis(Core):
 
     def __init__(self, game_ui_runner=None):
         Core.__init__(self)
-        self.encoding = 'UTF-8'
         self.load_config()
         self.__class__.game_ui_runner = game_ui_runner
+        self.encoding = 'UTF-8'
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
 
     def emit_info(self, info_str):

@@ -89,6 +89,8 @@ class Config(object):
         self.amv_de_folder = self.toolkit_path/'AlphaMovieDecoder'/'video'
         # https://github.com/zhiyb/AlphaMovieEncoder
         self.amv_en_exe = self.toolkit_path/'AlphaMovieEncoder'/'amenc.exe'
+        # https://github.com/AtomCrafty/MajiroTools
+        self.mjotool_exe = self.toolkit_path/'MajiroTools'/'maji.exe'
         # 通用参数
         self.vnu_config.read(self.vnu_config_file)
         self.cpu_cores = self.vnu_config.getint('General', 'cpu_cores')

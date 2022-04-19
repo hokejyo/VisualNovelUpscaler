@@ -19,4 +19,5 @@
 [png2tlg](https://github.com/zhiyb/png2tlg)  
 [AlphaMovieDecoder](https://github.com/xmoeproject/AlphaMovieDecoder)  
 [AlphaMovieEncoder](https://github.com/zhiyb/AlphaMovieEncoder)  
+[MajiroTools](https://github.com/AtomCrafty/MajiroTools)  
 [pypng](https://github.com/drj11/pypng)  
