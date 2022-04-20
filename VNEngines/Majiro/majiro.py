@@ -32,13 +32,13 @@ class Majiro(Core):
             self.patch_folder.mkdir(parents=True)
         # 开始放大
         if self.run_dict['script']:
-            self.script2x()
+            self._script2x()
             self.emit_info('文本文件处理完成')
         if self.run_dict['image']:
-            self.image2x()
+            self._image2x()
             self.emit_info('图片文件放大完成')
         if self.run_dict['video']:
-            self.video2x()
+            self._video2x()
             self.emit_info('视频文件处理完成')
         # 结束
         timing_count = time.time() - start_time

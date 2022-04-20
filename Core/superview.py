@@ -7,9 +7,9 @@ import math
 
 
 def derp_it(tx, target_width, src_width):
-    x = (float(tx) / target_width - 0.5) * 2  # -1 -> 1
-    sx = tx - (target_width - src_width) / 2
-    offset = math.pow(x, 2) * (-1 if x < 0 else 1) * ((target_width - src_width) / 2)
+    x = (float(tx)/target_width - 0.5) * 2  # -1 -> 1
+    sx = tx - (target_width - src_width)/2
+    offset = math.pow(x, 2) * (-1 if x < 0 else 1) * ((target_width - src_width)/2)
     return sx - offset
 
 

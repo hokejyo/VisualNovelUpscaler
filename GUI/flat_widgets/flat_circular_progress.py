@@ -57,8 +57,8 @@ class FCircularProgress(QFrame):
         # SET PROGRESS PARAMETERS
         width = self.width() - self.progress_width - 30
         height = self.height() - self.progress_width - 30
-        margin = self.progress_width / 2 + 15
-        value = self.value * 360 / self.max_value
+        margin = self.progress_width/2 + 15
+        value = self.value * 360/self.max_value
 
         # PAINTER
         paint = QPainter()
@@ -83,7 +83,7 @@ class FCircularProgress(QFrame):
             paint.setPen(pen)
             paint.drawArc(margin, margin, width, height, 0, 360 * 16)
 
-        # CREATE ARC / CIRCULAR PROGRESS
+        # CREATE ARC/CIRCULAR PROGRESS
         pen.setColor(QColor(self.progress_color))
         paint.setPen(pen)
         paint.drawArc(margin, margin, width, height, -90 * 16, -value * 16)

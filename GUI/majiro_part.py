@@ -4,7 +4,7 @@ from .qt_core import *
 from .flat_widgets import *
 
 
-class ArtemisPart(FTabWidget):
+class MajiroPart(FTabWidget):
     def __init__(self):
         FTabWidget.__init__(self, height=40, position='top')
         self.icon_folder = Path(sys.argv[0]).parent/'Icons'
@@ -12,7 +12,7 @@ class ArtemisPart(FTabWidget):
         self.set_ratio_state()
         self.set_resolution_state()
         self.select_all_part()
-        self.set_game_resolution_encoding(1280, 720, 'UTF-8')
+        self.set_game_resolution_encoding(1280, 720, 'Shift_JIS')
         # self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
     def initUI(self):
@@ -114,7 +114,6 @@ class ArtemisPart(FTabWidget):
 
         self.text_part = QCheckBox('文本')
         self.image_part = QCheckBox('图片')
-        self.animation_part = QCheckBox('动画')
         self.video_part = QCheckBox('视频')
         self.select_all_btn = FPushButton(text='全选', height=20, minimum_width=50, text_padding=0, text_align='center', border_radius=10)
         self.select_none_btn = FPushButton(text='全不选', height=20, minimum_width=50, text_padding=0, text_align='center', border_radius=10)
@@ -124,7 +123,6 @@ class ArtemisPart(FTabWidget):
 
         layout2.addWidget(self.text_part)
         layout2.addWidget(self.image_part)
-        layout2.addWidget(self.animation_part)
         layout2.addWidget(self.video_part)
         layout2.addLayout(hlayout)
 
@@ -140,24 +138,38 @@ class ArtemisPart(FTabWidget):
         self.work_up_layout.setContentsMargins(15, 25, 15, 0)
         self.work_up_layout.setSpacing(15)
 
-        self.setup_pfs_unpack()
+        self.setup_mjo_converter()
 
         self.work_up_group = QButtonGroup()
-        self.work_up_group.addButton(self.pfs_unpack_btn)
+        self.work_up_group.addButton(self.mjo_convert_btn)
 
-    def setup_pfs_unpack(self):
-        self.pfs_unpack_btn = QRadioButton('批量解包：')
-        self.pfs_unpack_btn.setChecked(True)
-        layout = QHBoxLayout()
-        self.work_up_layout.addRow(self.pfs_unpack_btn, layout)
-        self.pfs_encoding_label = QLabel('编码格式：')
-        self.pfs_encoding_line_edit = FLineEdit('UTF-8')
-        layout.addWidget(self.pfs_encoding_label)
-        layout.addWidget(self.pfs_encoding_line_edit)
+    def setup_mjo_converter(self):
+        self.mjo_convert_btn = QRadioButton('MJO格式转换：')
+        hlayout1 = QHBoxLayout()
+        self.work_up_layout.addRow(self.mjo_convert_btn, hlayout1)
 
-    def check_pfs_unpack_btn(self):
-        self.pfs_unpack_btn.setChecked(True)
+        self.mjo_in_label = QLabel('输入格式：')
+        self.mjo_in = QComboBox()
+        self.mjo_in.addItems(['mjo', 'mjil&mjres'])
+        self.mjo_out_label = QLabel('输出格式：')
+        self.mjo_out = QComboBox()
+        self.mjo_out.addItems(['mjil&mjres'])
+        hlayout1.addWidget(self.mjo_in_label)
+        hlayout1.addWidget(self.mjo_in)
+        hlayout1.addWidget(self.mjo_out_label)
+        hlayout1.addWidget(self.mjo_out)
+        sapcer = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        hlayout1.addItem(sapcer)
 
+    def change_mjo_out(self):
+        match self.mjo_in.currentText():
+            case 'mjo':
+                self.mjo_out.clear()
+                self.mjo_out.addItems(['mjil&mjres'])
+            case 'mjil&mjres':
+                self.mjo_out.clear()
+                self.mjo_out.addItems(['mjo'])
+        self.mjo_convert_btn.setChecked(True)
 
     def setup_connections(self):
         self.s1080p_btn.toggled.connect(self.s1080p_btn_ratio)
@@ -170,7 +182,7 @@ class ArtemisPart(FTabWidget):
         self.height_line_edit.textEdited.connect(self.auto_change_width_ratio)
         self.select_all_btn.clicked.connect(self.select_all_part)
         self.select_none_btn.clicked.connect(self.select_none_part)
-        self.pfs_encoding_line_edit.textChanged.connect(self.check_pfs_unpack_btn)
+        self.mjo_in.currentTextChanged.connect(self.change_mjo_out)
 
     def select_all_part(self):
         for check_box in self.select_run_parts_frame.findChildren(QCheckBox):

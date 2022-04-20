@@ -381,7 +381,7 @@ class Artemis(Core):
             output_file_ls = self.extract_pfs(input_path, output_folder, encoding)
         # 输出耗时
         timing_count = time.time() - start_time
-        self.emit_info(f'拆包完成，耗时{seconds_format(timing_count)}!\n请把游戏目录中类似script、movie等文件夹及*.ini文件也复制到：\n{output_folder}中')
+        self.emit_info(f'耗时{seconds_format(timing_count)}!')
         return output_file_ls
 
     def extract_pfs(self, pfs_file, output_folder, encoding='UTF-8') -> list:
@@ -391,7 +391,7 @@ class Artemis(Core):
         digest = hashlib.sha1(pfs.hash_data).digest()
         name_data_dict = {}
         for entry in pfs.entries:
-            file_path = output_folder / entry.file_name.decode(encoding)
+            file_path = output_folder/entry.file_name.decode(encoding)
             name_data_dict[file_path] = bytearray(entry.file_data)
         file_path_ls = self.pool_run(self.decrypt_pfs_and_save_file, name_data_dict.items(), digest)
         return file_path_ls

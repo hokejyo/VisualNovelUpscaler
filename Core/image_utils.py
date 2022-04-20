@@ -194,7 +194,7 @@ class ImageUtils(object):
                             if rename_sfx is not None:
                                 target_image_file = target_image_file.with_stem(target_image_file.stem+rename_sfx)
                             tmp_target_dict[tmp_stem] = target_image_file
-                            tmp_image_file = img_tmp_folder1 / (tmp_stem + image_file.suffix)
+                            tmp_image_file = img_tmp_folder1/(tmp_stem + image_file.suffix)
                             image_file.copy_as(tmp_image_file)
                             # 预处理
                             self._palette_png_pre_(tmp_image_file)
@@ -363,8 +363,8 @@ class ImageUtils(object):
             _percent = 0
             _lefe_time = 0
         else:
-            _progress = len_finished_image_list / len_org_image_ls
+            _progress = len_finished_image_list/len_org_image_ls
             passed_time = _now_time - _start_time
             _percent = int(_progress * 100)
-            _lefe_time = passed_time / _progress - passed_time
+            _lefe_time = passed_time/_progress - passed_time
         self.emit_progress(_percent, _lefe_time)

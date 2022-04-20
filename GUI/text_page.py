@@ -8,7 +8,7 @@ class TextPage(QFrame):
 
     def __init__(self):
         QFrame.__init__(self)
-        self.icon_folder = Path(sys.argv[0]).parent / 'Icons'
+        self.icon_folder = Path(sys.argv[0]).parent/'Icons'
         self.initUI()
         self.set_file_root_path('./')
 

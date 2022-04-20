@@ -420,7 +420,7 @@ class Kirikiri(Core):
                     re_result = re.match(pattern, line)
                     if re_result:
                         re_result_ls = list(re_result.groups())
-                        re_result_ls[1] = str(int(re_result_ls[1]) - int((self.scwidth * self.scale_ratio - self.scwidth) / 2))
+                        re_result_ls[1] = str(int(re_result_ls[1]) - int((self.scwidth * self.scale_ratio - self.scwidth)/2))
                         re_result_ls = [i for i in re_result_ls if i != None]
                         line = ''.join(re_result_ls)
                 # 大小修正
@@ -644,8 +644,8 @@ class Kirikiri(Core):
         pimg_json_file, output_folder = json_work_path
         pimg_en_p = subprocess.run([self.psb_en_exe, pimg_json_file], shell=True, cwd=output_folder, capture_output=True)
         # 重命名
-        tmp_pimg_file = output_folder / pimg_json_file.with_suffix('.pure.pimg').name
-        out_pimg_file = output_folder / pimg_json_file.with_suffix('.pimg').name
+        tmp_pimg_file = output_folder/pimg_json_file.with_suffix('.pure.pimg').name
+        out_pimg_file = output_folder/pimg_json_file.with_suffix('.pimg').name
         tmp_pimg_file.move_as(out_pimg_file)
         return out_pimg_file
 
@@ -750,7 +750,7 @@ class Kirikiri(Core):
                 tlg_tmp_folder = Path(tlg_tmp_folder)
                 tmp_target_dict = {}
                 for png_file, target_tlg in png_tlg_path_dict.items():
-                    tmp_png = tlg_tmp_folder / (self.create_str() + '.png')
+                    tmp_png = tlg_tmp_folder/(self.create_str() + '.png')
                     png_file.copy_as(tmp_png)
                     tmp_target_dict[tmp_png] = target_tlg
                 self.emit_info('请将弹出文件夹中的png图片拖入吉里吉里图像转换器窗口\n不要修改选项，确认处理完成后关闭吉里吉里图像转换器')
@@ -855,10 +855,10 @@ class Kirikiri(Core):
         amv_dict = {}
         for index_i, amv_file in enumerate(amv_file_ls, start=1):
             target_amv_file = amv_file.reio_path(input_dir, output_dir, mk_dir=True)
-            target_amv_dir = target_amv_file.parent / target_amv_file.stem
-            tmp_amv = self.amv_de_folder / ('%03d' % index_i + '.amv')
+            target_amv_dir = target_amv_file.parent/target_amv_file.stem
+            tmp_amv = self.amv_de_folder/('%03d' % index_i + '.amv')
             amv_file.copy_as(tmp_amv)
-            tmp_amv_dir = tmp_amv.parent / (tmp_amv.stem + 'frames')
+            tmp_amv_dir = tmp_amv.parent/(tmp_amv.stem + 'frames')
             amv_dict[tmp_amv] = (tmp_amv_dir, target_amv_dir, target_amv_file)
         return amv_dict
 
@@ -874,7 +874,7 @@ class Kirikiri(Core):
         result = json.dumps(amv_file_info, sort_keys=False, indent=2, ensure_ascii=False)
         tmp_amv.unlink()
         tmp_amv_dir.move_as(target_amv_dir)
-        with open(target_amv_dir.parent / (target_amv_dir.name + '.json'), 'w', newline='', encoding='utf-8') as amv_c:
+        with open(target_amv_dir.parent/(target_amv_dir.name + '.json'), 'w', newline='', encoding='utf-8') as amv_c:
             amv_c.write(result)
         return target_amv_dir
 

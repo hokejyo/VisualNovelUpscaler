@@ -4,6 +4,7 @@ from .qt_core import *
 from .flat_widgets import *
 from .kirikiri_part import KirikiriPart
 from .artemis_part import ArtemisPart
+from .majiro_part import MajiroPart
 
 
 class GamePage(QFrame):
@@ -43,6 +44,7 @@ class GamePage(QFrame):
     def setup_connections(self):
         self.kirikiri_btn.clicked.connect(self.switch_kirikiri)
         self.artemis_btn.clicked.connect(self.switch_artemis)
+        self.majiro_btn.clicked.connect(self.switch_majiro)
         self.select_input_folder_btn.clicked.connect(self.choose_input_folder)
         self.select_output_folder_btn.clicked.connect(self.choose_output_folder)
         self.select_input_folder_line_edit.textChanged.connect(self.auto_fill_output_folder)
@@ -56,8 +58,10 @@ class GamePage(QFrame):
         top_bar_layout.setSpacing(20)
         self.kirikiri_btn = FPushButton(text='KiriKiri 2/Z', height=self.top_bar.height(), btn_pressed='yellow', text_padding=0, text_align='center', border_direction='border', border_radius=15, border_width=3)
         self.artemis_btn = FPushButton(text='Artemis', height=self.top_bar.height(), btn_pressed='yellow', text_padding=0, text_align='center', border_direction='border', border_radius=15, border_width=3)
+        self.majiro_btn = FPushButton(text='Majiro', height=self.top_bar.height(), btn_pressed='yellow', text_padding=0, text_align='center', border_direction='border', border_radius=15, border_width=3)
         top_bar_layout.addWidget(self.kirikiri_btn)
         top_bar_layout.addWidget(self.artemis_btn)
+        top_bar_layout.addWidget(self.majiro_btn)
 
     def setup_input_folder(self):
         self.input_folder_frame = QFrame()
@@ -117,6 +121,10 @@ class GamePage(QFrame):
         self.artemis = ArtemisPart()
         self.artemis.setObjectName('Artemis')
         self.game_engine_area.addWidget(self.artemis)
+
+        self.majiro = MajiroPart()
+        self.majiro.setObjectName('Majiro')
+        self.game_engine_area.addWidget(self.majiro)
 
     def reset_engine_selection(self):
         for btn in self.top_bar.findChildren(QPushButton):
@@ -182,3 +190,9 @@ class GamePage(QFrame):
             self.reset_engine_selection()
             self.artemis_btn.set_active(True)
             self.game_engine_area.setCurrentWidget(self.artemis)
+
+    def switch_majiro(self):
+        if not self.majiro_btn.is_active:
+            self.reset_engine_selection()
+            self.majiro_btn.set_active(True)
+            self.game_engine_area.setCurrentWidget(self.majiro)
