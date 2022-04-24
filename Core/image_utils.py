@@ -283,8 +283,10 @@ class ImageUtils(object):
         return options, step_scale_ratio
 
     def _real_esrgan_options_and_step_scale_ratio(self, in_folder, out_folder):
-        if self.real_esrgan_model_name == 'RealESRGANv2-animevideo-xsx2':
+        if self.real_esrgan_model_name == 'realesr-animevideov3-x2':
             step_scale_ratio = 2
+        elif self.real_esrgan_model_name == 'realesr-animevideov3-x3':
+            step_scale_ratio = 3
         else:
             step_scale_ratio = 4
         options = [self.real_esrgan_exe,
