@@ -17,7 +17,6 @@ class MainUI(QMainWindow):
         QMainWindow.__init__(self)
         self.icon_folder = Path(sys.argv[0]).parent/'Icons'
         self.initUI()
-        
         # 设置标题栏能用鼠标拖动
         self.maincontent.top_bar.mouseMoveEvent = self.moveWindow
 
@@ -43,6 +42,7 @@ class MainUI(QMainWindow):
     def initUI(self):
         # 设置标题
         self.setWindowTitle('Visual Novel Upscaler')
+        self.setObjectName('mainwin')
         # 设置图标
         self.setWindowIcon(QIcon(str(self.icon_folder/'icon.ico')))
         # 移除标题栏
@@ -51,7 +51,7 @@ class MainUI(QMainWindow):
         # 改变尺寸
         self.resize(1080, 720)
         # 设置最小尺寸
-        self.setMinimumSize(950, 680)
+        self.setMinimumSize(1080, 720)
         self.setup_layouts()
         self.setup_pages()
         self.setup_connections()
@@ -61,7 +61,7 @@ class MainUI(QMainWindow):
         self.setStyleSheet("QFrame {border-radius: 15px;}")
         # 设置透明度
         self.setWindowOpacity(1)
-        # 显示页面2
+        # 显示默认页面
         self.show_image_page()
 
     def setup_layouts(self):

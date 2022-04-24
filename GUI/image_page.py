@@ -89,16 +89,18 @@ class ImagePage(QFrame):
         self.layout.addWidget(self.image_show_label)
 
     def get_image_list(self):
+        self.list_widget.clear()
         input_path = Path(self.input_line_edit.text().strip())
-        try:
-            self.list_widget.clear()
-            extension_list = [('.' + extension.strip().lower()) for extension in self.filter_line_edit.text().split(',')]
-            walk_mode = True if self.ignr_btn.isChecked() else False
-            image_list = [file_path for file_path in input_path.file_list(walk_mode=walk_mode) if file_path.suffix.lower() in extension_list]
-            for image_file in image_list:
-                self.list_widget.addItem(image_file.to_str)
-        except:
-            self.list_widget.clear()
+        if input_path.exists():
+            if input_path.is_dir():
+                extension_list = [('.' + extension.strip().lower()) for extension in self.filter_line_edit.text().split(',')]
+                walk_mode = True if self.ignr_btn.isChecked() else False
+                image_list = [file_path for file_path in input_path.file_list(walk_mode=walk_mode) if file_path.suffix.lower() in extension_list]
+                for image_file in image_list:
+                    self.list_widget.addItem(image_file.to_str)
+            elif input_path.is_file():
+                self.list_widget.addItem(input_path.to_str)
+            self.list_widget.setCurrentRow(0)
 
     def show_image(self):
         try:
@@ -106,7 +108,8 @@ class ImagePage(QFrame):
             image_show_pix = QPixmap(image_path).scaledToHeight(self.image_show_label.height(), Qt.SmoothTransformation)
             self.image_show_label.setPixmap(image_show_pix)
         except:
-            pass
+            warn_msg = QMessageBox()
+            reply = warn_msg.warning(self.ui, '提示', '无法读取该图片!', QMessageBox.Yes)
 
     def setup_in_out_folders(self):
         layout1 = QHBoxLayout()
@@ -173,6 +176,7 @@ class ImagePage(QFrame):
             self.run_btn.setDisabled(True)
             self.run_btn.setText('正在统计')
             self.run_btn.set_icon(self.icon_folder/'clock.svg')
+            self.status_progress_bar.setValue(0)
         elif state == 2:
             self.run_btn.setEnabled(True)
             self.run_btn.setText('开始处理')

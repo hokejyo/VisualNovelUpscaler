@@ -205,7 +205,7 @@ class ImageUtils(object):
                         # 未达指定倍数循环放大
                         while actual_scale_ratio < scale_ratio:
                             img_tmp_folder2.move_as(img_tmp_folder1)
-                            img_tmp_folder2.mk_dir(parents=True, exist_ok=True)
+                            img_tmp_folder2.mkdir(parents=True, exist_ok=True)
                             image_upscale_p = subprocess.run(options, capture_output=True, shell=True)
                             actual_scale_ratio *= step_scale_ratio
                         tmp_image_ls = img_tmp_folder2.file_list()

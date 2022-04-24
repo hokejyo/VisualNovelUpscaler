@@ -7,6 +7,7 @@ from .flat_widgets import *
 class MainContent(QFrame):
     def __init__(self):
         QFrame.__init__(self)
+        self.setObjectName('maincontent')
         self.icon_folder = Path(sys.argv[0]).parent/'Icons'
         self.theme = {'MainContent_background': '#282a36', 'MainContent_font': '#6272a4', 'MainContent_bar': '#21232d', }
         self.setStyleSheet(f"background-color: {self.theme['MainContent_background']};color: {self.theme['MainContent_font']}")

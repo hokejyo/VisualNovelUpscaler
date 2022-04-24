@@ -131,7 +131,7 @@ dmypy.json
 # 自定义
 /Dependencies
 /old_modules
-/config.ini
+/config*
 /test*
 /log.txt
 /VNTranslator

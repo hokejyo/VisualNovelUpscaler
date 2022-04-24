@@ -122,23 +122,9 @@ class Artemis(Core):
         tbl_file_ls = self.game_data.file_list('tbl')
         self.pool_run(self.windwos_tbl2x, tbl_file_ls)
 
-    def windows_xx_tbl2x(self, tbl_file):
-        '''
-        主要是字体修正
-        '''
-        keyn_ls = ['size', 'left', 'top', 'width', 'height', 'spacetop', 'spacemiddle', 'spacebottom', 'rubysize']
-        result = []
-        lines, current_encoding = self.get_lines_encoding(tbl_file)
-        for line in lines:
-            for keyn in keyn_ls:
-                pattern = re.compile(rf'(.*?\W+{keyn}\W+)(\d+)(.*)')
-                re_result = re.match(pattern, line)
-                if re_result:
-                    line = self.line_pattern_num2x(re_result)
-            result.append(line)
-        with open(self.a2p(tbl_file), 'w', newline='', encoding=current_encoding) as f:
-            for line in result:
-                f.write(line)
+    def _tbl_file2x(self,tbl_file):
+        ls1 = ['game_scale', 'game_wasmbar', 'fontsize', 'line_size', 'line_window', 'line_back', 'line_scroll', 'line_name01', 'line_name02']
+        pattern_rule1 = '(' + keyn1 + r'\W+?\{' + ')' + '(.*?)' + r'(\}.*)'
 
     def windwos_tbl2x(self, tbl_file):
         '''

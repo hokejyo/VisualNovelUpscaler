@@ -16,6 +16,9 @@ class TextPage(QFrame):
         self.setup_layouts()
         self.setup_connections()
 
+    def setup_connections(self):
+        pass
+
     def setup_layouts(self):
         self.main_layout = QVBoxLayout(self)
 
@@ -33,24 +36,11 @@ class TextPage(QFrame):
         layout.addWidget(self.lb1)
         layout.addWidget(self.lnedt)
 
-    def setup_text_tree_view(self):
-        self.text_tree_view = QTreeView()
-        self.text_layout.addWidget(self.text_tree_view)
-
-        self.file_model = QFileSystemModel()
-        self.text_tree_view.setModel(self.file_model)
-        self.text_tree_view.setSortingEnabled(True)
-        # self.text_tree_view.setAlternatingRowColors(True)
-        # self.text_tree_view.setMaximumWidth(250)
-        self.text_tree_view.setStyleSheet('background-color:#456')
-
-    def set_file_root_path(self, root_path):
-        self.file_model.setRootPath(root_path)
-        self.text_tree_view.setRootIndex(self.file_model.index(root_path))
+    
 
     def setup_text_area(self):
-        self.text_layout = QHBoxLayout()
-        self.main_layout.addLayout(self.text_layout)
+        self.text_layout = QSplitter(Qt.Horizontal)
+        self.main_layout.addWidget(self.text_layout)
 
         self.setup_text_tree_view()
 
@@ -63,5 +53,20 @@ class TextPage(QFrame):
         self.text_layout.addWidget(self.org_text_edit)
         self.text_layout.addWidget(self.edited_text_edit)
 
-    def setup_connections(self):
-        pass
+    
+
+    def setup_text_tree_view(self):
+        self.text_tree_view = QTreeView()
+        # self.text_tree_view = QTreeWidget()
+        self.text_layout.addWidget(self.text_tree_view)
+
+        self.file_model = QFileSystemModel()
+        self.text_tree_view.setModel(self.file_model)
+        self.text_tree_view.setSortingEnabled(True)
+        # self.text_tree_view.setAlternatingRowColors(True)
+        # self.text_tree_view.setMaximumWidth(250)
+        self.text_tree_view.setStyleSheet('background-color:#456')
+
+    def set_file_root_path(self, root_path):
+        self.file_model.setRootPath(root_path)
+        self.text_tree_view.setRootIndex(self.file_model.index(root_path))
