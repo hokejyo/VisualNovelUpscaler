@@ -111,25 +111,6 @@ class ImageUtils(object):
             input_path.unlink()
         return output_path
 
-    @staticmethod
-    def _palette_png_pre_(input_path) -> Path:
-        """
-        @brief      PALETTE PNG图片预处理为RGBA或RGB
-
-        @param      input_path  输入路径
-
-        @return     输出文件路径
-        """
-        if input_path.suffix.lower() == '.png':
-            img = Image.open(input_path)
-            if img.mode == 'P':
-                for chunk_tuple in png.Reader(filename=input_path).chunks():
-                    if b'tRNS' in chunk_tuple:
-                        img.convert('RGBA').save(input_path, quality=100)
-                        return input_path
-                img.convert('RGB').save(input_path, quality=100)
-                return input_path
-
     def image_upscale(self,
                       input_path,
                       output_folder,
@@ -182,6 +163,7 @@ class ImageUtils(object):
                     img_tmp_folder1 = Path(img_tmp_folder1)
                     with tempfile.TemporaryDirectory() as img_tmp_folder2:
                         img_tmp_folder2 = Path(img_tmp_folder2)
+                        pre_image_file_ls = []
                         # 避免不同文件夹重名文件错误覆盖
                         tmp_target_dict = {}
                         for image_file in group:
@@ -196,8 +178,11 @@ class ImageUtils(object):
                             tmp_target_dict[tmp_stem] = target_image_file
                             tmp_image_file = img_tmp_folder1/(tmp_stem + image_file.suffix)
                             image_file.copy_as(tmp_image_file)
-                            # 预处理
-                            self._palette_png_pre_(tmp_image_file)
+                            # # 预处理
+                            # self._palette_png_pre_(tmp_image_file)
+                            pre_image_file_ls.append(tmp_image_file)
+                        # 预处理
+                        self._img_pretreatment_(pre_image_file_ls, sr_engine)
                         # 放大tmp1到tmp2
                         options, step_scale_ratio = self._get_options_and_step_scale_ratio(img_tmp_folder1, img_tmp_folder2, sr_engine)
                         image_upscale_p = subprocess.run(options, capture_output=True, shell=True)
@@ -226,6 +211,10 @@ class ImageUtils(object):
         else:
             self.emit_progress(100, 0)
         return output_image_list
+
+    def _img_pretreatment_(self, pre_image_file_ls, sr_engine):
+        if sr_engine in ['real_cugan', 'real_esrgan', 'srmd_ncnn', 'realsr_ncnn']:
+            self.pool_run(self._palette_png_pre_, pre_image_file_ls)
 
     def _get_options_and_step_scale_ratio(self, in_folder, out_folder, sr_engine):
         if sr_engine == 'waifu2x_ncnn':
@@ -370,3 +359,22 @@ class ImageUtils(object):
             _percent = int(_progress * 100)
             _lefe_time = passed_time/_progress - passed_time
         self.emit_progress(_percent, _lefe_time)
+
+    @staticmethod
+    def _palette_png_pre_(input_path) -> Path:
+        """
+        @brief      PALETTE PNG图片预处理为RGBA或RGB
+
+        @param      input_path  输入路径
+
+        @return     输出文件路径
+        """
+        if input_path.suffix.lower() == '.png':
+            img = Image.open(input_path)
+            if img.mode == 'P':
+                for chunk_tuple in png.Reader(filename=input_path).chunks():
+                    if b'tRNS' in chunk_tuple:
+                        img.convert('RGBA').save(input_path, quality=100)
+                        return input_path
+                img.convert('RGB').save(input_path, quality=100)
+                return input_path
