@@ -64,7 +64,7 @@ class ImagePage(QFrame):
 
         self.filter_lab = QLabel('图片格式筛选：')
         self.filter_line_edit = FLineEdit(place_holder_text='使用英文逗号分隔图片格式')
-        self.filter_line_edit.setText('png,jpg,jpeg,bmp,tif,tiff,webp,tga')
+        self.filter_line_edit.setText('png,jpg,jpeg,bmp,webp,tif,tiff')
         self.set_formlayout.addRow(self.filter_lab, self.filter_line_edit)
 
         self.ignr_lb = QLabel('处理子文件夹：')

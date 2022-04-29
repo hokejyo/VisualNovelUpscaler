@@ -10,21 +10,25 @@ class TextsUtils(object):
 
     def get_encoding(self, text_file) -> str:
         """
-        @brief      获取文本编码
+        @brief      获取文本编码，获取不到返回None，优先从自定义编码列表中识别
 
         @param      text_file  文本文件路径
 
         @return     文本编码格式
         """
+        encoding = None
         with open(text_file, 'rb') as f:
             content_b = f.read()
-            for encoding in self.encoding_list:
+            for _encoding in self.encoding_list:
                 try:
-                    content_b.decode(encoding=encoding)
-                    return encoding
+                    content_b.decode(encoding=_encoding)
+                    encoding = _encoding
+                    break
                 except:
-                    continue
-            return 'Unknown_Encoding'
+                    pass
+            if encoding is None:
+                encoding = chardet.detect(content_b)
+            return encoding
 
     def get_lines_encoding(self, text_file):
         '''
@@ -36,6 +40,7 @@ class TextsUtils(object):
                 current_encoding = self.encoding
         except:
             current_encoding = self.get_encoding(text_file)
+            assert current_encoding != None, f'未能正确识别{text_file}的文本编码'
             with open(text_file, newline='', encoding=current_encoding) as f:
                 lines = f.readlines()
         return lines, current_encoding
@@ -59,8 +64,8 @@ class TextsUtils(object):
                     content_ls[i] = str(int(float(content_ls[i]) * scale_ratio))
             result.append(content_ls)
         with open(output_csv, 'w', newline='', encoding=current_encoding) as f:
-            content2x = csv.writer(f)
-            content2x.writerows(result)
+            csvwtr = csv.writer(f)
+            csvwtr.writerows(result)
 
     def line_pattern_num2x(self, re_result, test_mode=False, line=None) -> str:
         """
@@ -74,7 +79,7 @@ class TextsUtils(object):
         """
         return pattern_num2x(re_result, self.scale_ratio, test_mode=test_mode, line=line)
 
-    def sub_scale_num(self, match):
+    def _sub_scale_num(self, match):
         """
         @brief      用于放大正则替换匹配到的数字pattern.sub(self.sub_scale_num), line)，放大倍数为self.scale_ratio
 

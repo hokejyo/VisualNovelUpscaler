@@ -33,16 +33,16 @@ class Kirikiri(Core):
             self.patch_folder.mkdir(parents=True)
         # 开始放大
         if self.run_dict['script']:
-            self.script2x()
+            self._script2x()
             self.emit_info('文本文件处理完成')
         if self.run_dict['image']:
-            self.image2x()
+            self._image2x()
             self.emit_info('图片文件放大完成')
         if self.run_dict['animation']:
-            self.animation2x()
+            self._animation2x()
             self.emit_info('动画文件处理完成')
         if self.run_dict['video']:
-            self.video2x()
+            self._video2x()
             self.emit_info('视频文件处理完成')
         timing_count = time.time() - start_time
         self.emit_info(f'共耗时：{seconds_format(timing_count)}')
@@ -83,7 +83,7 @@ class Kirikiri(Core):
     ==================================================
     """
 
-    def script2x(self):
+    def _script2x(self):
         self.emit_info('开始处理游戏脚本......')
         self.tjs2x()
         self.ks2x()
@@ -110,7 +110,7 @@ class Kirikiri(Core):
                 try:
                     pass
                 except:
-                    pass
+                    self.emit_info(f'warning: {tjs_file}未能正确读取！')
 
     def ks2x(self):
         ks_file_ls = patch9_first(self.game_data.file_list('ks'))
@@ -123,7 +123,7 @@ class Kirikiri(Core):
                 try:
                     pass
                 except:
-                    pass
+                    self.emit_info(f'warning: {ks_file}未能正确读取！')
 
     def _config_tjs2x(self, tjs_file):
         '''
@@ -141,7 +141,7 @@ class Kirikiri(Core):
                        '点击等待位置左': ';glyphFixedLeft', '点击等待位置上': ';glyphFixedTop', '垂直书写余白': ';marginRCh'}
         # 读取文件，处理数值
         result = []
-        lines, current_encoding = self.get_lines_encoding(tjs_file)
+        lines, current_encoding = self._get_lines_encoding(tjs_file)
         for line in lines:
             for config_c in config_dict.values():
                 pattern1 = re.compile(rf'(^{config_c}\W+)(\d+)(\W+)(\d*)(.*)')
@@ -168,9 +168,9 @@ class Kirikiri(Core):
         kwds_ = '|'.join(kwds)
         ptn = re.compile(rf'(?<=(\W|^)({kwds_})(\W+|\b)(int\W+)?)(\d+)(?=\W|$)', re.IGNORECASE)
         result = []
-        lines, current_encoding = self.get_lines_encoding(tjs_file)
+        lines, current_encoding = self._get_lines_encoding(tjs_file)
         for line in lines:
-            line = ptn.sub(self.sub_scale_num, line)
+            line = ptn.sub(self._sub_scale_num, line)
             result.append(line)
         with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
             # tmp_count = 0
@@ -191,7 +191,7 @@ class Kirikiri(Core):
     #                     '纯色层1': r'(.*"width", )(\d+)(, "height", )(\d+)(.*color.*)',
     #                     '纯色层2和motion': r'(^\t*)("width"\D*|"height"\D*)(\d+)(\D*)'}
     #     result = []
-    #     lines, current_encoding = self.get_lines_encoding(tjs_file)
+    #     lines, current_encoding = self._get_lines_encoding(tjs_file)
     #     for line in lines:
     #         for i in pattern_dict.values():
     #             pattern = re.compile(i)
@@ -216,7 +216,7 @@ class Kirikiri(Core):
         '''
         result = []
         pattern_rule_keywords = ['fontheight', 'fontsize', 'linestep', 'linespace', 'linespacing']
-        lines, current_encoding = self.get_lines_encoding(tjs_file)
+        lines, current_encoding = self._get_lines_encoding(tjs_file)
         for line in lines:
             for rule_keyword in pattern_rule_keywords:
                 pattern = re.compile(rf'(.*?\W+)({rule_keyword})(\W+)(\d+)(.*)', re.IGNORECASE)
@@ -235,7 +235,7 @@ class Kirikiri(Core):
         result = []
         pattern1 = re.compile(r'(.*FaceThumbRect\W+)(\d+)(\W+)(\d+)(.*)')
         pattern2_rule_keywords = ['ox', 'oy', 'fontheight', 'fontsize', 'linestep', 'marginL', 'marginR', 'marginB', 'marginT', 'linespace', 'linespacing']
-        lines, current_encoding = self.get_lines_encoding(tjs_file)
+        lines, current_encoding = self._get_lines_encoding(tjs_file)
         for line in lines:
             # backlog头像裁剪
             re_result1 = re.match(pattern1, line)
@@ -260,7 +260,7 @@ class Kirikiri(Core):
         粒子效果修正
         '''
         result = []
-        lines, current_encoding = self.get_lines_encoding(tjs_file)
+        lines, current_encoding = self._get_lines_encoding(tjs_file)
         for line in lines:
             # 生成位置
             if 'genpos' in line:
@@ -285,7 +285,7 @@ class Kirikiri(Core):
         custom.ks文件处理，选择肢修正
         '''
         result = []
-        lines, current_encoding = self.get_lines_encoding(ks_file)
+        lines, current_encoding = self._get_lines_encoding(ks_file)
         for line in lines:
             # 选择肢位置、大小修正
             if 'select_normal' in line:
@@ -305,7 +305,7 @@ class Kirikiri(Core):
         '''
         keyn_ls = ['xpos', 'width', 'height', 'ypos', 'movex', 'movey', 'zoom', 'movx', 'movy', 'shiftx', 'shifty', 'camerazoom']
         result = []
-        lines, current_encoding = self.get_lines_encoding(ks_file)
+        lines, current_encoding = self._get_lines_encoding(ks_file)
         for line in lines:
             for keyn in keyn_ls:
                 pattern_rule = rf'(.*?)({keyn})(\W+)(\d+)(\W+)(\d*)(.*)'
@@ -338,7 +338,7 @@ class Kirikiri(Core):
         # asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         for asd_file in asd_file_ls:
             result = []
-            lines, current_encoding = self.get_lines_encoding(asd_file)
+            lines, current_encoding = self._get_lines_encoding(asd_file)
             for line in lines:
                 line = line.replace('\r\n', '')
                 tmp_ls = line.split(' ')
@@ -412,7 +412,7 @@ class Kirikiri(Core):
         stand_file_ls = patch9_first(self.game_data.file_list('stand'))
         for stand_file in stand_file_ls:
             result = []
-            lines, current_encoding = self.get_lines_encoding(stand_file)
+            lines, current_encoding = self._get_lines_encoding(stand_file)
             pattern = re.compile(r'(.*?)(-?\d+)(.*)')
             for line in lines:
                 # 水平方向位置修正
@@ -443,7 +443,7 @@ class Kirikiri(Core):
         pattern = re.compile(r'(.*?)(-?\d+)(.*)')
         for stand_file in stand_file_ls:
             result = []
-            lines, current_encoding = self.get_lines_encoding(stand_file)
+            lines, current_encoding = self._get_lines_encoding(stand_file)
             for line in lines:
                 # 水平方向位置修正
                 if 'facexoff' in line:
@@ -523,13 +523,24 @@ class Kirikiri(Core):
             result = zlib.decompress(content[0x15:]).decode('UTF-16')
         return mode, result
 
+    def _get_lines_encoding(self, text_file):
+        # 获取行列表和编码
+        try:
+            lines, current_encoding = self.get_lines_encoding(text_file)
+        except:
+            mode, content = self._decrypt_text(text_file)
+            current_encoding = self.encoding
+            with PrivateStringIO(content) as _f:
+                lines = _f.readlines()
+        return lines, current_encoding
+
     """
     ==================================================
     Kirikiri引擎图片文件：pimg, tlg, png, jpg, jpeg, bmp, webp, eri
     ==================================================
     """
 
-    def image2x(self):
+    def _image2x(self):
         self.emit_info('开始处理游戏图片......')
         self._general_image2x()
         self.emit_info('常规图片处理完成')
@@ -803,7 +814,7 @@ class Kirikiri(Core):
     ==================================================
     """
 
-    def animation2x(self):
+    def _animation2x(self):
         self.emit_info('开始处理游戏动画......')
         self._amv2x()
         # self._psb2x()
@@ -821,79 +832,116 @@ class Kirikiri(Core):
             self.emit_info('swf这东西没见过有游戏用过，有需求再加进去')
 
     def _amv2x(self):
-        ori_amv_file_ls = patch9_first(self.game_data.file_list('amv'))
-        if ori_amv_file_ls:
+        org_amv_file_ls = patch9_first(self.game_data.file_list('amv'))
+        if org_amv_file_ls:
             with tempfile.TemporaryDirectory() as tmp_folder:
                 self.tmp_folder = Path(tmp_folder)
-                amv_file_ls = [amv_file.copy_as(self.a2t(amv_file)) for amv_file in ori_amv_file_ls]
+                amv_file_ls = [amv_file.copy_as(self.a2t(amv_file)) for amv_file in org_amv_file_ls]
                 self.emit_info('AMV动画拆帧中......')
-                png_sequence_folder_ls = self.amv2png(self.tmp_folder, self.tmp_folder)
+                amv_json_path_ls = self.amv2png_batch(self.tmp_folder, self.tmp_folder)
                 [amv_file.unlink() for amv_file in amv_file_ls]
                 self.emit_info('AMV动画拆帧完成，正在放大中......')
                 self.image_upscale(self.tmp_folder, self.tmp_folder, self.scale_ratio, 'png', video_mode=True)
                 self.emit_info('AMV动画组装中......')
-                scaled_amv_file_ls = self.png2amv(self.tmp_folder, self.patch_folder)
+                self.png2amv_batch(self.tmp_folder, self.patch_folder)
 
-    def amv2png(self, input_dir, output_dir) -> list:
+    def amv2png_batch(self, input_path, output_folder) -> list:
         """
-        @brief      拆amv为png和json，json记录帧率等数据
+        @brief      amv转png序列
 
-        @param      input_dir   The input dir
-        @param      output_dir  The output dir
+        @param      input_path     The input path
+        @param      output_folder  The output folder
 
-        @return     图片序列文件夹列表
+        @return     存储amv帧率等文件头信息的json文件路径列表
         """
-        input_dir = Path(input_dir)
-        output_dir = Path(output_dir)
-        amv_dict = self._amv2png_pre(input_dir, output_dir)
-        target_amv_dirs = self.pool_run(self._amv_de, amv_dict.items())
-        return target_amv_dirs
+        input_path = Path(input_path)
+        output_folder = Path(output_folder)
+        amv_out_path_dict = {}
+        if input_path.is_file():
+            out_dir = input_path.reio_path(input_path.parent, output_folder, mk_dir=True).parent
+            amv_out_path_dict[input_path] = out_dir
+        else:
+            amv_file_ls = input_path.file_list('amv')
+            for amv_file in amv_file_ls:
+                out_dir = amv_file.reio_path(input_path, output_folder, mk_dir=True).parent
+                amv_out_path_dict[amv_file] = out_dir
+        out_amv_json_file_ls = self.pool_run(self._amv_de, amv_out_path_dict.items())
+        return out_amv_json_file_ls
 
-    def _amv2png_pre(self, input_dir, output_dir) -> dict:
-        amv_file_ls = input_dir.file_list('amv')
-        self.amv_de_folder.sweep()
-        amv_dict = {}
-        for index_i, amv_file in enumerate(amv_file_ls, start=1):
-            target_amv_file = amv_file.reio_path(input_dir, output_dir, mk_dir=True)
-            target_amv_dir = target_amv_file.parent/target_amv_file.stem
-            tmp_amv = self.amv_de_folder/('%03d' % index_i + '.amv')
-            amv_file.copy_as(tmp_amv)
-            tmp_amv_dir = tmp_amv.parent/(tmp_amv.stem + 'frames')
-            amv_dict[tmp_amv] = (tmp_amv_dir, target_amv_dir, target_amv_file)
-        return amv_dict
-
-    def _amv_de(self, amv_tuple) -> Path:
-        '''
-        拆分amv动画为png序列
-        '''
-        tmp_amv = amv_tuple[0]
-        tmp_amv_dir = amv_tuple[1][0]
-        target_amv_dir = amv_tuple[1][1]
+    def _amv_de(self, amv_out_path) -> Path:
+        # 拆分amv，返回存储amv文件头信息的json文件路径
+        amv_path, out_dir = amv_out_path
+        out_sequence = out_dir/amv_path.stem
+        amv_json = out_dir/(amv_path.stem + '.json')
+        tmp_amv = self.amv_de_folder/(self.create_str() + '.amv')
+        amv_path.copy_as(tmp_amv)
         amv_de_p = subprocess.run([self.amv_de_exe, '-amvpath=' + tmp_amv.to_str], capture_output=True, shell=True)
+        tmp_amv_dir = tmp_amv.parent/(tmp_amv.stem + 'frames')
+        tmp_amv_dir.move_as(out_sequence)
+        # 写入amv信息
         amv_file_info = self._get_amv_file_info(tmp_amv)
         result = json.dumps(amv_file_info, sort_keys=False, indent=2, ensure_ascii=False)
-        tmp_amv.unlink()
-        tmp_amv_dir.move_as(target_amv_dir)
-        with open(target_amv_dir.parent/(target_amv_dir.name + '.json'), 'w', newline='', encoding='utf-8') as amv_c:
+        with open(amv_json, 'w', newline='', encoding='utf-8') as amv_c:
             amv_c.write(result)
-        return target_amv_dir
+        tmp_amv.unlink()
+        return amv_json
 
     @staticmethod
     def _get_amv_file_info(amv_file) -> dict:
+        # 获取amv动画信息
         amv_file_info = dict(AMVStruct.parse_file(amv_file).header)
         amv_file_info.pop('_io')
         for i, j in amv_file_info.items():
             amv_file_info[i] = str(j)
-        amv_file_info['type'] = 'amv'
         return amv_file_info
 
-    def _amv_en(self, amv_dict_item):
-        '''
-        将png序列合并为amv动画
-        '''
-        png_sequence_folder = Path(amv_dict_item[0])
-        target_amv = Path(amv_dict_item[1][0])
-        frame_rate = str(amv_dict_item[1][1])
+    def png2amv_batch(self, input_path, output_folder) -> list:
+        """
+        @brief      从拆分amv得到的json合并回amv
+
+        @param      input_path     The input path
+        @param      output_folder  The input folder
+
+        @return     amv路径列表
+        """
+        input_path = Path(input_path)
+        output_folder = Path(output_folder)
+        json_amv_path_dict = {}
+        if input_path.is_file():
+            assert self._is_amv_json_legal(input_path), '合并amv所需的json文件不合法或其对应的图片序列不存在!'
+            out_amv = input_path.reio_path(input_path.parent, output_folder, mk_dir=True).with_suffix('.amv')
+            json_amv_path_dict[input_path] = out_amv
+        else:
+            amv_json_file_ls = [amv_json_file for amv_json_file in input_path.file_list('json') if self._is_amv_json_legal(amv_json_file)]
+            for amv_json_file in amv_json_file_ls:
+                out_amv = amv_json_file.reio_path(input_path, output_folder, mk_dir=True).with_suffix('.amv')
+                json_amv_path_dict[amv_json_file] = out_amv
+        out_amv_file_ls = self.pool_run(self._amv_en, json_amv_path_dict.items())
+        return out_amv_file_ls
+
+    @staticmethod
+    def _is_amv_json_legal(amv_json_file) -> bool:
+        # 检查amv_json是否合法
+        is_leagl = False
+        try:
+            with open(amv_json_file, newline='', encoding='utf-8') as f:
+                # 读取文件内容
+                content = json.load(f)
+                # 是否是amv_json
+                if content['magic'] == "b'AJPM'":
+                    # png序列是否存在
+                    png_sequence_folder = amv_json_file.with_suffix('')
+                    if png_sequence_folder.exists():
+                        is_leagl = True
+        except:
+            pass
+        return is_leagl
+
+    def _amv_en(self, json_amv_path) -> Path:
+        # 从拆分amv得到的json合并回amv
+        amv_json_file, out_amv = json_amv_path
+        png_sequence_folder = amv_json_file.with_suffix('')
+        amv_frame_rate = self._get_amv_frame_rate(amv_json_file)
         # 防乱码和空格及特殊字符
         with tempfile.TemporaryDirectory() as tmp_folder:
             tmp_folder = Path(tmp_folder)
@@ -902,34 +950,23 @@ class Kirikiri(Core):
             # 运行
             options = [self.amv_en_exe,
                        '--png', '--zlib',
-                       '--rate', frame_rate,
+                       '--rate', amv_frame_rate,
                        '--quality', '100',
                        tmp_folder, tmp_amv
                        ]
             amv_en_p = subprocess.run(options, capture_output=True, shell=True)
             # 改名
-            tmp_amv.move_as(target_amv)
-        return target_amv
+            tmp_amv.move_as(out_amv)
+            return out_amv
 
-    def png2amv(self, input_folder, output_folder):
-        input_folder = Path(input_folder)
-        output_folder = Path(output_folder)
-        amv_json_file_ls = input_folder.file_list('json')
-        amv_en_dict = {}
-        for amv_json_file in amv_json_file_ls:
-            try:
-                with open(amv_json_file, newline='', encoding='utf-8') as f:
-                    # 读取文件内容
-                    content = json.load(f)
-                    if content['type'] == 'amv':
-                        # png序列
-                        png_sequence_folder = amv_json_file.with_suffix('')
-                        target_amv = amv_json_file.reio_path(input_folder, output_folder, mk_dir=True).with_suffix('.amv')
-                        amv_en_dict[png_sequence_folder] = (target_amv, content['frame_rate'])
-            except:
-                pass
-        target_amv_file_ls = self.pool_run(self._amv_en, amv_en_dict.items())
-        return target_amv_file_ls
+    @staticmethod
+    def _get_amv_frame_rate(amv_json_file) -> str:
+        # 获取amv帧率
+        with open(amv_json_file, newline='', encoding='utf-8') as f:
+            # 读取文件内容
+            content = json.load(f)
+            amv_frame_rate = content['frame_rate']
+            return amv_frame_rate
 
     """
     ==================================================
@@ -937,7 +974,7 @@ class Kirikiri(Core):
     ==================================================
     """
 
-    def video2x(self):
+    def _video2x(self):
         self.emit_info('开始处理游戏视频......')
         video_extension_ls = ['mpg', 'mpeg', 'wmv', 'avi', 'mkv', 'mp4']
         for video_extension in video_extension_ls:

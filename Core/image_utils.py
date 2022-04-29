@@ -213,6 +213,7 @@ class ImageUtils(object):
         return output_image_list
 
     def _img_pretreatment_(self, pre_image_file_ls, sr_engine):
+        # 预处理
         if sr_engine in ['real_cugan', 'real_esrgan', 'srmd_ncnn', 'realsr_ncnn']:
             self.pool_run(self._palette_png_pre_, pre_image_file_ls)
 
@@ -362,13 +363,7 @@ class ImageUtils(object):
 
     @staticmethod
     def _palette_png_pre_(input_path) -> Path:
-        """
-        @brief      PALETTE PNG图片预处理为RGBA或RGB
-
-        @param      input_path  输入路径
-
-        @return     输出文件路径
-        """
+        # PALETTE PNG图片预处理为RGBA或RGB
         if input_path.suffix.lower() == '.png':
             img = Image.open(input_path)
             if img.mode == 'P':

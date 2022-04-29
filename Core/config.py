@@ -20,7 +20,7 @@ class Config(object):
             self.vnu_config.add_section('General')
             self.vnu_config.set('General', 'cpu_cores', str(int(cpu_count()/2)))
             self.vnu_config.set('General', 'gpu_id', '0')
-            self.vnu_config.set('General', 'encoding_list', 'Shift_JIS,UTF-8,GBK,UTF-16,CP932')
+            self.vnu_config.set('General', 'encoding_list', 'Shift_JIS,UTF-8,GBK,UTF-16')
             # 图片设置
             self.vnu_config.add_section('Image')
             self.vnu_config.set('Image', 'image_sr_engine', 'waifu2x_ncnn')

@@ -19,6 +19,6 @@ PF8Struct = Struct(
         )
     ),
     'hash_data'/Pointer(7, Bytes(this.header.hash_data_size)),
-    # 'checksum'/Checksum(Bytes(64), lambda data: hashlib.sha1(data).digest(),
+    # 'checksum'/Checksum(Bytes(64), lambda this: hashlib.sha1(this.hash_data).digest(),
     #                       this.hash_data),
 )

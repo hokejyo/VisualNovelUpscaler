@@ -379,15 +379,15 @@ class Artemis(Core):
         for entry in pfs.entries:
             file_path = output_folder/entry.file_name.decode(encoding)
             name_data_dict[file_path] = bytearray(entry.file_data)
-        file_path_ls = self.pool_run(self.decrypt_pfs_and_save_file, name_data_dict.items(), digest)
+        file_path_ls = self.pool_run(self._decrypt_pfs_and_save_file, name_data_dict.items(), digest)
         return file_path_ls
 
-    def decrypt_pfs_and_save_file(self, entry_item, digest) -> Path:
+    def _decrypt_pfs_and_save_file(self, entry_item, digest) -> Path:
         file_path = entry_item[0]
         contents = entry_item[1]
         len_contents = len(contents)
         len_digest = len(digest)
-        new_file_data = self.decrypt_pfs_contents(contents, digest, len_contents, len_digest)
+        new_file_data = self._decrypt_pfs_contents(contents, digest, len_contents, len_digest)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, 'wb') as f:
             f.write(new_file_data)
@@ -395,7 +395,7 @@ class Artemis(Core):
 
     # @staticmethod
     @jit(fastmath=True)
-    def decrypt_pfs_contents(self, contents, digest, len_contents, len_digest):
+    def _decrypt_pfs_contents(self, contents, digest, len_contents, len_digest):
         for i in range(len_contents):
             contents[i] ^= digest[i % len_digest]
         return contents

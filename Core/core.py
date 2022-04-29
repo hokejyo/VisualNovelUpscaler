@@ -14,6 +14,7 @@ class Core(Config, TextsUtils, ImageUtils, VideoUtils):
 
     def __init__(self):
         Config.__init__(self)
+        self.encoding = 'UTF-8'
 
     def set_vn_hd_io_folder(self, game_data, patch_folder):
         self.game_data = Path(game_data)

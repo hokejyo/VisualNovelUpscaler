@@ -222,13 +222,13 @@ class GamePageRunner(QThread):
                     self.finish_sig.emit('pimg转换完成!')
             # amv动画格式转换
             elif ugk.amv_cvt_btn.isChecked():
-                if self.path_pass():
+                if self.path_pass(only_folder=False):
                     input_format = ugk.amv_in.currentText()
                     output_format = ugk.amv_out.currentText()
                     if input_format == 'amv' and output_format == 'json&png':
-                        kirikiri.amv2png(self.vnu.input_path, self.vnu.output_folder)
+                        kirikiri.amv2png_batch(self.vnu.input_path, self.vnu.output_folder)
                     elif input_format == 'json&png' and output_format == 'amv':
-                        kirikiri.png2amv(self.vnu.input_path, self.vnu.output_folder)
+                        kirikiri.png2amv_batch(self.vnu.input_path, self.vnu.output_folder)
                     self.finish_sig.emit('amv转换完成!')
             elif ugk.flat_patch_btn.isChecked():
                 if self.path_pass():
