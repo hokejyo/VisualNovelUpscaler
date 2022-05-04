@@ -17,7 +17,9 @@ class TextPage(QFrame):
         self.setup_connections()
 
     def setup_connections(self):
-        pass
+        self.text_tree_view.selectionModel().currentChanged.connect(self.show_text)
+        # self.text_tree_view.clicked.connect(self.show_text)
+        self.text_tree_view.doubleClicked.connect(self.changed_root_dir)
 
     def setup_layouts(self):
         self.main_layout = QVBoxLayout(self)
@@ -36,8 +38,6 @@ class TextPage(QFrame):
         layout.addWidget(self.lb1)
         layout.addWidget(self.lnedt)
 
-    
-
     def setup_text_area(self):
         self.text_layout = QSplitter(Qt.Horizontal)
         self.main_layout.addWidget(self.text_layout)
@@ -53,20 +53,33 @@ class TextPage(QFrame):
         self.text_layout.addWidget(self.org_text_edit)
         self.text_layout.addWidget(self.edited_text_edit)
 
-    
-
     def setup_text_tree_view(self):
         self.text_tree_view = QTreeView()
-        # self.text_tree_view = QTreeWidget()
         self.text_layout.addWidget(self.text_tree_view)
 
         self.file_model = QFileSystemModel()
         self.text_tree_view.setModel(self.file_model)
-        self.text_tree_view.setSortingEnabled(True)
-        # self.text_tree_view.setAlternatingRowColors(True)
-        # self.text_tree_view.setMaximumWidth(250)
-        self.text_tree_view.setStyleSheet('background-color:#456')
+        for i in range(1, self.file_model.columnCount()):
+            self.text_tree_view.hideColumn(i)
+        self.text_tree_view.setSortingEnabled(False)
+        # self.text_tree_view.setStyleSheet('background-color:#456')
 
     def set_file_root_path(self, root_path):
         self.file_model.setRootPath(root_path)
         self.text_tree_view.setRootIndex(self.file_model.index(root_path))
+
+    def show_text(self, current):
+        file_path = Path(self.text_tree_view.model().filePath(current))
+        if file_path.exists() and file_path.is_file():
+            try:
+                with open(file_path, 'r') as f:
+                    content = f.read()
+                    self.org_text_edit.setPlainText(content)
+            except:
+                self.org_text_edit.setPlainText('无法打开此文件')
+
+    def changed_root_dir(self, current):
+        file_path = Path(self.text_tree_view.model().filePath(current))
+        print(file_path)
+        if file_path.exists() and file_path.is_dir():
+            self.set_file_root_path(str(file_path))

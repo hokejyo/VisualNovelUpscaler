@@ -58,7 +58,7 @@ class MainUI(QMainWindow):
         self.move_to_center()
         self.is_maxed = False
         # 设置圆角
-        self.setStyleSheet("QFrame {border-radius: 15px;}")
+        self.setStyleSheet("QFrame {border-radius: 15px};")
         # 设置透明度
         self.setWindowOpacity(1)
         # 显示默认页面

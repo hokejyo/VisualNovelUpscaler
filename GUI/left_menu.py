@@ -8,8 +8,8 @@ class LeftMenu(QFrame):
     def __init__(self):
         QFrame.__init__(self)
         self.icon_folder = Path(sys.argv[0]).parent/'Icons'
+        # self.setStyleSheet("background-color: #44475a; border-radius: 15px;")
         self.setStyleSheet("background-color: #44475a")
-        # self.setStyleSheet("background-color: #647A54")
         self.setup_layouts()
         self.setup_connections()
 

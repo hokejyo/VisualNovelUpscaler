@@ -8,7 +8,7 @@ from .sr_engine_settings import *
 class SettingPage(QFrame):
     def __init__(self):
         QFrame.__init__(self)
-        self.theme = {'MainContent_background': '#282a36', 'MainContent_font': '#6272a4', 'MainContent_bar': '#21232d', }
+        # self.theme = {'MainContent_background': '#282a36', 'MainContent_font': '#6272a4', 'MainContent_bar': '#21232d', }
         self.sr_engine_list = ['waifu2x_ncnn',
                                'real_cugan',
                                'real_esrgan',

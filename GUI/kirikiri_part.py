@@ -128,19 +128,20 @@ class KirikiriPart(FTabWidget):
         layout2.addWidget(self.video_part)
         layout2.addLayout(hlayout)
 
-        self.patch_mode_lb = QLabel('高清补丁输出：')
-        self.keep_mode_btn = QCheckBox('保持目录结构')
-        layout1.addRow(self.patch_mode_lb, self.keep_mode_btn)
-        self.keep_mode_btn.setChecked(True)
-        self.keep_mode_btn.setDisabled(True)
+        self.other_setting_lb = QLabel('高级处理选项：')
+        self.upscale_fg_btn = QCheckBox('处理立绘文件(实验性功能)')
+        layout1.addRow(self.other_setting_lb, self.upscale_fg_btn)
+        self.upscale_fg_btn.setChecked(False)
+        # self.upscale_fg_btn.setDisabled(True)
 
     def setup_work_up(self):
         self.work_up_frame = QFrame()
         self.work_up_layout = QFormLayout(self.work_up_frame)
         self.work_up_layout.setContentsMargins(15, 25, 15, 0)
-        self.work_up_layout.setSpacing(15)
+        self.work_up_layout.setSpacing(10)
 
         self.setup_stand_correction()
+        self.setup_scn_cvt()
         self.setup_tlg_converter()
         self.setup_pimg_cvt()
         self.setup_amv_cvt()
@@ -148,6 +149,7 @@ class KirikiriPart(FTabWidget):
 
         self.work_up_group = QButtonGroup()
         self.work_up_group.addButton(self.stand_crt_btn)
+        self.work_up_group.addButton(self.scn_cvt_btn)
         self.work_up_group.addButton(self.tlg_convert_btn)
         self.work_up_group.addButton(self.pimg_cvt_btn)
         self.work_up_group.addButton(self.amv_cvt_btn)
@@ -210,6 +212,33 @@ class KirikiriPart(FTabWidget):
                 self.pimg_out.clear()
                 self.pimg_out.addItems(['pimg'])
         self.pimg_cvt_btn.setChecked(True)
+
+    def setup_scn_cvt(self):
+        self.scn_cvt_btn = QRadioButton('SCN格式转换：')
+        layout = QHBoxLayout()
+        self.work_up_layout.addRow(self.scn_cvt_btn, layout)
+        self.scn_in_label = QLabel('输入格式：')
+        self.scn_in = QComboBox()
+        self.scn_in.addItems(['scn', 'json'])
+        self.scn_out_label = QLabel('输出格式：')
+        self.scn_out = QComboBox()
+        self.scn_out.addItems(['json'])
+        layout.addWidget(self.scn_in_label)
+        layout.addWidget(self.scn_in)
+        layout.addWidget(self.scn_out_label)
+        layout.addWidget(self.scn_out)
+        sapcer = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        layout.addItem(sapcer)
+
+    def change_scn_out(self):
+        match self.scn_in.currentText():
+            case 'scn':
+                self.scn_out.clear()
+                self.scn_out.addItems(['json'])
+            case 'json':
+                self.scn_out.clear()
+                self.scn_out.addItems(['scn'])
+        self.scn_cvt_btn.setChecked(True)
 
     def setup_stand_correction(self):
         self.stand_crt_btn = QRadioButton('对话框头像调整：')
@@ -279,18 +308,19 @@ class KirikiriPart(FTabWidget):
         self.tlg_in.currentTextChanged.connect(self.change_tlg_out)
         self.amv_in.currentTextChanged.connect(self.change_amv_out)
         self.pimg_in.currentTextChanged.connect(self.change_pimg_out)
+        self.scn_in.currentTextChanged.connect(self.change_scn_out)
         self.crt_ratio.textChanged.connect(self.check_stand_crt_btn)
         self.crt_movex.textChanged.connect(self.check_stand_crt_btn)
 
     def select_all_part(self):
         for check_box in self.select_run_parts_frame.findChildren(QCheckBox):
-            if check_box is self.keep_mode_btn:
+            if check_box is self.upscale_fg_btn:
                 continue
             check_box.setChecked(True)
 
     def select_none_part(self):
         for check_box in self.select_run_parts_frame.findChildren(QCheckBox):
-            if check_box is self.keep_mode_btn:
+            if check_box is self.upscale_fg_btn:
                 continue
             check_box.setChecked(False)
 

@@ -13,6 +13,8 @@ class Kirikiri(Core):
         self.__class__.game_ui_runner = game_ui_runner
         self.encoding = 'Shift_JIS'
         self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
+        # 是否处理立绘相关文件(实验性功能)
+        self.upscale_fg = False
 
     def emit_info(self, info_str):
         print(info_str)
@@ -90,8 +92,9 @@ class Kirikiri(Core):
         self.uicsv2x()
         self.asd2x()
         self.stand2x()
-        self.fg_text2x()
-        # self.scn2x()
+        if self.upscale_fg:
+            self.fg_text2x()
+        # self._scn2x()
 
     def tjs2x(self):
         tjs_file_ls = patch9_first(self.game_data.file_list('tjs'))
@@ -99,7 +102,10 @@ class Kirikiri(Core):
             if tjs_file.name == 'Config.tjs':
                 self._config_tjs2x(tjs_file)
             elif tjs_file.name == 'envinit.tjs':
-                self._envinit_tjs2x(tjs_file)
+                if self.upscale_fg:
+                    self._envinit_tjs2x(tjs_file)
+                else:
+                    self._envinit2x_old(tjs_file)
             elif tjs_file.name == 'custom.tjs':
                 self.customtjs2x(tjs_file)
             elif tjs_file.name == 'default.tjs':
@@ -183,32 +189,32 @@ class Kirikiri(Core):
                 #     continue
                 f.write(line)
 
-    # def envinit2x(self, tjs_file):
-    #     '''
-    #     envinit.tjs文件处理，图层修改，开启对话框头像修正模式
-    #     '''
-    #     pattern_dict = {'amv动画和粒子效果显示层': r'(.*width:)(\d+)(.*height:)(\d+)(.*)(amovie|particle)(.*)',
-    #                     '纯色层1': r'(.*"width", )(\d+)(, "height", )(\d+)(.*color.*)',
-    #                     '纯色层2和motion': r'(^\t*)("width"\D*|"height"\D*)(\d+)(\D*)'}
-    #     result = []
-    #     lines, current_encoding = self._get_lines_encoding(tjs_file)
-    #     for line in lines:
-    #         for i in pattern_dict.values():
-    #             pattern = re.compile(i)
-    #             re_result = re.match(pattern, line)
-    #             if re_result:
-    #                 line = self.line_pattern_num2x(re_result)
-    #         result.append(line)
-    #     with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
-    #         tmp_count = 0
-    #         for line in result:
-    #             # 开启对话框头像位置修正模式，使对stand文件的修改生效
-    #             if 'autoFaceShow' in line and tmp_count == 0:
-    #                 f.write('\t"facePosMode", 1,\r\n')
-    #                 tmp_count = 1
-    #             if line.startswith('\t"facePosMode'):
-    #                 continue
-    #             f.write(line)
+    def _envinit2x_old(self, tjs_file):
+        '''
+        envinit.tjs文件处理，图层修改，开启对话框头像修正模式
+        '''
+        pattern_dict = {'amv动画和粒子效果显示层': r'(.*width:)(\d+)(.*height:)(\d+)(.*)(amovie|particle)(.*)',
+                        '纯色层1': r'(.*"width", )(\d+)(, "height", )(\d+)(.*color.*)',
+                        '纯色层2和motion': r'(^\t*)("width"\D*|"height"\D*)(\d+)(\D*)'}
+        result = []
+        lines, current_encoding = self._get_lines_encoding(tjs_file)
+        for line in lines:
+            for i in pattern_dict.values():
+                pattern = re.compile(i)
+                re_result = re.match(pattern, line)
+                if re_result:
+                    line = self.line_pattern_num2x(re_result)
+            result.append(line)
+        with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
+            tmp_count = 0
+            for line in result:
+                # 开启对话框头像位置修正模式，使对stand文件的修改生效
+                if 'autoFaceShow' in line and tmp_count == 0:
+                    f.write('\t"facePosMode", 1,\r\n')
+                    tmp_count = 1
+                if line.startswith('\t"facePosMode'):
+                    continue
+                f.write(line)
 
     def customtjs2x(self, tjs_file):
         '''
@@ -333,9 +339,11 @@ class Kirikiri(Core):
         '''
         asd_keyword_list = ['clipleft', 'cliptop', 'clipwidth', 'clipheight', 'left',
                             'top', 'height', 'weight', 'dx', 'dy', 'dw', 'dh', 'sx', 'sy', 'sw', 'sh', 'x', 'y']
-        asd_file_ls = patch9_first(self.game_data.file_list('asd'))
-        # 忽略人物表情处理，这东西不需要改，改了反而不正常
-        # asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+        if self.upscale_fg:
+            asd_file_ls = patch9_first(self.game_data.file_list('asd'))
+        else:
+            # 忽略人物表情处理，这东西不需要改，改了反而不正常
+            asd_file_ls = patch9_first(self.game_data.file_list('asd', ignored_folders=['emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         for asd_file in asd_file_ls:
             result = []
             lines, current_encoding = self._get_lines_encoding(asd_file)
@@ -355,38 +363,89 @@ class Kirikiri(Core):
                 for line in result:
                     f.write(line)
 
-    def scn2x(self):
+    def _scn2x(self):
         ori_scn_file_ls = patch9_first(self.game_data.file_list('scn'))
         if ori_scn_file_ls:
             with tempfile.TemporaryDirectory() as tmp_folder:
                 self.tmp_folder = Path(tmp_folder)
-
                 scn_file_ls = [scn_file.copy_as(self.a2t(scn_file)) for scn_file in ori_scn_file_ls]
-                self.emit_info('开始拆分scn')
-                self.pool_run(self.scn_de, scn_file_ls)
 
-                # 获得json文件列表并删除原scn
-                scn_json_file_ls = []
-                for scn_file in scn_file_ls:
-                    scn_json_file_ls.append(scn_file.with_suffix('.json'))
-                    scn_file.unlink()
+                self.emit_info('开始拆分scn')
+                scn_json_file_ls = self.scn_de_batch(self.tmp_folder, self.tmp_folder)
+
                 self.emit_info('开始处理scn坐标')
                 self.pool_run(self.scn_json2x_, scn_json_file_ls)
 
                 self.emit_info('开始合并scn')
-                scaled_scn_file_ls = self.pool_run(self.scn_en, scn_json_file_ls)
+                scaled_scn_file_ls = self.scn_en_batch(self.tmp_folder, self.patch_folder)
 
-                [scn_file.move_as(self.t2p(scn_file)) for scn_file in scaled_scn_file_ls]
+    def scn_de_batch(self, input_path, output_folder) -> list:
+        """
+        @brief      批量拆scn为json
 
-    def scn_de(self, scn_file):
-        scn_de_p = subprocess.run([self.psb_de_exe, scn_file], capture_output=True, shell=True)
+        @param      input_path     The input path
+        @param      output_folder  The output folder
 
-    def scn_en(self, scn_json_file):
-        output_folder = scn_json_file.parent
-        scn_en_p = subprocess.run([self.psb_en_exe, scn_json_file], shell=True, cwd=output_folder, capture_output=True)
+        @return     json路径列表
+        """
+        input_path = Path(input_path)
+        output_folder = Path(output_folder)
+        scn_out_path_dict = {}
+        if input_path.is_file():
+            out_dir = input_path.reio_path(input_path.parent, output_folder, mk_dir=True).parent
+            scn_out_path_dict[input_path] = out_dir
+        else:
+            scn_file_ls = input_path.file_list('scn')
+            for scn_file in scn_file_ls:
+                out_dir = scn_file.reio_path(input_path, output_folder, mk_dir=True).parent
+                scn_out_path_dict[scn_file] = out_dir
+        out_scn_json_file_ls = self.pool_run(self._scn_de, scn_out_path_dict.items())
+        return out_scn_json_file_ls
+
+    def _scn_de(self, scn_out_path) -> Path:
+        # 拆scn为json
+        scn_file, out_dir = scn_out_path
+        with tempfile.TemporaryDirectory() as scn_tmp_folder:
+            scn_tmp_folder = Path(scn_tmp_folder)
+            tmp_scn = scn_file.copy_to(scn_tmp_folder)
+            # 拆分scn文件到scn文件所在目录
+            scn_de_p = subprocess.run([self.psb_de_exe, tmp_scn], capture_output=True, shell=True)
+            tmp_json_file1 = tmp_scn.with_suffix('.json')
+            scn_json = tmp_json_file1.move_to(out_dir)
+            tmp_json_file2 = tmp_scn.with_suffix('.resx.json')
+            tmp_json_file2.move_to(out_dir)
+            return scn_json
+
+    def scn_en_batch(self, input_path, output_folder) -> list:
+        """
+        @brief      批量合成scn
+
+        @param      input_path     The input path
+        @param      output_folder  The output folder
+
+        @return     scn路径列表
+        """
+        input_path = Path(input_path)
+        output_folder = Path(output_folder)
+        json_work_path_dict = {}
+        if input_path.is_file():
+            json_work_path_dict[input_path] = output_folder
+        else:
+            json_file_ls = [json_file for json_file in input_path.file_list('json') if (json_file.with_suffix('.resx.json').exists())]
+            # json_file_ls = input_path.file_list('json')
+            for json_file in json_file_ls:
+                work_dir = json_file.reio_path(input_path, output_folder, mk_dir=True).parent
+                json_work_path_dict[json_file] = work_dir
+        output_scn_file_ls = self.pool_run(self._scn_en, json_work_path_dict.items())
+        return output_scn_file_ls
+
+    def _scn_en(self, json_work_path) -> Path:
+        # 组装scn文件，原程序直接输出到工作路径，所以需要修改输出路径
+        scn_json_file, work_dir = json_work_path
+        scn_en_p = subprocess.run([self.psb_en_exe, scn_json_file], shell=True, cwd=work_dir, capture_output=True)
         # 重命名
-        tmp_scn_file = scn_json_file.with_suffix('.pure.scn')
-        out_scn_file = scn_json_file.with_suffix('.scn')
+        tmp_scn_file = work_dir/scn_json_file.with_suffix('.pure.scn').name
+        out_scn_file = work_dir/scn_json_file.with_suffix('.scn').name
         tmp_scn_file.move_as(out_scn_file)
         return out_scn_file
 
@@ -557,8 +616,10 @@ class Kirikiri(Core):
         '''
         image_extension_ls = ['bmp', 'jpg', 'jpeg', 'png', 'webp']
         for image_extension in image_extension_ls:
-            image_file_list = patch9_first(self.game_data.file_list(image_extension))
-            # image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+            if self.upscale_fg:
+                image_file_list = patch9_first(self.game_data.file_list(image_extension))
+            else:
+                image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
             if image_file_list:
                 with tempfile.TemporaryDirectory() as tmp_folder:
                     self.tmp_folder = Path(tmp_folder)
@@ -688,8 +749,10 @@ class Kirikiri(Core):
         '''
         对tlg格式图片进行放大处理
         '''
-        ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
-        # ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
+        if self.upscale_fg:
+            ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
+        else:
+            ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
         if ori_tlg_file_ls:
             with tempfile.TemporaryDirectory() as tmp_folder:
                 self.tmp_folder = Path(tmp_folder)

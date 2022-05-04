@@ -9,8 +9,9 @@ class MainContent(QFrame):
         QFrame.__init__(self)
         self.setObjectName('maincontent')
         self.icon_folder = Path(sys.argv[0]).parent/'Icons'
-        self.theme = {'MainContent_background': '#282a36', 'MainContent_font': '#6272a4', 'MainContent_bar': '#21232d', }
-        self.setStyleSheet(f"background-color: {self.theme['MainContent_background']};color: {self.theme['MainContent_font']}")
+        self.setStyleSheet("background-color: #282a36;color: #6272a4;")
+        # self.setStyleSheet("background-color: #282a36;color: #6272a4;QFrame {border-radius: 15px};")
+        # self.setStyleSheet("QFrame {border-radius: 15px;}")
         self.setup_layouts()
         self.setup_connections()
 
@@ -48,15 +49,15 @@ class MainContent(QFrame):
         # 窗口功能按键
         self.minimize_btn = FPushButton(height=self.top_bar.height(),
                                         minimum_width=self.top_bar.height(),
-                                        btn_color=self.theme['MainContent_background'],
+                                        btn_color='#282a36',
                                         icon_path=self.icon_folder/'icon_minimize.svg')
         self.maximize_btn = FPushButton(height=self.top_bar.height(),
                                         minimum_width=self.top_bar.height(),
-                                        btn_color=self.theme['MainContent_background'],
+                                        btn_color='#282a36',
                                         icon_path=self.icon_folder/'icon_maximize.svg')
         self.close_btn = FPushButton(height=self.top_bar.height(),
                                      minimum_width=self.top_bar.height(),
-                                     btn_color=self.theme['MainContent_background'],
+                                     btn_color='#282a36',
                                      icon_path=self.icon_folder/'icon_close.svg')
         # 添加控件
         self.top_bar_layout.addWidget(self.top_label_left)
@@ -75,7 +76,7 @@ class MainContent(QFrame):
         self.bottom_bar = QFrame()
         self.bottom_bar.setMinimumHeight(30)
         self.bottom_bar.setMaximumHeight(30)
-        self.bottom_bar.setStyleSheet(f"background-color: {self.theme['MainContent_bar']};")
+        self.bottom_bar.setStyleSheet(f"background-color: '#282a36';")
         self.bottom_bar_layout = QHBoxLayout(self.bottom_bar)
         self.bottom_bar_layout.setContentsMargins(10, 0, 2.5, 0)
         # self.bottom_label_left = QLabel("准备就绪！")
@@ -84,7 +85,6 @@ class MainContent(QFrame):
         self.setup_resize_botton()
         # 添加组件
         # self.bottom_bar_layout.addWidget(self.bottom_label_left)
-        # self.bottom_bar_layout.addWidget(FProgressBar())
         self.bottom_bar_layout.addItem(self.bottom_spacer)
         self.bottom_bar_layout.addWidget(self.frame_grip)
 
@@ -97,5 +97,5 @@ class MainContent(QFrame):
         self.frame_grip.setFrameShape(QFrame.StyledPanel)
         self.frame_grip.setFrameShadow(QFrame.Raised)
         self.sizegrip = QSizeGrip(self.frame_grip)
-        self.sizegrip.setStyleSheet(f"QSizeGrip {{ width: 10px; height: 10px; margin: 5px;background-color: {self.theme['MainContent_font']}; border-radius: 10px;}} QSizeGrip:hover {{ background-color: yellow}}")
+        self.sizegrip.setStyleSheet(f"QSizeGrip {{ width: 10px; height: 10px; margin: 5px;background-color: #6272a4; border-radius: 10px;}} QSizeGrip:hover {{ background-color: yellow}}")
         self.sizegrip.setToolTip('窗口缩放')

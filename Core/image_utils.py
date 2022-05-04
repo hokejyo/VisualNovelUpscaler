@@ -75,7 +75,8 @@ class ImageUtils(object):
 
         @return     图片格式
         """
-        return Image.open(image_path).format.lower()
+        with Image.open(image_path) as img:
+            return img.format.lower()
 
     @staticmethod
     def image_resize_(image_file, zoom_factor) -> Path:
@@ -85,11 +86,11 @@ class ImageUtils(object):
         @param      image_file   图片文件路径
         @param      zoom_factor  缩放系数
         """
-        image = Image.open(image_file)
         if zoom_factor != 1:
-            image_resize = image.resize((int(image.width * zoom_factor),
-                                         int(image.height * zoom_factor)),
-                                        Image.LANCZOS).save(image_file)
+            with Image.open(image_file) as image:
+                image_resize = image.resize((int(image.width * zoom_factor),
+                                             int(image.height * zoom_factor)),
+                                            Image.LANCZOS).save(image_file)
         return image_file
 
     @staticmethod
@@ -104,10 +105,11 @@ class ImageUtils(object):
         """
         output_path = input_path.with_suffix('.' + output_extention)
         if output_path != input_path:
-            try:
-                Image.open(input_path).save(output_path, quality=100)
-            except:
-                Image.open(input_path).convert('RGB').save(output_path, quality=100)
+            with Image.open(input_path) as img:
+                try:
+                    img.save(output_path, quality=100)
+                except:
+                    img.convert('RGB').save(output_path, quality=100)
             input_path.unlink()
         return output_path
 
@@ -363,13 +365,13 @@ class ImageUtils(object):
 
     @staticmethod
     def _palette_png_pre_(input_path) -> Path:
-        # PALETTE PNG图片预处理为RGBA或RGB
+        # PALETTE PNG图片预处理为RGBA
         if input_path.suffix.lower() == '.png':
-            img = Image.open(input_path)
-            if img.mode == 'P':
-                for chunk_tuple in png.Reader(filename=input_path).chunks():
-                    if b'tRNS' in chunk_tuple:
-                        img.convert('RGBA').save(input_path, quality=100)
-                        return input_path
-                img.convert('RGB').save(input_path, quality=100)
-                return input_path
+            with Image.open(input_path) as img:
+                if img.mode == 'P':
+                    # for chunk_tuple in png.Reader(filename=input_path).chunks():
+                    #     if b'tRNS' in chunk_tuple:
+                    img.convert('RGBA').save(input_path, quality=100)
+                    #         return input_path
+                    # img.convert('RGB').save(input_path, quality=100)
+        return input_path

@@ -2,3 +2,4 @@
 
 from .qt_core import *
 from .main_ui import MainUI
+from .flat_widgets import *

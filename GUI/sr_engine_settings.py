@@ -80,7 +80,7 @@ class RealESRGANSettings(QFrame):
         self.modle_name_lb = QLabel('超分模型选择：')
         self.modle_name_combobox = QComboBox()
         layout.addRow(self.modle_name_lb, self.modle_name_combobox)
-        self.modle_name_combobox.addItems(['realesrgan-x4plus', 'realesrnet-x4plus', 'realesr-animevideov3-x2', 'realesr-animevideov3-x3', 'realesr-animevideov3-x4'])
+        self.modle_name_combobox.addItems(['realesrgan-x4plus', 'realesrgan-x4plus-anime', 'realesr-animevideov3-x2', 'realesr-animevideov3-x3', 'realesr-animevideov3-x4'])
 
         self.load_proc_save_lb = QLabel('显卡线程分配：')
         self.load_proc_save_line_edit = FLineEdit()

@@ -30,7 +30,7 @@ class GamePageUIConnection(object):
         self.game_page_runner.start()
 
     def show_game_page_tip(self, _str):
-        warn_msg = QMessageBox()
+        warn_msg = FMessageBox()
         reply = warn_msg.warning(self.ui, '提示', _str, QMessageBox.Yes)
 
     def start_game_page_runner_and_lock(self):
@@ -184,6 +184,9 @@ class GamePageRunner(QThread):
                 kirikiri.run_dict['image'] = ugk.image_part.isChecked()
                 kirikiri.run_dict['animation'] = ugk.animation_part.isChecked()
                 kirikiri.run_dict['video'] = ugk.video_part.isChecked()
+                # 高级选项
+                # 处理立绘
+                kirikiri.upscale_fg = ugk.upscale_fg_btn.isChecked()
                 # 开始放大
                 kirikiri.upscale()
                 self.finish_sig.emit('高清重制完成!')
@@ -195,6 +198,16 @@ class GamePageRunner(QThread):
                     xpos_move = ugk.crt_movex.value()
                     kirikiri.stand_correction(self.vnu.input_path, self.vnu.output_folder, face_zoom, xpos_move)
                     self.finish_sig.emit('对话框头像坐标调整完成!')
+            # scn格式转换
+            elif ugk.scn_cvt_btn.isChecked():
+                if self.path_pass(only_folder=False):
+                    input_format = ugk.scn_in.currentText()
+                    output_format = ugk.scn_out.currentText()
+                    if input_format == 'scn':
+                        kirikiri.scn_de_batch(self.vnu.input_path, self.vnu.output_folder)
+                    elif input_format == 'json':
+                        kirikiri.scn_en_batch(self.vnu.input_path, self.vnu.output_folder)
+                    self.finish_sig.emit('scn转换完成!')
             # tlg图片格式转换
             elif ugk.tlg_convert_btn.isChecked():
                 if self.path_pass(only_folder=False):

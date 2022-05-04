@@ -24,11 +24,11 @@ class Config(object):
             # 图片设置
             self.vnu_config.add_section('Image')
             self.vnu_config.set('Image', 'image_sr_engine', 'waifu2x_ncnn')
-            self.vnu_config.set('Image', 'image_batch_size', '20')
+            self.vnu_config.set('Image', 'image_batch_size', '10')
             # 视频设置
             self.vnu_config.add_section('Video')
             self.vnu_config.set('Video', 'video_sr_engine', 'anime4k')
-            self.vnu_config.set('Video', 'video_batch_size', '40')
+            self.vnu_config.set('Video', 'video_batch_size', '20')
             self.vnu_config.set('Video', 'video_quality', '8')
             # 超分引擎设置
             self.vnu_config.add_section('SREngine')

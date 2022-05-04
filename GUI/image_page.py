@@ -10,6 +10,7 @@ class ImagePage(QFrame):
         QFrame.__init__(self)
         self.icon_folder = Path(sys.argv[0]).parent/'Icons'
         self.initUI()
+        # self.show_image(self.icon_folder/'sample.png')
 
     def initUI(self):
         self.setup_layouts()
@@ -22,7 +23,7 @@ class ImagePage(QFrame):
         self.input_line_edit.editingFinished.connect(self.get_image_list)
         self.input_line_edit.editingFinished.connect(self.auto_fill_output_folder)
         self.filter_line_edit.editingFinished.connect(self.get_image_list)
-        self.list_widget.currentItemChanged.connect(self.show_image)
+        self.list_widget.currentItemChanged.connect(self.switch_show_image)
         self.input_btn.clicked.connect(self.choose_input_folder)
         self.output_btn.clicked.connect(self.choose_output_folder)
         self.ignr_btn.toggled.connect(self.get_image_list)
@@ -86,6 +87,7 @@ class ImagePage(QFrame):
         self.image_show_label.setStyleSheet('background-color:#456')
         self.image_show_label.setMinimumWidth(540)
         self.image_show_label.setMinimumHeight(360)
+        self.image_show_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.image_show_label)
 
     def get_image_list(self):
@@ -102,14 +104,18 @@ class ImagePage(QFrame):
                 self.list_widget.addItem(input_path.to_str)
             self.list_widget.setCurrentRow(0)
 
-    def show_image(self):
+    def switch_show_image(self):
         try:
-            image_path = Path(self.list_widget.currentItem().text().strip())
-            image_show_pix = QPixmap(image_path).scaledToHeight(self.image_show_label.height(), Qt.SmoothTransformation)
-            self.image_show_label.setPixmap(image_show_pix)
+            if self.list_widget.currentItem() is not None:
+                image_path = Path(self.list_widget.currentItem().text().strip())
+                self.show_image(image_path)
         except:
             warn_msg = QMessageBox()
             reply = warn_msg.warning(self.ui, '提示', '无法读取该图片!', QMessageBox.Yes)
+
+    def show_image(self, image_path):
+        image_show_pix = QPixmap(image_path).scaledToHeight(self.image_show_label.height(), Qt.SmoothTransformation)
+        self.image_show_label.setPixmap(image_show_pix)
 
     def setup_in_out_folders(self):
         layout1 = QHBoxLayout()
