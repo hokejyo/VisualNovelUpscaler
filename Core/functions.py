@@ -25,6 +25,7 @@ import construct
 import regex as re
 from wmi import WMI
 from PIL import Image
+import numpy as np
 from numba import jit
 # 自定义库
 from .pathplus import Path

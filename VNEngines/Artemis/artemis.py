@@ -382,9 +382,8 @@ class Artemis(Core):
         file_path_ls = self.pool_run(self._decrypt_pfs_and_save_file, name_data_dict.items(), digest)
         return file_path_ls
 
-    def _decrypt_pfs_and_save_file(self, entry_item, digest) -> Path:
-        file_path = entry_item[0]
-        contents = entry_item[1]
+    def _decrypt_pfs_and_save_file(self, entry_name_data, digest) -> Path:
+        file_path, contents = entry_name_data
         len_contents = len(contents)
         len_digest = len(digest)
         new_file_data = self._decrypt_pfs_contents(contents, digest, len_contents, len_digest)

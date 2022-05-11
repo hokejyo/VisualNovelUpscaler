@@ -31,8 +31,9 @@ class InfoPage(QFrame):
 
         with open(Path(sys.argv[0]).parent/'LICENSE', 'r', newline='', encoding='utf-8') as f:
             license_text = f.read()
-        license_msg.append(license_text)
-        license_msg.moveCursor(QTextCursor.Start)
+            license_msg.setPlainText(license_text)
+        # license_msg.append(license_text)
+        # license_msg.moveCursor(QTextCursor.Start)
 
     def setup_update_bug(self):
         self.update_bug_frame = QFrame()

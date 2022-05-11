@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from constructplus import *
-import hashlib
+import construct
+construct.core.possiblestringencodings['shift_jis'] = 1
+from construct import *
 from pathlib import Path
-from functools import partial
-
-def get_file_data_offset(file_index):
-    pass
-    return 1
 
 ArcStruct = Struct(
     'magic'/Const(b'MajiroArc'),
@@ -60,8 +56,6 @@ ArcStruct = Struct(
         'unk2'/Int32ul,
     )
 )
-
-
 
 
 if __name__ == '__main__':

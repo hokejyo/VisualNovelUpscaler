@@ -10,7 +10,7 @@ from SettingPageUIConnection import SettingPageUIConnection
 
 class VisualNovelUpscaler(Core, SettingPageUIConnection, GamePageUIConnection, ImagePageUIConnection):
 
-    _version = 'v0.2.1'
+    __version__ = 'v0.2.1'
 
     def __init__(self):
         Core.__init__(self)
@@ -25,7 +25,7 @@ class VisualNovelUpscaler(Core, SettingPageUIConnection, GamePageUIConnection, I
         SettingPageUIConnection.__init__(self)
         GamePageUIConnection.__init__(self)
         ImagePageUIConnection.__init__(self)
-        self.ui.set_version(self._version)
+        self.ui.set_version(self.__version__)
 
     def catch_exceptions(self, excType, excValue, tb):
         error_info = ''.join(traceback.format_exception(excType, excValue, tb))

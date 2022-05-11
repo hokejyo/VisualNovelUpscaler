@@ -47,6 +47,8 @@ class ImagePage(QFrame):
 
     def setup_settings(self):
         self.setting_frame = QFrame()
+        self.setting_frame.setMaximumHeight(145)
+        self.setting_frame.setMinimumHeight(145)
         self.setting_frame.setStyleSheet('background-color:#456')
         self.hlayout.addWidget(self.setting_frame)
         self.set_formlayout = QFormLayout(self.setting_frame)
@@ -79,13 +81,15 @@ class ImagePage(QFrame):
 
     def setup_image_list_view(self):
         self.list_widget = QListWidget()
+        self.list_widget.setMaximumHeight(145)
+        self.list_widget.setMinimumHeight(145)
         self.list_widget.setStyleSheet('background-color:#456')
         self.hlayout.addWidget(self.list_widget)
 
     def setup_show_image_area(self):
         self.image_show_label = QLabel()
         self.image_show_label.setStyleSheet('background-color:#456')
-        self.image_show_label.setMinimumWidth(540)
+        # self.image_show_label.setMinimumWidth(540)
         self.image_show_label.setMinimumHeight(360)
         self.image_show_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.image_show_label)

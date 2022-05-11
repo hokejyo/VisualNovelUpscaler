@@ -244,7 +244,7 @@ class GamePageRunner(QThread):
                         kirikiri.png2amv_batch(self.vnu.input_path, self.vnu.output_folder)
                     self.finish_sig.emit('amv转换完成!')
             elif ugk.flat_patch_btn.isChecked():
-                if self.path_pass():
+                if self.path_pass(warn_kwd='patch'):
                     kirikiri.flat_kirikiri_patch_folder(self.vnu.input_path, self.vnu.output_folder)
                     self.finish_sig.emit('补丁文件平铺完成!')
 
