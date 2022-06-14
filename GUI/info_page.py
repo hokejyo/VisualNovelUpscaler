@@ -10,6 +10,11 @@ class InfoPage(QFrame):
 
         QFrame.__init__(self)
         self.setup_layouts()
+        self.setup_connections()
+
+    def setup_connections(self):
+        self.check_update_btn.clicked.connect(self.open_releases_page)
+        self.submit_issue_btn.clicked.connect(self.open_issues_page)
 
     def setup_layouts(self):
         self.layout = QVBoxLayout(self)
@@ -42,3 +47,11 @@ class InfoPage(QFrame):
         layout = QVBoxLayout(self.update_bug_frame)
         self.check_update_btn = FIconButton('检查更新')
         layout.addWidget(self.check_update_btn)
+        self.submit_issue_btn = FIconButton('提交反馈')
+        layout.addWidget(self.submit_issue_btn)
+
+    def open_releases_page(self):
+        QDesktopServices.openUrl(QUrl('https://github.com/hokejyo/VisualNovelUpscaler/releases'))
+
+    def open_issues_page(self):
+        QDesktopServices.openUrl(QUrl('https://github.com/hokejyo/VisualNovelUpscaler/issues/new'))

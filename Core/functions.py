@@ -25,6 +25,7 @@ import construct
 import regex as re
 from wmi import WMI
 from PIL import Image
+Image.MAX_IMAGE_PIXELS = None #超大分辨率图片支持
 import numpy as np
 from numba import jit
 # 自定义库
@@ -159,7 +160,10 @@ def show_folder(folder_path):
     @param      folder_path  文件夹路径
     """
     folder_path = Path(folder_path)
-    _p = subprocess.run(['start', folder_path], capture_output=True, shell=True)
+    try:
+        os.startfile(folder_path)
+    except:
+        _p = subprocess.run(['start', folder_path], capture_output=True, shell=True)
 
 
 def sub_scale_num(match, scale_ratio):
