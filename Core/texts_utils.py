@@ -30,19 +30,19 @@ class TextsUtils(object):
                 encoding = chardet.detect(content_b)
             return encoding
 
-    def get_lines_encoding(self, text_file):
+    def get_lines_encoding(self, text_file, split=True):
         '''
         返回文本内容和编码
         '''
         try:
             with open(text_file, newline='', encoding=self.encoding) as f:
-                lines = f.readlines()
+                lines = f.readlines() if split else f.read()
                 current_encoding = self.encoding
         except:
             current_encoding = self.get_encoding(text_file)
             assert current_encoding != None, f'未能正确识别{text_file}的文本编码'
             with open(text_file, newline='', encoding=current_encoding) as f:
-                lines = f.readlines()
+                lines = f.readlines() if split else f.read()
         return lines, current_encoding
 
     def csv2x(self, input_csv, output_csv, scale_ratio):
@@ -50,14 +50,17 @@ class TextsUtils(object):
         将csv文件中的数字乘以放大倍数
         '''
         result = []
-        try:
-            with open(input_csv, newline='', encoding=self.encoding) as f:
-                current_encoding = self.encoding
-                content = list(csv.reader(f))
-        except:
-            current_encoding = self.get_encoding(input_csv)
-            with open(input_csv, newline='', encoding=current_encoding) as f:
-                content = list(csv.reader(f))
+        lines, current_encoding = self.get_lines_encoding(input_csv, split=False)
+        with PrivateStringIO(lines) as _f:
+            content = list(csv.reader(_f))
+        # try:
+        #     with open(input_csv, newline='', encoding=self.encoding) as f:
+        #         current_encoding = self.encoding
+        #         content = list(csv.reader(f))
+        # except:
+        #     current_encoding = self.get_encoding(input_csv)
+        #     with open(input_csv, newline='', encoding=current_encoding) as f:
+        #         content = list(csv.reader(f))
         for content_ls in content:
             for i in range(len(content_ls)):
                 if real_digit(content_ls[i]):

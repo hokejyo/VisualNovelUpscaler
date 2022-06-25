@@ -151,7 +151,6 @@ class GamePageRunner(QThread):
             return True
 
     def run(self):
-        # self.start_sig.emit()
         try:
             # Kirikiri
             if self.vnu.ui.gamepage.game_engine_area.currentWidget() is self.vnu.ui.gamepage.kirikiri:

@@ -79,6 +79,36 @@ class Kirikiri(Core):
                 target_file_path = file.copy_to(output_folder)
                 self.emit_info(f'{target_file_path} saved!')
 
+    def _get_lines_encoding(self, text_file, split=True):
+        # 获取文本行和编码
+        try:
+            lines, current_encoding = self.get_lines_encoding(text_file, split=split)
+        except:
+            lines = self._decrypt_text(text_file)
+            if split:
+                current_encoding = self.encoding
+                with PrivateStringIO(lines) as _f:
+                    lines = _f.readlines()
+        return lines, current_encoding
+
+    def _decrypt_text(self, file_path):
+        # 文本解密
+        content = file_path.readbs()
+        # if content[:5] == b'\xfe\xfe\x00\xff\xfe':
+        #     pass
+        if content[:5] == b'\xfe\xfe\x01\xff\xfe':
+            mode = 1
+            content_p = bytearray(content[5:])
+            for i in range(len(content_p)):
+                c = content_p[i]
+                if c:
+                    content_p[i] = (((c & 0x55) << 1) | ((c & 0xaa) >> 1)) & 0xff
+            result = content_p.decode('UTF-16LE')
+        elif content[:5] == b'\xfe\xfe\x02\xff\xfe':
+            mode = 2
+            result = zlib.decompress(content[0x15:]).decode('UTF-16')
+        return result
+
     """
     ==================================================
     Kirikiri引擎脚本文件：tjs, ks, csv, asd, stand, scn
@@ -105,31 +135,31 @@ class Kirikiri(Core):
                 if self.upscale_fg:
                     self._envinit_tjs2x(tjs_file)
                 else:
-                    self._envinit2x_old(tjs_file)
-            elif tjs_file.name == 'custom.tjs':
-                self.customtjs2x(tjs_file)
+                    self._common_2x(tjs_file)
+            # elif tjs_file.name == 'custom.tjs':
+            #     self.customtjs2x(tjs_file)
             elif tjs_file.name == 'default.tjs':
                 self.default2x(tjs_file)
             elif 'particle' in tjs_file.name:
                 self.particle2x(tjs_file)
             else:
-                try:
-                    pass
-                except:
-                    self.emit_info(f'warning: {tjs_file}未能正确读取！')
+                # try:
+                self._common_2x(tjs_file)
+                # except:
+                #     self.emit_info(f'warning: {tjs_file}未能正确读取！')
 
     def ks2x(self):
         ks_file_ls = patch9_first(self.game_data.file_list('ks'))
         for ks_file in ks_file_ls:
-            if ks_file.name == 'custom.ks':
-                self.customks2x(ks_file)
-            elif ks_file.name in ['macro.ks', 'macro_old.ks']:
-                self.macro2x(ks_file)
-            else:
-                try:
-                    pass
-                except:
-                    self.emit_info(f'warning: {ks_file}未能正确读取！')
+            # if ks_file.name == 'custom.ks':
+            #     self.customks2x(ks_file)
+            # elif ks_file.name in ['macro.ks', 'macro_old.ks']:
+            #     self.macro2x(ks_file)
+            # else:
+            # try:
+            self._common_2x(ks_file)
+            # except:
+            #     self.emit_info(f'warning: {ks_file}未能正确读取！')
 
     def _config_tjs2x(self, tjs_file):
         '''
@@ -168,26 +198,26 @@ class Kirikiri(Core):
                 if line.startswith(';freeSaveDataMode'):
                     f.write(';saveDataLocation = "savedataHD";\r\n')
 
-    def _envinit_tjs2x(self, tjs_file):
-        kwds = ['width', 'height', 'xoff', 'yoff', 'xpos', 'ypos', 'originx', 'originy', 'emotionX', 'emotionY']
-        # kwds = ['width', 'height', 'xoff', 'yoff', 'xpos', 'ypos', 'originx', 'originy', 'emotionX', 'emotionY', 'value', 'start']
-        kwds_ = '|'.join(kwds)
-        ptn = re.compile(rf'(?<=(\W|^)({kwds_})(\W+|\b)(int\W+)?)(\d+)(?=\W|$)', re.IGNORECASE)
-        result = []
-        lines, current_encoding = self._get_lines_encoding(tjs_file)
-        for line in lines:
-            line = ptn.sub(self._sub_scale_num, line)
-            result.append(line)
-        with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
-            # tmp_count = 0
-            for line in result:
-                # # 开启对话框头像位置修正模式，使对stand文件的修改生效
-                # if 'autoFaceShow' in line and tmp_count == 0:
-                #     f.write('\t"facePosMode", 1,\r\n')
-                #     tmp_count = 1
-                # if line.startswith('\t"facePosMode'):
-                #     continue
-                f.write(line)
+    # def _envinit_tjs2x(self, tjs_file):
+    #     kwds = ['width', 'height', 'xoff', 'yoff', 'xpos', 'ypos', 'originx', 'originy', 'emotionX', 'emotionY']
+    #     # kwds = ['width', 'height', 'xoff', 'yoff', 'xpos', 'ypos', 'originx', 'originy', 'emotionX', 'emotionY', 'value', 'start']
+    #     kwds_ = '|'.join(kwds)
+    #     ptn = re.compile(rf'(?<=(\W|^)({kwds_})(\W+|\b)(int\W+)?)(\d+)(?=\W|$)', re.IGNORECASE)
+    #     result = []
+    #     lines, current_encoding = self._get_lines_encoding(tjs_file)
+    #     for line in lines:
+    #         line = ptn.sub(self._sub_scale_num, line)
+    #         result.append(line)
+    #     with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
+    #         # tmp_count = 0
+    #         for line in result:
+    #             # # 开启对话框头像位置修正模式，使对stand文件的修改生效
+    #             # if 'autoFaceShow' in line and tmp_count == 0:
+    #             #     f.write('\t"facePosMode", 1,\r\n')
+    #             #     tmp_count = 1
+    #             # if line.startswith('\t"facePosMode'):
+    #             #     continue
+    #             f.write(line)
 
     def _envinit2x_old(self, tjs_file):
         '''
@@ -216,23 +246,23 @@ class Kirikiri(Core):
                     continue
                 f.write(line)
 
-    def customtjs2x(self, tjs_file):
-        '''
-        custom.tjs文件处理，字体大小，间距修改
-        '''
-        result = []
-        pattern_rule_keywords = ['fontheight', 'fontsize', 'linestep', 'linespace', 'linespacing']
-        lines, current_encoding = self._get_lines_encoding(tjs_file)
-        for line in lines:
-            for rule_keyword in pattern_rule_keywords:
-                pattern = re.compile(rf'(.*?\W+)({rule_keyword})(\W+)(\d+)(.*)', re.IGNORECASE)
-                re_result = re.match(pattern, line)
-                if re_result:
-                    line = self.line_pattern_num2x(re_result)
-            result.append(line)
-        with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
-            for line in result:
-                f.write(line)
+    # def customtjs2x(self, tjs_file):
+    #     '''
+    #     custom.tjs文件处理，字体大小，间距修改
+    #     '''
+    #     result = []
+    #     pattern_rule_keywords = ['fontheight', 'fontsize', 'linestep', 'linespace', 'linespacing']
+    #     lines, current_encoding = self._get_lines_encoding(tjs_file)
+    #     for line in lines:
+    #         for rule_keyword in pattern_rule_keywords:
+    #             pattern = re.compile(rf'(.*?\W+)({rule_keyword})(\W+)(\d+)(.*)', re.IGNORECASE)
+    #             re_result = re.match(pattern, line)
+    #             if re_result:
+    #                 line = self.line_pattern_num2x(re_result)
+    #         result.append(line)
+    #     with open(self.a2p(tjs_file), 'w', newline='', encoding=current_encoding) as f:
+    #         for line in result:
+    #             f.write(line)
 
     def default2x(self, tjs_file):
         '''
@@ -286,43 +316,43 @@ class Kirikiri(Core):
             for line in result:
                 f.write(line)
 
-    def customks2x(self, ks_file):
-        '''
-        custom.ks文件处理，选择肢修正
-        '''
-        result = []
-        lines, current_encoding = self._get_lines_encoding(ks_file)
-        for line in lines:
-            # 选择肢位置、大小修正
-            if 'select_normal' in line:
-                pattern = re.compile(
-                    r'(.*left\W+)(\d+)(.*top\W+)(\d+)(.*width\W+)(\d+)(.*height\W+)(\d+)(.*)')
-                re_result = re.match(pattern, line)
-                if re_result:
-                    line = self.line_pattern_num2x(re_result)
-            result.append(line)
-        with open(self.a2p(ks_file), 'w', newline='', encoding=current_encoding) as f:
-            for line in result:
-                f.write(line)
+    # def customks2x(self, ks_file):
+    #     '''
+    #     custom.ks文件处理，选择肢修正
+    #     '''
+    #     result = []
+    #     lines, current_encoding = self._get_lines_encoding(ks_file)
+    #     for line in lines:
+    #         # 选择肢位置、大小修正
+    #         if 'select_normal' in line:
+    #             pattern = re.compile(
+    #                 r'(.*left\W+)(\d+)(.*top\W+)(\d+)(.*width\W+)(\d+)(.*height\W+)(\d+)(.*)')
+    #             re_result = re.match(pattern, line)
+    #             if re_result:
+    #                 line = self.line_pattern_num2x(re_result)
+    #         result.append(line)
+    #     with open(self.a2p(ks_file), 'w', newline='', encoding=current_encoding) as f:
+    #         for line in result:
+    #             f.write(line)
 
-    def macro2x(self, ks_file):
-        '''
-        macro.ks文件处理，自定义宏
-        '''
-        keyn_ls = ['xpos', 'width', 'height', 'ypos', 'movex', 'movey', 'zoom', 'movx', 'movy', 'shiftx', 'shifty', 'camerazoom']
-        result = []
-        lines, current_encoding = self._get_lines_encoding(ks_file)
-        for line in lines:
-            for keyn in keyn_ls:
-                pattern_rule = rf'(.*?)({keyn})(\W+)(\d+)(\W+)(\d*)(.*)'
-                pattern = re.compile(pattern_rule, re.IGNORECASE)
-                re_result = re.match(pattern, line)
-                if re_result:
-                    line = self.line_pattern_num2x(re_result)
-            result.append(line)
-        with open(self.a2p(ks_file), 'w', newline='', encoding=current_encoding) as f:
-            for line in result:
-                f.write(line)
+    # def macro2x(self, ks_file):
+    #     '''
+    #     macro.ks文件处理，自定义宏
+    #     '''
+    #     keyn_ls = ['xpos', 'width', 'height', 'ypos', 'movex', 'movey', 'zoom', 'movx', 'movy', 'shiftx', 'shifty', 'camerazoom']
+    #     result = []
+    #     lines, current_encoding = self._get_lines_encoding(ks_file)
+    #     for line in lines:
+    #         for keyn in keyn_ls:
+    #             pattern_rule = rf'(.*?)({keyn})(\W+)(\d+)(\W+)(\d*)(.*)'
+    #             pattern = re.compile(pattern_rule, re.IGNORECASE)
+    #             re_result = re.match(pattern, line)
+    #             if re_result:
+    #                 line = self.line_pattern_num2x(re_result)
+    #         result.append(line)
+    #     with open(self.a2p(ks_file), 'w', newline='', encoding=current_encoding) as f:
+    #         for line in result:
+    #             f.write(line)
 
     def uicsv2x(self):
         '''
@@ -532,18 +562,7 @@ class Kirikiri(Core):
                     self.emit_info(f'未识别的加密文件{file_path}!')
 
     def _fg_text2x(self, file_path, scale_ratio, output_path):
-        if file_path.readbs(2) == b'\xfe\xfe':
-            mode, content = self._decrypt_text(file_path)
-            current_encoding = self.encoding
-        else:
-            try:
-                with open(file_path, newline='', encoding=self.encoding) as f:
-                    current_encoding = self.encoding
-                    content = f.read()
-            except:
-                current_encoding = self.get_encoding(file_path)
-                with open(file_path, newline='', encoding=current_encoding) as f:
-                    content = f.read()
+        content, current_encoding = self._get_lines_encoding(file_path, split=False)
         fgimage_text_sign = '#layer_type\tname\tleft\ttop\twidth\theight\ttype\topacity\tvisible\tlayer_id\tgroup_layer_id\tbase\timages\t'
         if not content.startswith(fgimage_text_sign):
             # self.emit_info(f'{file_path}不是立绘坐标文件!')
@@ -565,33 +584,22 @@ class Kirikiri(Core):
         self.emit_info(f'{file_path}立绘坐标处理完成!')
         return output_path
 
-    def _decrypt_text(self, file_path):
-        content = file_path.readbs()
-        # if content[:5] == b'\xfe\xfe\x00\xff\xfe':
-        #     pass
-        if content[:5] == b'\xfe\xfe\x01\xff\xfe':
-            mode = 1
-            content_p = bytearray(content[5:])
-            for i in range(len(content_p)):
-                c = content_p[i]
-                if c:
-                    content_p[i] = (((c & 0x55) << 1) | ((c & 0xaa) >> 1)) & 0xff
-            result = content_p.decode('UTF-16LE')
-        elif content[:5] == b'\xfe\xfe\x02\xff\xfe':
-            mode = 2
-            result = zlib.decompress(content[0x15:]).decode('UTF-16')
-        return mode, result
-
-    def _get_lines_encoding(self, text_file):
-        # 获取行列表和编码
-        try:
-            lines, current_encoding = self.get_lines_encoding(text_file)
-        except:
-            mode, content = self._decrypt_text(text_file)
-            current_encoding = self.encoding
-            with PrivateStringIO(content) as _f:
-                lines = _f.readlines()
-        return lines, current_encoding
+    def _common_2x(self, text_file):
+        # 其它文件的坐标修正
+        key_str = '|'.join(['left', 'top', 'width', 'height',
+                            'xpos', 'ypos', 'movex', 'movey',
+                            'zoom', 'movx', 'movy', 'shiftx', 'shifty', 'camerazoom',
+                            'fontheight', 'fontsize', 'linestep', 'linespace', 'linespacing',
+                            'xoff', 'yoff', 'originx', 'originy', 'emotionX', 'emotionY'])
+        ptn = re.compile(rf'(?<=(\W|^)({key_str})\W+((int|float|double)\W+)?)(\d+)(?=\W|$)', re.IGNORECASE)
+        result = []
+        lines, current_encoding = self._get_lines_encoding(text_file)
+        for line in lines:
+            line = ptn.sub(self._sub_scale_num, line)
+            result.append(line)
+        with open(self.a2p(text_file), 'w', newline='', encoding=current_encoding) as f:
+            for line in result:
+                f.write(line)
 
     """
     ==================================================

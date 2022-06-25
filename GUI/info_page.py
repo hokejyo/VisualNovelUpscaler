@@ -54,4 +54,4 @@ class InfoPage(QFrame):
         QDesktopServices.openUrl(QUrl('https://github.com/hokejyo/VisualNovelUpscaler/releases'))
 
     def open_issues_page(self):
-        QDesktopServices.openUrl(QUrl('https://github.com/hokejyo/VisualNovelUpscaler/issues/new'))
+        QDesktopServices.openUrl(QUrl('https://github.com/hokejyo/VisualNovelUpscaler/issues'))
