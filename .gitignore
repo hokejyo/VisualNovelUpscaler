@@ -133,7 +133,7 @@ dmypy.json
 /old_modules
 /config*
 /test*
-/log.txt
+/logs.txt
 /VNTranslator
 /env*
 /make_exe.py

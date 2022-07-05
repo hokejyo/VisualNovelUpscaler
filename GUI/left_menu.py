@@ -50,7 +50,7 @@ class LeftMenu(QFrame):
         self.menu_button = FPushButton(text="折叠菜单", text_padding=60, icon_path=self.icon_folder/'columns.svg')
         self.image_button = FPushButton(text="图像增强", text_padding=60, icon_path=self.icon_folder/'slack.svg')
         self.game_button = FPushButton(text="视觉小说", text_padding=60, icon_path=self.icon_folder/'book-open.svg')
-        self.text_button = FPushButton(text="文字处理", text_padding=60, icon_path=self.icon_folder/'edit.svg')
+        self.text_button = FPushButton(text="文本处理", text_padding=60, icon_path=self.icon_folder/'edit.svg')
         # self.page3_button = FPushButton(text="批量处理", text_padding=60, icon_path=self.icon_folder/'trello.svg')
         self.left_menu_top_layout.addWidget(self.menu_button)
         self.left_menu_top_layout.addWidget(self.image_button)

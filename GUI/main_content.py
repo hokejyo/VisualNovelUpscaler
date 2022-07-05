@@ -9,6 +9,7 @@ class MainContent(QFrame):
         QFrame.__init__(self)
         self.setObjectName('maincontent')
         self.icon_folder = Path(sys.argv[0]).parent/'Icons'
+        self.log_file = Path(sys.argv[0]).parent/'logs.txt'
         self.setStyleSheet("background-color: #282a36;color: #6272a4;")
         # self.setStyleSheet("background-color: #282a36;color: #6272a4;QFrame {border-radius: 15px};")
         # self.setStyleSheet("QFrame {border-radius: 15px;}")
@@ -16,7 +17,7 @@ class MainContent(QFrame):
         self.setup_connections()
 
     def setup_connections(self):
-        pass
+        self.show_logs_btn.clicked.connect(self.show_logs)
 
     def setup_layouts(self):
         self.content_layout = QVBoxLayout(self)
@@ -80,11 +81,13 @@ class MainContent(QFrame):
         self.bottom_bar_layout = QHBoxLayout(self.bottom_bar)
         self.bottom_bar_layout.setContentsMargins(10, 0, 2.5, 0)
         # self.bottom_label_left = QLabel("准备就绪！")
+        self.show_logs_btn = FIconButton('查看日志', minimum_width=75, height=25, border_radius=10)
         self.bottom_spacer = QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         # 窗口尺寸控制
         self.setup_resize_botton()
         # 添加组件
         # self.bottom_bar_layout.addWidget(self.bottom_label_left)
+        self.bottom_bar_layout.addWidget(self.show_logs_btn)
         self.bottom_bar_layout.addItem(self.bottom_spacer)
         self.bottom_bar_layout.addWidget(self.frame_grip)
 
@@ -99,3 +102,6 @@ class MainContent(QFrame):
         self.sizegrip = QSizeGrip(self.frame_grip)
         self.sizegrip.setStyleSheet(f"QSizeGrip {{ width: 10px; height: 10px; margin: 5px;background-color: #6272a4; border-radius: 10px;}} QSizeGrip:hover {{ background-color: yellow}}")
         self.sizegrip.setToolTip('窗口缩放')
+
+    def show_logs(self):
+        os.startfile(self.log_file)

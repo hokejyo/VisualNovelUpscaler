@@ -17,7 +17,7 @@ import subprocess
 import configparser
 from threading import Thread
 from functools import partial
-import io.StringIO as _io_StringIO  # 跟construct库冲突
+from io import StringIO as _io_StringIO # 避免和construct库冲突
 from multiprocessing import Pool, cpu_count, Process, freeze_support
 # 第三方库
 import png
@@ -25,7 +25,7 @@ import construct
 import regex as re
 from wmi import WMI
 from PIL import Image
-Image.MAX_IMAGE_PIXELS = None       # 超大分辨率图片支持
+Image.MAX_IMAGE_PIXELS = None           # 超大分辨率图片支持
 import numpy as np
 from numba import jit
 # 自定义库

@@ -10,7 +10,7 @@ class Config(object):
         self.bundle_dir = Path(sys.argv[0]).parent
         self.vnu_config = configparser.ConfigParser()
         self.vnu_config_file = self.bundle_dir/'config.ini'
-        self.vnu_log_file = self.bundle_dir/'log.txt'
+        self.vnu_log_file = self.bundle_dir/'logs.txt'
         self.vnu_lic_file = self.bundle_dir/'LICENSE'
 
     def reset_config(self):
