@@ -51,7 +51,7 @@ class TextsUtils(object):
         '''
         result = []
         lines, current_encoding = self.get_lines_encoding(input_csv, split=False)
-        with PrivateStringIO(lines) as _f:
+        with _io_StringIO(lines) as _f:
             content = list(csv.reader(_f))
         # try:
         #     with open(input_csv, newline='', encoding=self.encoding) as f:

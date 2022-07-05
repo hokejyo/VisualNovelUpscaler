@@ -84,10 +84,12 @@ class Kirikiri(Core):
         try:
             lines, current_encoding = self.get_lines_encoding(text_file, split=split)
         except:
-            lines = self._decrypt_text(text_file)
+            lines, current_encoding = self._decrypt_text(text_file)
+            if lines is None:
+                self.emit_info(f'warning:{text_file}未被正确读取！')
+                return None
             if split:
-                current_encoding = self.encoding
-                with PrivateStringIO(lines) as _f:
+                with _io_StringIO(lines) as _f:
                     lines = _f.readlines()
         return lines, current_encoding
 
@@ -106,8 +108,11 @@ class Kirikiri(Core):
             result = content_p.decode('UTF-16LE')
         elif content[:5] == b'\xfe\xfe\x02\xff\xfe':
             mode = 2
-            result = zlib.decompress(content[0x15:]).decode('UTF-16')
-        return result
+            result = zlib.decompress(content[0x15:]).decode('UTF-16LE')
+        else:
+            # 解密失败
+            result = None
+        return result, self.encoding
 
     """
     ==================================================
@@ -119,11 +124,10 @@ class Kirikiri(Core):
         self.emit_info('开始处理游戏脚本......')
         self.tjs2x()
         self.ks2x()
+        self.txt2x()
         self.uicsv2x()
         self.asd2x()
         self.stand2x()
-        if self.upscale_fg:
-            self.fg_text2x()
         # self._scn2x()
 
     def tjs2x(self):
@@ -133,9 +137,9 @@ class Kirikiri(Core):
                 self._config_tjs2x(tjs_file)
             elif tjs_file.name == 'envinit.tjs':
                 if self.upscale_fg:
-                    self._envinit_tjs2x(tjs_file)
-                else:
                     self._common_2x(tjs_file)
+                else:
+                    self._envinit2x_old(tjs_file)
             # elif tjs_file.name == 'custom.tjs':
             #     self.customtjs2x(tjs_file)
             elif tjs_file.name == 'default.tjs':
@@ -143,8 +147,12 @@ class Kirikiri(Core):
             elif 'particle' in tjs_file.name:
                 self.particle2x(tjs_file)
             else:
-                # try:
-                self._common_2x(tjs_file)
+                if self._is_fg_text(tjs_file):
+                    if self.upscale_fg:
+                        self._fg_text2x(tjs_file)
+                else:
+                    # try:
+                    self._common_2x(tjs_file)
                 # except:
                 #     self.emit_info(f'warning: {tjs_file}未能正确读取！')
 
@@ -157,9 +165,21 @@ class Kirikiri(Core):
             #     self.macro2x(ks_file)
             # else:
             # try:
-            self._common_2x(ks_file)
+            if self._is_fg_text(ks_file):
+                if self.upscale_fg:
+                    self._fg_text2x(ks_file)
+            else:
+                # try:
+                self._common_2x(ks_file)
             # except:
             #     self.emit_info(f'warning: {ks_file}未能正确读取！')
+
+    def txt2x(self):
+        txt_file_ls = patch9_first(self.game_data.file_list('txt'))
+        for txt_file in txt_file_ls:
+            if self._is_fg_text(txt_file):
+                if self.upscale_fg:
+                    self._fg_text2x(txt_file)
 
     def _config_tjs2x(self, tjs_file):
         '''
@@ -265,9 +285,7 @@ class Kirikiri(Core):
     #             f.write(line)
 
     def default2x(self, tjs_file):
-        '''
-        default.tjs文件处理，backlog头像，字体，跳过游戏验证
-        '''
+        """default.tjs文件处理，backlog头像，字体，跳过游戏验证"""
         result = []
         pattern1 = re.compile(r'(.*FaceThumbRect\W+)(\d+)(\W+)(\d+)(.*)')
         pattern2_rule_keywords = ['ox', 'oy', 'fontheight', 'fontsize', 'linestep', 'marginL', 'marginR', 'marginB', 'marginT', 'linespace', 'linespacing']
@@ -292,9 +310,7 @@ class Kirikiri(Core):
                 f.write(line)
 
     def particle2x(self, tjs_file):
-        '''
-        粒子效果修正
-        '''
+        """粒子效果修正"""
         result = []
         lines, current_encoding = self._get_lines_encoding(tjs_file)
         for line in lines:
@@ -552,22 +568,10 @@ class Kirikiri(Core):
                 for line in result:
                     f.write(line)
 
-    def fg_text2x(self):
-        extension_list = ['txt', 'tjs', 'ks', 'pbd']
-        for extension in extension_list:
-            for file_path in patch9_first(self.game_data.file_list(extension)):
-                try:
-                    self._fg_text2x(file_path, self.scale_ratio, self.a2p(file_path))
-                except:
-                    self.emit_info(f'未识别的加密文件{file_path}!')
-
-    def _fg_text2x(self, file_path, scale_ratio, output_path):
+    def _fg_text2x(self, file_path, scale_ratio):
         content, current_encoding = self._get_lines_encoding(file_path, split=False)
         fgimage_text_sign = '#layer_type\tname\tleft\ttop\twidth\theight\ttype\topacity\tvisible\tlayer_id\tgroup_layer_id\tbase\timages\t'
-        if not content.startswith(fgimage_text_sign):
-            # self.emit_info(f'{file_path}不是立绘坐标文件!')
-            return None
-        with PrivateStringIO(content) as _f:
+        with _io_StringIO(content) as _f:
             reader = csv.DictReader(_f, delimiter='\t')
             content_ls = list(reader)
             for i, j in enumerate(content_ls):
@@ -577,29 +581,39 @@ class Kirikiri(Core):
                     if real_digit(_num):
                         j[kwd] = str(int(float(_num) * scale_ratio))
                 content_ls[i] = j
-        with open(output_path, 'w', newline='', encoding=current_encoding) as f:
+        with open(self.a2p(file_path), 'w', newline='', encoding=current_encoding) as f:
             writer = csv.DictWriter(f, delimiter='\t', fieldnames=fgimage_text_sign.split('\t'))
             writer.writeheader()
             writer.writerows(content_ls)
-        self.emit_info(f'{file_path}立绘坐标处理完成!')
-        return output_path
+
+    def _is_fg_text(self, file_path):
+        '''判断是否是立绘坐标文件'''
+        content, current_encoding = self._get_lines_encoding(file_path, split=False)
+        fgimage_text_sign = '#layer_type\tname\tleft\ttop\twidth\theight\ttype\topacity\tvisible\tlayer_id\tgroup_layer_id\tbase\timages\t'
+        if content.startswith(fgimage_text_sign):
+            return True
+        else:
+            return False
 
     def _common_2x(self, text_file):
         # 其它文件的坐标修正
-        key_str = '|'.join(['left', 'top', 'width', 'height',
-                            'xpos', 'ypos', 'movex', 'movey',
-                            'zoom', 'movx', 'movy', 'shiftx', 'shifty', 'camerazoom',
-                            'fontheight', 'fontsize', 'linestep', 'linespace', 'linespacing',
-                            'xoff', 'yoff', 'originx', 'originy', 'emotionX', 'emotionY'])
+        kwds = ['left', 'top', 'width', 'height',
+                'xpos', 'ypos', 'movex', 'movey',
+                'zoom', 'movx', 'movy', 'shiftx', 'shifty', 'camerazoom',
+                'fontheight', 'fontsize', 'linestep', 'linespace', 'linespacing',
+                'xoff', 'yoff', 'originx', 'originy', 'emotionX', 'emotionY']
+        key_str = '|'.join(kwds)
         ptn = re.compile(rf'(?<=(\W|^)({key_str})\W+((int|float|double)\W+)?)(\d+)(?=\W|$)', re.IGNORECASE)
-        result = []
-        lines, current_encoding = self._get_lines_encoding(text_file)
-        for line in lines:
-            line = ptn.sub(self._sub_scale_num, line)
-            result.append(line)
-        with open(self.a2p(text_file), 'w', newline='', encoding=current_encoding) as f:
-            for line in result:
-                f.write(line)
+        lines_encoding = self._get_lines_encoding(text_file)
+        if lines_encoding is not None:
+            lines, current_encoding = lines_encoding
+            result = []
+            for line in lines:
+                line = ptn.sub(self._sub_scale_num, line)
+                result.append(line)
+            with open(self.a2p(text_file), 'w', newline='', encoding=current_encoding) as f:
+                for line in result:
+                    f.write(line)
 
     """
     ==================================================

@@ -30,7 +30,7 @@ class GamePageUIConnection(object):
         self.game_page_runner.start()
 
     def show_game_page_tip(self, _str):
-        warn_msg = FMessageBox()
+        warn_msg = QMessageBox()
         reply = warn_msg.warning(self.ui, '提示', _str, QMessageBox.Yes)
 
     def start_game_page_runner_and_lock(self):

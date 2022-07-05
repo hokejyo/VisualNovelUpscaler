@@ -38,8 +38,7 @@ if __name__ == '__main__':
     # 防止打包运行后多进程内存泄漏
     freeze_support()
     # 防止打包后拖拽运行工作路径改变
-    bundle_dir = Path(sys.argv[0]).parent
-    os.chdir(bundle_dir)
+    os.chdir(Path(sys.argv[0]).parent)
     # 启动
     app = QApplication(sys.argv)
     visual_novel_upscaler = VisualNovelUpscaler()
