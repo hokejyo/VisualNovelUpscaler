@@ -1,53 +1,17 @@
 # -*- coding:utf-8 -*-
 
-from Core import *
+from ..base_engine import *
 from .amv_struct import AMVStruct
 
 
-class Kirikiri(Core):
+class Kirikiri(BaseEngine):
     """Kirikiri 2/Z Engine"""
 
     def __init__(self, game_ui_runner=None):
-        Core.__init__(self)
-        self.load_config()
-        self.__class__.game_ui_runner = game_ui_runner
+        BaseEngine.__init__(self, game_ui_runner)
         self.encoding = 'Shift_JIS'
-        self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
         # 是否处理立绘相关文件(实验性功能)
-        self.upscale_fg = False
-
-    def emit_info(self, info_str):
-        print(info_str)
-        logging.info(info_str)
-        if self.game_ui_runner is not None:
-            self.game_ui_runner.info_sig.emit(info_str)
-
-    def emit_progress(self, _percent, _left_time):
-        print(_percent, _left_time, sep='\t')
-        if self.game_ui_runner is not None:
-            self.game_ui_runner.progress_sig.emit(_percent, _left_time)
-
-    def upscale(self):
-        # 计时
-        start_time = time.time()
-        # 创建补丁文件夹
-        if not self.patch_folder.exists():
-            self.patch_folder.mkdir(parents=True)
-        # 开始放大
-        if self.run_dict['script']:
-            self._script2x()
-            self.emit_info('文本文件处理完成')
-        if self.run_dict['image']:
-            self._image2x()
-            self.emit_info('图片文件放大完成')
-        if self.run_dict['animation']:
-            self._animation2x()
-            self.emit_info('动画文件处理完成')
-        if self.run_dict['video']:
-            self._video2x()
-            self.emit_info('视频文件处理完成')
-        timing_count = time.time() - start_time
-        self.emit_info(f'共耗时：{seconds_format(timing_count)}')
+        # self.advanced_option['upscale_fg'] = False
 
     def get_resolution_encoding(self, input_folder):
         '''
@@ -136,7 +100,7 @@ class Kirikiri(Core):
             if tjs_file.name == 'Config.tjs':
                 self._config_tjs2x(tjs_file)
             elif tjs_file.name == 'envinit.tjs':
-                if self.upscale_fg:
+                if self.advanced_option['upscale_fg']:
                     self._common_2x(tjs_file)
                 else:
                     self._envinit2x_old(tjs_file)
@@ -148,7 +112,7 @@ class Kirikiri(Core):
                 self.particle2x(tjs_file)
             else:
                 if self._is_fg_text(tjs_file):
-                    if self.upscale_fg:
+                    if self.advanced_option['upscale_fg']:
                         self._fg_text2x(tjs_file)
                 else:
                     # try:
@@ -166,7 +130,7 @@ class Kirikiri(Core):
             # else:
             # try:
             if self._is_fg_text(ks_file):
-                if self.upscale_fg:
+                if self.advanced_option['upscale_fg']:
                     self._fg_text2x(ks_file)
             else:
                 # try:
@@ -178,7 +142,7 @@ class Kirikiri(Core):
         txt_file_ls = patch9_first(self.game_data.file_list('txt'))
         for txt_file in txt_file_ls:
             if self._is_fg_text(txt_file):
-                if self.upscale_fg:
+                if self.advanced_option['upscale_fg']:
                     self._fg_text2x(txt_file)
 
     def _config_tjs2x(self, tjs_file):
@@ -385,7 +349,7 @@ class Kirikiri(Core):
         '''
         asd_keyword_list = ['clipleft', 'cliptop', 'clipwidth', 'clipheight', 'left',
                             'top', 'height', 'weight', 'dx', 'dy', 'dw', 'dh', 'sx', 'sy', 'sw', 'sh', 'x', 'y']
-        if self.upscale_fg:
+        if self.advanced_option['upscale_fg']:
             asd_file_ls = patch9_first(self.game_data.file_list('asd'))
         else:
             # 忽略人物表情处理，这东西不需要改，改了反而不正常
@@ -638,7 +602,7 @@ class Kirikiri(Core):
         '''
         image_extension_ls = ['bmp', 'jpg', 'jpeg', 'png', 'webp']
         for image_extension in image_extension_ls:
-            if self.upscale_fg:
+            if self.advanced_option['upscale_fg']:
                 image_file_list = patch9_first(self.game_data.file_list(image_extension))
             else:
                 image_file_list = patch9_first(self.game_data.file_list(image_extension, ignored_folders=['sysscn', 'fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))
@@ -771,7 +735,7 @@ class Kirikiri(Core):
         '''
         对tlg格式图片进行放大处理
         '''
-        if self.upscale_fg:
+        if self.advanced_option['upscale_fg']:
             ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg'))
         else:
             ori_tlg_file_ls = patch9_first(self.game_data.file_list('tlg', ignored_folders=['fgimage', 'emotion', 'emotions', 'Emotion', 'Emotions', 'anim']))

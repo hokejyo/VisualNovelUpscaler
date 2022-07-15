@@ -1,48 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from Core import *
+from ..base_engine import *
 
 
-class Majiro(Core):
+class Majiro(BaseEngine):
     """Majiro Script Engine"""
 
     def __init__(self, game_ui_runner=None):
-        Core.__init__(self)
-        self.load_config()
-        self.__class__.game_ui_runner = game_ui_runner
+        BaseEngine.__init__(self, game_ui_runner)
         self.encoding = 'Shift_JIS'
-        self.run_dict = {'script': False, 'image': False, 'video': False}
-
-    def emit_info(self, info_str):
-        print(info_str)
-        logging.info(info_str)
-        if self.game_ui_runner is not None:
-            self.game_ui_runner.info_sig.emit(info_str)
-
-    def emit_progress(self, _percent, _left_time):
-        print(_percent, _left_time, sep='\t')
-        if self.game_ui_runner is not None:
-            self.game_ui_runner.progress_sig.emit(_percent, _left_time)
-
-    def upscale(self):
-        # 计时
-        start_time = time.time()
-        # 创建补丁文件夹
-        if not self.patch_folder.exists():
-            self.patch_folder.mkdir(parents=True)
-        # 开始放大
-        if self.run_dict['script']:
-            self._script2x()
-            self.emit_info('文本文件处理完成')
-        if self.run_dict['image']:
-            self._image2x()
-            self.emit_info('图片文件放大完成')
-        if self.run_dict['video']:
-            self._video2x()
-            self.emit_info('视频文件处理完成')
-        # 结束
-        timing_count = time.time() - start_time
-        self.emit_info(f'共耗时：{seconds_format(timing_count)}')
 
     """
     ==================================================

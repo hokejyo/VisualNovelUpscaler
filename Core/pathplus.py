@@ -264,6 +264,6 @@ class Path(pathlib.Path):
 
     def mkdirs(self):
         """
-        @brief      创建多级目录，并防止并发时小概率因文件夹已存在的错误
+        @brief      创建多级目录，并避免并发时小概率因文件夹已存在而引发的错误
         """
         self.mkdir(parents=True, exist_ok=True)

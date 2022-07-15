@@ -170,24 +170,23 @@ class GamePageRunner(QThread):
         ugk = self.vnu.ui.gamepage.kirikiri
         if ugk.currentWidget() is ugk.hd_parts_frame:
             if self.path_pass(warn_kwd='patch'):
-                # 设置输入、输出路径
-                kirikiri.set_vn_hd_io_folder(self.vnu.input_path, self.vnu.output_folder)
-                # 设置原生分辨率和主要编码
-                scwidth, scheight = map(int, ugk.before_resolution.text().split('x'))
-                encoding = ugk.main_encoding.text()
-                kirikiri.set_resolution_encoding(scwidth, scheight, encoding)
-                # 设置放大倍率
-                kirikiri.scale_ratio = ugk.custiom_ratio_spinbox.value()
                 # 设置放大部分
-                kirikiri.run_dict['script'] = ugk.text_part.isChecked()
-                kirikiri.run_dict['image'] = ugk.image_part.isChecked()
-                kirikiri.run_dict['animation'] = ugk.animation_part.isChecked()
-                kirikiri.run_dict['video'] = ugk.video_part.isChecked()
-                # 高级选项
-                # 处理立绘
-                kirikiri.upscale_fg = ugk.upscale_fg_btn.isChecked()
+                run_dict = {}
+                run_dict['script'] = ugk.text_part.isChecked()
+                run_dict['image'] = ugk.image_part.isChecked()
+                run_dict['animation'] = ugk.animation_part.isChecked()
+                run_dict['video'] = ugk.video_part.isChecked()
                 # 开始放大
-                kirikiri.upscale()
+                kirikiri.upscale(
+                    game_data=self.vnu.input_path,
+                    patch_folder=self.vnu.output_folder,
+                    scale_ratio=ugk.custiom_ratio_spinbox.value(),
+                    run_dict=run_dict,
+                    encoding=ugk.main_encoding.text(),
+                    resolution=[int(i) for i in ugk.before_resolution.text().split('x')],
+                    # 高级选项
+                    upscale_fg=True if ugk.upscale_fg_btn.isChecked() else False
+                )
                 self.finish_sig.emit('高清重制完成!')
         elif ugk.currentWidget() is ugk.work_up_frame:
             # 对话框头像坐标调整
@@ -253,20 +252,20 @@ class GamePageRunner(QThread):
         uga = self.vnu.ui.gamepage.artemis
         if uga.currentWidget() is uga.hd_parts_frame:
             if self.path_pass():
-                # 设置输入、输出路径
-                artemis.set_vn_hd_io_folder(self.vnu.input_path, self.vnu.output_folder)
-                # 设置原生分辨率和主要编码
-                scwidth, scheight = map(int, uga.before_resolution.text().split('x'))
-                encoding = uga.main_encoding.text()
-                artemis.set_resolution_encoding(scwidth, scheight, encoding)
-                # 设置放大倍率
-                artemis.scale_ratio = uga.custiom_ratio_spinbox.value()
                 # 设置放大部分
-                artemis.run_dict['script'] = uga.text_part.isChecked()
-                artemis.run_dict['image'] = uga.image_part.isChecked()
-                artemis.run_dict['animation'] = uga.animation_part.isChecked()
-                artemis.run_dict['video'] = uga.video_part.isChecked()
-                artemis.upscale()
+                run_dict = {}
+                run_dict['script'] = uga.text_part.isChecked()
+                run_dict['image'] = uga.image_part.isChecked()
+                run_dict['animation'] = uga.animation_part.isChecked()
+                run_dict['video'] = uga.video_part.isChecked()
+                artemis.upscale(
+                    game_data=self.vnu.input_path,
+                    patch_folder=self.vnu.output_folder,
+                    scale_ratio=uga.custiom_ratio_spinbox.value(),
+                    run_dict=run_dict,
+                    encoding=uga.main_encoding.text(),
+                    resolution=[int(i) for i in uga.before_resolution.text().split('x')]
+                )
                 self.finish_sig.emit('高清重制完成!')
         elif uga.currentWidget() is uga.work_up_frame:
             if uga.pfs_unpack_btn.isChecked():
@@ -281,19 +280,19 @@ class GamePageRunner(QThread):
         ugm = self.vnu.ui.gamepage.majiro
         if ugm.currentWidget() is ugm.hd_parts_frame:
             if self.path_pass():
-                # 设置输入、输出路径
-                majiro.set_vn_hd_io_folder(self.vnu.input_path, self.vnu.output_folder)
-                # 设置原生分辨率和主要编码
-                scwidth, scheight = map(int, ugm.before_resolution.text().split('x'))
-                encoding = ugm.main_encoding.text()
-                majiro.set_resolution_encoding(scwidth, scheight, encoding)
-                # 设置放大倍率
-                majiro.scale_ratio = ugm.custiom_ratio_spinbox.value()
                 # 设置放大部分
-                majiro.run_dict['script'] = ugm.text_part.isChecked()
-                majiro.run_dict['image'] = ugm.image_part.isChecked()
-                majiro.run_dict['video'] = ugm.video_part.isChecked()
-                majiro.upscale()
+                run_dict = {}
+                run_dict['script'] = ugm.text_part.isChecked()
+                run_dict['image'] = ugm.image_part.isChecked()
+                run_dict['video'] = ugm.video_part.isChecked()
+                majiro.upscale(
+                    game_data=self.vnu.input_path,
+                    patch_folder=self.vnu.output_folder,
+                    scale_ratio=ugm.custiom_ratio_spinbox.value(),
+                    run_dict=run_dict,
+                    encoding=ugm.main_encoding.text(),
+                    resolution=[int(i) for i in ugm.before_resolution.text().split('x')]
+                )
                 self.finish_sig.emit('高清重制完成!')
         elif ugm.currentWidget() is ugm.work_up_frame:
             if ugm.mjo_convert_btn.isChecked():

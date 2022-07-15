@@ -1,50 +1,15 @@
 # -*- coding:utf-8 -*-
 
-from Core import *
+from ..base_engine import *
 from .pf8_struct import PF8Struct
 
 
-class Artemis(Core):
+class Artemis(BaseEngine):
     """Artemis Engine"""
 
     def __init__(self, game_ui_runner=None):
-        Core.__init__(self)
-        self.load_config()
-        self.__class__.game_ui_runner = game_ui_runner
+        BaseEngine.__init__(self, game_ui_runner)
         self.encoding = 'UTF-8'
-        self.run_dict = {'script': False, 'image': False, 'animation': False, 'video': False}
-
-    def emit_info(self, info_str):
-        print(info_str)
-        logging.info(info_str)
-        if self.game_ui_runner is not None:
-            self.game_ui_runner.info_sig.emit(info_str)
-
-    def emit_progress(self, _percent, _left_time):
-        print(_percent, _left_time, sep='\t')
-        if self.game_ui_runner is not None:
-            self.game_ui_runner.progress_sig.emit(_percent, _left_time)
-
-    def upscale(self):
-        # 计时
-        start_time = time.time()
-        if not self.patch_folder.exists():
-            self.patch_folder.mkdir(parents=True)
-        # 开始放大
-        if self.run_dict['script']:
-            self.script2x()
-            self.emit_info('文本文件处理完成')
-        if self.run_dict['image']:
-            self.image2x()
-            self.emit_info('图片文件放大完成')
-        if self.run_dict['animation']:
-            self.animation2x()
-            self.emit_info('动画文件处理完成')
-        if self.run_dict['video']:
-            self.video2x()
-            self.emit_info('视频文件处理完成')
-        timing_count = time.time() - start_time
-        self.emit_info(f'共耗时：{seconds_format(timing_count)}')
 
     def get_resolution_encoding(self, input_folder):
         '''
@@ -75,7 +40,7 @@ class Artemis(Core):
     ==================================================
     """
 
-    def script2x(self):
+    def _script2x(self):
         self.emit_info('开始处理游戏脚本......')
         self.sysini2x()
         self.tbl2x()
@@ -262,7 +227,7 @@ class Artemis(Core):
     ==================================================
     """
 
-    def image2x(self):
+    def _image2x(self):
         self.emit_info('开始处理游戏图片......')
         self.png2x()
 
@@ -298,7 +263,7 @@ class Artemis(Core):
     ==================================================
     """
 
-    def animation2x(self):
+    def _animation2x(self):
         self.emit_info('开始处理游戏动画......')
         self.ogv2x()
 
@@ -316,7 +281,7 @@ class Artemis(Core):
     ==================================================
     """
 
-    def video2x(self):
+    def _video2x(self):
         self.emit_info('开始处理游戏视频......')
         video_extension_ls = ['wmv', 'dat', 'mp4', 'avi', 'mpg', 'mkv']
         for video_extension in video_extension_ls:
@@ -392,7 +357,6 @@ class Artemis(Core):
             f.write(new_file_data)
         return file_path
 
-    # @staticmethod
     @jit(fastmath=True)
     def _decrypt_pfs_contents(self, contents, digest, len_contents, len_digest):
         for i in range(len_contents):
