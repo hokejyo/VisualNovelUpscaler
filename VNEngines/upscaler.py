@@ -3,7 +3,7 @@
 from Core import *
 
 
-class BaseEngine(Core):
+class Upscaler(Core):
     """
     @brief      其它游戏引擎的放大处理器需继承此类
     """

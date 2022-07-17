@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from ..base_engine import *
+from ..upscaler import *
 
 
-class Majiro(BaseEngine):
+class Majiro(Upscaler):
     """Majiro Script Engine"""
 
     def __init__(self, game_ui_runner=None):
-        BaseEngine.__init__(self, game_ui_runner)
+        Upscaler.__init__(self, game_ui_runner)
         self.encoding = 'Shift_JIS'
 
     """

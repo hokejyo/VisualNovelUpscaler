@@ -1,14 +1,14 @@
 # -*- coding:utf-8 -*-
 
-from ..base_engine import *
+from ..upscaler import *
 from .amv_struct import AMVStruct
 
 
-class Kirikiri(BaseEngine):
+class Kirikiri(Upscaler):
     """Kirikiri 2/Z Engine"""
 
     def __init__(self, game_ui_runner=None):
-        BaseEngine.__init__(self, game_ui_runner)
+        Upscaler.__init__(self, game_ui_runner)
         self.encoding = 'Shift_JIS'
         # 是否处理立绘相关文件(实验性功能)
         # self.advanced_option['upscale_fg'] = False
@@ -561,11 +561,22 @@ class Kirikiri(BaseEngine):
 
     def _common_2x(self, text_file):
         # 其它文件的坐标修正
-        kwds = ['left', 'top', 'width', 'height',
-                'xpos', 'ypos', 'movex', 'movey',
-                'zoom', 'movx', 'movy', 'shiftx', 'shifty', 'camerazoom',
-                'fontheight', 'fontsize', 'linestep', 'linespace', 'linespacing',
-                'xoff', 'yoff', 'originx', 'originy', 'emotionX', 'emotionY']
+        kwds = [
+            'left', 'top', 'width', 'height',
+            'xpos', 'ypos', 'movex', 'movey',
+            'zoom', 'movx', 'movy', 'shiftx', 'shifty', 'camerazoom',
+            'fontheight', 'fontsize', 'linestep', 'linespace', 'linespacing',
+            'xoff', 'yoff', 'originx', 'originy', 'emotionX', 'emotionY',
+            # 夜羊社
+            'defaultFontSize', 'defaultLineSize', '_fontSize', 'reserveLineSize',
+            'defaultRubySize', 'rubySize', '_rubySize', 'defaultRubyOffset',
+            'rubyOffset', '_rubyOffset', 'defaultLineSpacing', 'defaultPitch',
+            'pitch', 'edgeExtent', 'shadowOffsetX', 'shadowOffsetY',
+            'glyphFixedLeft', 'glyphFixedTop', 'th',
+            ';tabOffsetX', ';tabOffsetY', ';tabLeftMin', ';tabLeftMax',
+            ';valueOffsetX', ';valueOffsetY', ';valueFontHeight', ';valueShadowWidth',
+            ';valueShadowOffsetX', ';valueShadowOffsetY'
+        ]
         key_str = '|'.join(kwds)
         ptn = re.compile(rf'(?<=(\W|^)({key_str})\W+((int|float|double)\W+)?)(\d+)(?=\W|$)', re.IGNORECASE)
         lines_encoding = self._get_lines_encoding(text_file)

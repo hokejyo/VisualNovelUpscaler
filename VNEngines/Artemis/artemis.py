@@ -1,14 +1,14 @@
 # -*- coding:utf-8 -*-
 
-from ..base_engine import *
+from ..upscaler import *
 from .pf8_struct import PF8Struct
 
 
-class Artemis(BaseEngine):
+class Artemis(Upscaler):
     """Artemis Engine"""
 
     def __init__(self, game_ui_runner=None):
-        BaseEngine.__init__(self, game_ui_runner)
+        Upscaler.__init__(self, game_ui_runner)
         self.encoding = 'UTF-8'
 
     def get_resolution_encoding(self, input_folder):
